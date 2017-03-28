@@ -27,12 +27,18 @@ if [ $OPENSSL != NONE ]; then
         *)
             have=NGX_OPENSSL . auto/have
             have=NGX_SSL . auto/have
-
-            CORE_INCS="$CORE_INCS $OPENSSL/.openssl/include"
-            CORE_DEPS="$CORE_DEPS $OPENSSL/.openssl/include/openssl/ssl.h"
-            CORE_LIBS="$CORE_LIBS $OPENSSL/.openssl/lib/libssl.a"
-            CORE_LIBS="$CORE_LIBS $OPENSSL/.openssl/lib/libcrypto.a"
-            CORE_LIBS="$CORE_LIBS $NGX_LIBDL"
+			echo "USE_BORINGSSL_SO:$USE_BORINGSSL_SO"
+			if [ "$USE_BORINGSSL_SO" = YES ]; then
+				CORE_INCS="$CORE_INCS $OPENSSL/include"
+				CORE_DEPS="$CORE_DEPS $OPENSSL/include/openssl/ssl.h"
+				CORE_LIBS="$CORE_LIBS $NGX_LIBDL"
+			else
+				CORE_INCS="$CORE_INCS $OPENSSL/.openssl/include"
+				CORE_DEPS="$CORE_DEPS $OPENSSL/.openssl/include/openssl/ssl.h"
+				CORE_LIBS="$CORE_LIBS $OPENSSL/.openssl/lib/libssl.a"
+				CORE_LIBS="$CORE_LIBS $OPENSSL/.openssl/lib/libcrypto.a"
+				CORE_LIBS="$CORE_LIBS $NGX_LIBDL"
+			fi
 
             if [ "$NGX_PLATFORM" = win32 ]; then
                 CORE_LIBS="$CORE_LIBS -lgdi32 -lcrypt32 -lws2_32"

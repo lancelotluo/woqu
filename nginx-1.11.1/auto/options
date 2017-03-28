@@ -135,6 +135,7 @@ PCRE_JIT=NO
 
 USE_OPENSSL=NO
 OPENSSL=NONE
+USE_BORINGSSL_SO=NO
 
 USE_MD5=NO
 MD5=NONE
@@ -332,6 +333,7 @@ use the \"--with-mail_ssl_module\" option instead"
 
         --with-openssl=*)                OPENSSL="$value"           ;;
         --with-openssl-opt=*)            OPENSSL_OPT="$value"       ;;
+		--with-boringssl_so=*)           USE_BORINGSSL_SO="$value"	;;
 
         --with-md5=*)                    MD5="$value"               ;;
         --with-md5-opt=*)                MD5_OPT="$value"           ;;
