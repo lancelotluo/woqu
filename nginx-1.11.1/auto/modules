@@ -425,6 +425,7 @@ ngx_module_type=HTTP
 
 if [ $HTTP_V2 = YES ]; then
     have=NGX_HTTP_V2 . auto/have
+    have=NGX_HTTP_QUIC . auto/have
 
     ngx_module_name=ngx_http_v2_module
     ngx_module_incs=src/http/v2

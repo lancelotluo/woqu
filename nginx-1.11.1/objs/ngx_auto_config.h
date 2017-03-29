@@ -1,4 +1,4 @@
-#define NGX_CONFIGURE " --prefix=/home/lancelotluo/nginx --sbin-path=/home/lancelotluo/nginx/nginx --conf-path=/home/lancelotluo/nginx/nginx.conf --pid-path=/home/lancelotluo/nginx/nginx.pid --with-cc-opt='-I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/' --with-ld-opt='-lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl' --with-http_ssl_module --with-http_realip_module --with-http_addition_module --with-http_v2_module --with-http_gzip_static_module --with-pcre=/home/lancelotluo/github/woqu/third-lib/pcre-8.40 --with-openssl=.././proto-quic/src/third_party/boringssl/src/ --with-openssl-opt=-fPIC --with-http_stub_status_module --with-boringssl_so=YES --add-module=/home/lancelotluo/github/woqu/third-modules//ngx_http_quic_module/ --with-debug"
+#define NGX_CONFIGURE " --prefix=/home/lancelotluo/nginx --sbin-path=/home/lancelotluo/nginx/nginx --conf-path=/home/lancelotluo/nginx/nginx.conf --pid-path=/home/lancelotluo/nginx/nginx.pid --with-cc-opt='-I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/' --with-ld-opt='-lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl' --with-http_ssl_module --with-http_realip_module --with-http_addition_module --with-http_v2_module --with-http_gzip_static_module --with-pcre=/home/lancelotluo/github/woqu/third-lib/pcre-8.40 --with-openssl=.././proto-quic/src/third_party/boringssl/src/ --with-openssl-opt=-fPIC --with-http_stub_status_module --with-stream --with-boringssl_so=YES --add-module=/home/lancelotluo/github/woqu/third-modules//ngx_http_quic_module/ --with-debug"
 
 #ifndef NGX_DEBUG
 #define NGX_DEBUG  1
@@ -380,6 +380,11 @@
 
 #ifndef NGX_STAT_STUB
 #define NGX_STAT_STUB  1
+#endif
+
+
+#ifndef NGX_STREAM_UPSTREAM_ZONE
+#define NGX_STREAM_UPSTREAM_ZONE  1
 #endif
 
 

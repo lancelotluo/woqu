@@ -141,7 +141,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
@@ -161,13 +161,13 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
 checking for crypt()
 
-/tmp/ccbd44qj.o: In function `main':
+/tmp/ccDnS8nW.o: In function `main':
 /home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:7: undefined reference to `crypt'
 collect2: error: ld returned 1 exit status
 ----------
@@ -182,7 +182,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
@@ -209,7 +209,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
@@ -240,7 +240,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
@@ -267,7 +267,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
@@ -285,7 +285,7 @@ objs/autotest.c: In function 'main':
 objs/autotest.c:7:5: warning: null argument where non-null required (argument 2) [-Wnonnull]
      dlopen(NULL, RTLD_NOW | RTLD_GLOBAL); dlsym(NULL, NULL);
      ^
-/tmp/ccgr4p2I.o: In function `main':
+/tmp/cctFxVjD.o: In function `main':
 /home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:7: undefined reference to `dlopen'
 /home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:7: undefined reference to `dlsym'
 collect2: error: ld returned 1 exit status
@@ -301,7 +301,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
@@ -336,7 +336,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
@@ -363,7 +363,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
@@ -386,7 +386,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
@@ -414,7 +414,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
@@ -438,7 +438,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
@@ -548,7 +548,7 @@ objs/autotest.c: In function 'main':
 objs/autotest.c:7:5: warning: implicit declaration of function 'setproctitle' [-Wimplicit-function-declaration]
      setproctitle("test");;
      ^
-/tmp/cc2215H2.o: In function `main':
+/tmp/ccwZIg4o.o: In function `main':
 /home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:7: undefined reference to `setproctitle'
 collect2: error: ld returned 1 exit status
 ----------
@@ -563,7 +563,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
@@ -581,7 +581,7 @@ checking for pwritev()
 ----------------------------------------
 checking for sys_nerr
 
-/tmp/cck2SVcn.o: In function `printf':
+/tmp/ccA4ERFD.o: In function `printf':
 /usr/include/x86_64-linux-gnu/bits/stdio2.h:104: warning: `sys_nerr' is deprecated; use `strerror' or `strerror_r' instead
 135
 ----------------------------------------
@@ -611,7 +611,7 @@ checking for System V shared memory
 ----------------------------------------
 checking for POSIX semaphores
 
-/tmp/cct5sedS.o: In function `main':
+/tmp/ccQQ6Cye.o: In function `main':
 /home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:8: undefined reference to `sem_init'
 /home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:9: undefined reference to `sem_destroy'
 collect2: error: ld returned 1 exit status
@@ -629,7 +629,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------
@@ -672,7 +672,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
+cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl
 ----------
 
 ----------------------------------------

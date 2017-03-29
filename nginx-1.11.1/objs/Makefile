@@ -1,10 +1,9 @@
-CC =	cc
-CFLAGS = -g -O2 -I /home/lancelotluo/github/woqu/third-lib/protobuf//protobuf_c_lib/include -I /home/lancelotluo/github/woqu/third-lib/protobuf//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/
-CPP =	
-CXX = g++
-CXXFLAGS = ${CFLAGS} -Wall -std=gnu++11
 
-LINK =	$(CC)
+CC =	cc
+CFLAGS = -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/
+CPP =	g++
+CPPFLAGS =	${CFLAGS} -fpermissive -std=gnu++11
+LINK =	$(CPP)
 
 
 ALL_INCS = -I src/core \
@@ -16,7 +15,8 @@ ALL_INCS = -I src/core \
 	-I objs \
 	-I src/http \
 	-I src/http/modules \
-	-I src/http/v2
+	-I src/http/v2 \
+	-I src/stream
 
 
 CORE_DEPS = src/core/nginx.h \
@@ -114,7 +114,15 @@ HTTP_INCS = -I src/http \
 	-I src/http/v2
 
 
-ADDON_DEPS = $(CORE_DEPS)  $(HTTP_DEPS)
+STREAM_DEPS = src/stream/ngx_stream.h \
+	src/stream/ngx_stream_upstream.h \
+	src/stream/ngx_stream_upstream_round_robin.h
+
+
+STREAM_INCS = -I src/stream
+
+
+ADDON_DEPS = $(CORE_DEPS)  $(HTTP_DEPS) $(STREAM_DEPS)
 
 
 build:	binary modules manpage
@@ -247,6 +255,17 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/modules/ngx_http_upstream_keepalive_module.o \
 	objs/src/http/modules/ngx_http_upstream_zone_module.o \
 	objs/src/http/modules/ngx_http_stub_status_module.o \
+	objs/src/stream/ngx_stream.o \
+	objs/src/stream/ngx_stream_handler.o \
+	objs/src/stream/ngx_stream_core_module.o \
+	objs/src/stream/ngx_stream_proxy_module.o \
+	objs/src/stream/ngx_stream_upstream.o \
+	objs/src/stream/ngx_stream_upstream_round_robin.o \
+	objs/src/stream/ngx_stream_limit_conn_module.o \
+	objs/src/stream/ngx_stream_access_module.o \
+	objs/src/stream/ngx_stream_upstream_hash_module.o \
+	objs/src/stream/ngx_stream_upstream_least_conn_module.o \
+	objs/src/stream/ngx_stream_upstream_zone_module.o \
 	objs/addon/ngx_http_quic_module/ngx_http_quic_module.o \
 	objs/ngx_modules.o \
 	/home/lancelotluo/github/woqu/third-lib/pcre-8.40/.libs/libpcre.a
@@ -378,6 +397,17 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/modules/ngx_http_upstream_keepalive_module.o \
 	objs/src/http/modules/ngx_http_upstream_zone_module.o \
 	objs/src/http/modules/ngx_http_stub_status_module.o \
+	objs/src/stream/ngx_stream.o \
+	objs/src/stream/ngx_stream_handler.o \
+	objs/src/stream/ngx_stream_core_module.o \
+	objs/src/stream/ngx_stream_proxy_module.o \
+	objs/src/stream/ngx_stream_upstream.o \
+	objs/src/stream/ngx_stream_upstream_round_robin.o \
+	objs/src/stream/ngx_stream_limit_conn_module.o \
+	objs/src/stream/ngx_stream_access_module.o \
+	objs/src/stream/ngx_stream_upstream_hash_module.o \
+	objs/src/stream/ngx_stream_upstream_least_conn_module.o \
+	objs/src/stream/ngx_stream_upstream_zone_module.o \
 	objs/addon/ngx_http_quic_module/ngx_http_quic_module.o \
 	objs/ngx_modules.o \
 	-lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -ldl -lpthread -lcrypt /home/lancelotluo/github/woqu/third-lib/pcre-8.40/.libs/libpcre.a -ldl -lz \
@@ -1276,9 +1306,86 @@ objs/src/http/modules/ngx_http_stub_status_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
 		src/http/modules/ngx_http_stub_status_module.c
 
 
+objs/src/stream/ngx_stream.o:	$(CORE_DEPS) $(STREAM_DEPS) \
+	src/stream/ngx_stream.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(STREAM_INCS) \
+		-o objs/src/stream/ngx_stream.o \
+		src/stream/ngx_stream.c
+
+
+objs/src/stream/ngx_stream_handler.o:	$(CORE_DEPS) $(STREAM_DEPS) \
+	src/stream/ngx_stream_handler.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(STREAM_INCS) \
+		-o objs/src/stream/ngx_stream_handler.o \
+		src/stream/ngx_stream_handler.c
+
+
+objs/src/stream/ngx_stream_core_module.o:	$(CORE_DEPS) $(STREAM_DEPS) \
+	src/stream/ngx_stream_core_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(STREAM_INCS) \
+		-o objs/src/stream/ngx_stream_core_module.o \
+		src/stream/ngx_stream_core_module.c
+
+
+objs/src/stream/ngx_stream_proxy_module.o:	$(CORE_DEPS) $(STREAM_DEPS) \
+	src/stream/ngx_stream_proxy_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(STREAM_INCS) \
+		-o objs/src/stream/ngx_stream_proxy_module.o \
+		src/stream/ngx_stream_proxy_module.c
+
+
+objs/src/stream/ngx_stream_upstream.o:	$(CORE_DEPS) $(STREAM_DEPS) \
+	src/stream/ngx_stream_upstream.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(STREAM_INCS) \
+		-o objs/src/stream/ngx_stream_upstream.o \
+		src/stream/ngx_stream_upstream.c
+
+
+objs/src/stream/ngx_stream_upstream_round_robin.o:	$(CORE_DEPS) $(STREAM_DEPS) \
+	src/stream/ngx_stream_upstream_round_robin.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(STREAM_INCS) \
+		-o objs/src/stream/ngx_stream_upstream_round_robin.o \
+		src/stream/ngx_stream_upstream_round_robin.c
+
+
+objs/src/stream/ngx_stream_limit_conn_module.o:	$(CORE_DEPS) $(STREAM_DEPS) \
+	src/stream/ngx_stream_limit_conn_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(STREAM_INCS) \
+		-o objs/src/stream/ngx_stream_limit_conn_module.o \
+		src/stream/ngx_stream_limit_conn_module.c
+
+
+objs/src/stream/ngx_stream_access_module.o:	$(CORE_DEPS) $(STREAM_DEPS) \
+	src/stream/ngx_stream_access_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(STREAM_INCS) \
+		-o objs/src/stream/ngx_stream_access_module.o \
+		src/stream/ngx_stream_access_module.c
+
+
+objs/src/stream/ngx_stream_upstream_hash_module.o:	$(CORE_DEPS) $(STREAM_DEPS) \
+	src/stream/ngx_stream_upstream_hash_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(STREAM_INCS) \
+		-o objs/src/stream/ngx_stream_upstream_hash_module.o \
+		src/stream/ngx_stream_upstream_hash_module.c
+
+
+objs/src/stream/ngx_stream_upstream_least_conn_module.o:	$(CORE_DEPS) $(STREAM_DEPS) \
+	src/stream/ngx_stream_upstream_least_conn_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(STREAM_INCS) \
+		-o objs/src/stream/ngx_stream_upstream_least_conn_module.o \
+		src/stream/ngx_stream_upstream_least_conn_module.c
+
+
+objs/src/stream/ngx_stream_upstream_zone_module.o:	$(CORE_DEPS) $(STREAM_DEPS) \
+	src/stream/ngx_stream_upstream_zone_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(STREAM_INCS) \
+		-o objs/src/stream/ngx_stream_upstream_zone_module.o \
+		src/stream/ngx_stream_upstream_zone_module.c
+
+
 objs/addon/ngx_http_quic_module/ngx_http_quic_module.o:	$(ADDON_DEPS) \
 	/home/lancelotluo/github/woqu/third-modules//ngx_http_quic_module//ngx_http_quic_module.cpp
-	$(CXX) -c $(CXXFLAGS)  $(ALL_INCS) \
+	$(CPP) -c $(CPPFLAGS)  $(ALL_INCS) \
 		-o objs/addon/ngx_http_quic_module/ngx_http_quic_module.o \
 		/home/lancelotluo/github/woqu/third-modules//ngx_http_quic_module//ngx_http_quic_module.cpp
 

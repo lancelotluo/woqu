@@ -4035,6 +4035,13 @@ ngx_http_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             continue;
         }
 
+#if (NGX_HTTP_QUIC)
+        if (ngx_strcmp(value[n].data, "quic") == 0) {
+            lsopt.quic = 1;
+            continue;
+        }
+#endif
+
 #if (NGX_HAVE_SETFIB)
         if (ngx_strncmp(value[n].data, "setfib=", 7) == 0) {
             lsopt.setfib = ngx_atoi(value[n].data + 7, value[n].len - 7);

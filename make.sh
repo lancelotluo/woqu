@@ -11,7 +11,7 @@ proto_quic_src=${BASE_DIR}/proto-quic/src/
 
 pcre_path=${BASE_DIR}/third-lib/pcre-8.40
 ngx_src=${BASE_DIR}/nginx-1.11.1
-protobuf_path=${BASE_DIR}/third-lib/protobuf/
+protobuf_path=${BASE_DIR}/proto-quic/src/third_party/protobuf/src/
 protobuf_lib_path=${protobuf_path}/protobuf_lib/lib
 protobuf_c_path=${protobuf_path}/protobuf_c_lib/
 stgw_engine_proto_lib_path=${protobuf_path}/stgw_engine_proto/
@@ -37,7 +37,7 @@ export CFLAGS="-g -O2"
 --sbin-path=$install_path/nginx \
 --conf-path=$install_path/nginx.conf \
 --pid-path=$install_path/nginx.pid \
---with-cc-opt="-I ${protobuf_path}/protobuf_c_lib/include -I ${stgw_engine_proto_lib_path} -I ${proto_quic_src}" \
+--with-cc-opt="-I ${protobuf_path} -I ${stgw_engine_proto_lib_path} -I ${proto_quic_src}" \
 --with-ld-opt="-lrt -L${boringssl_lib} -lcrcrypto -lboringssl" \
 --with-http_ssl_module \
 --with-http_realip_module \
@@ -48,6 +48,7 @@ export CFLAGS="-g -O2"
 --with-openssl="../${openssl_path}" \
 --with-openssl-opt="$openssl_opt" \
 --with-http_stub_status_module \
+--with-stream \
 --with-boringssl_so="YES" \
 --add-module=${third_module_path}/ngx_http_quic_module/ \
 --with-debug
@@ -65,3 +66,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "done"
+
+#CPP = g++   
+#CPPFLAGS = ${CFLAGS} -Wall -std=gnu++11
+#LINK =  $(CPP)
