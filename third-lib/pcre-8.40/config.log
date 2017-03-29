@@ -42,7 +42,6 @@ PATH: /usr/local/go/bin
 PATH: /usr/local/go/bin
 PATH: /home/lancelotluo/work/chromium/depot_tools
 PATH: /home/lancelotluo/work/quic/proto-quic/depot_tools/
-PATH: /home/lancelotluo/work/quic/proto-quic/depot_tools
 
 
 ## ----------- ##

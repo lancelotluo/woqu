@@ -2,8 +2,8 @@
 CC =	cc
 CFLAGS = -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/
 CPP =	g++
-CPPFLAGS =	${CFLAGS} -fpermissive -std=gnu++11
-LINK =	$(CPP)
+CPPFLAGS =	-fpermissive -std=gnu++11 -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/
+LINK =	g++
 
 
 ALL_INCS = -I src/core \
@@ -1385,7 +1385,7 @@ objs/src/stream/ngx_stream_upstream_zone_module.o:	$(CORE_DEPS) $(STREAM_DEPS) \
 
 objs/addon/ngx_http_quic_module/ngx_http_quic_module.o:	$(ADDON_DEPS) \
 	/home/lancelotluo/github/woqu/third-modules//ngx_http_quic_module//ngx_http_quic_module.cpp
-	$(CPP) -c $(CPPFLAGS)  $(ALL_INCS) \
+	$(CPP) $(CPPFLAGS) -c $(CFLAGS)  $(ALL_INCS) \
 		-o objs/addon/ngx_http_quic_module/ngx_http_quic_module.o \
 		/home/lancelotluo/github/woqu/third-modules//ngx_http_quic_module//ngx_http_quic_module.cpp
 

@@ -333,6 +333,11 @@
 #endif
 
 
+#ifndef NGX_HTTP_QUIC
+#define NGX_HTTP_QUIC  1
+#endif
+
+
 #ifndef NGX_HTTP_V2
 #define NGX_HTTP_V2  1
 #endif

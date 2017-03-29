@@ -1734,9 +1734,18 @@ ngx_http_add_listening(ngx_conf_t *cf, ngx_http_conf_addr_t *addr)
         return NULL;
     }
 
+
     ls->addr_ntop = 1;
 
     ls->handler = ngx_http_init_connection;
+
+#if NGX_HTTP_QUIC
+	if (addr->opt.quic) {
+		ls->type = SOCK_DGRAM;//default is SOCK_STREAM
+	}
+
+	ls->handler = NULL;
+#endif
 
     cscf = addr->default_server;
     ls->pool_size = cscf->connection_pool_size;
@@ -1827,6 +1836,9 @@ ngx_http_add_addrs(ngx_conf_t *cf, ngx_http_port_t *hport,
 #endif
 #if (NGX_HTTP_V2)
         addrs[i].conf.http2 = addr[i].opt.http2;
+#endif
+#if (NGX_HTTP_QUIC)
+        addrs[i].conf.quic = addr[i].opt.quic;
 #endif
         addrs[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
 

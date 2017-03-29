@@ -322,6 +322,12 @@ ngx_http_init_connection(ngx_connection_t *c)
     }
 #endif
 
+#if (NGX_HTTP_QUIC)
+	if (hc->addr_conf->quic) {
+		rev->handler = NULL;
+	}
+#endif
+
 #if (NGX_HTTP_SSL)
     {
     ngx_http_ssl_srv_conf_t  *sscf;
