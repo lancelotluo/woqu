@@ -167,7 +167,7 @@ cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/s
 ----------------------------------------
 checking for crypt()
 
-/tmp/ccMkMXn5.o: In function `main':
+/tmp/cc0tSKNe.o: In function `main':
 /home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:7: undefined reference to `crypt'
 collect2: error: ld returned 1 exit status
 ----------
@@ -285,7 +285,7 @@ objs/autotest.c: In function 'main':
 objs/autotest.c:7:5: warning: null argument where non-null required (argument 2) [-Wnonnull]
      dlopen(NULL, RTLD_NOW | RTLD_GLOBAL); dlsym(NULL, NULL);
      ^
-/tmp/ccPuTcHv.o: In function `main':
+/tmp/ccPCYQND.o: In function `main':
 /home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:7: undefined reference to `dlopen'
 /home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:7: undefined reference to `dlsym'
 collect2: error: ld returned 1 exit status
@@ -548,7 +548,7 @@ objs/autotest.c: In function 'main':
 objs/autotest.c:7:5: warning: implicit declaration of function 'setproctitle' [-Wimplicit-function-declaration]
      setproctitle("test");;
      ^
-/tmp/ccqAl6wl.o: In function `main':
+/tmp/ccE7xkdF.o: In function `main':
 /home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:7: undefined reference to `setproctitle'
 collect2: error: ld returned 1 exit status
 ----------
@@ -581,7 +581,7 @@ checking for pwritev()
 ----------------------------------------
 checking for sys_nerr
 
-/tmp/cc2XDBcp.o: In function `printf':
+/tmp/ccamt0GT.o: In function `printf':
 /usr/include/x86_64-linux-gnu/bits/stdio2.h:104: warning: `sys_nerr' is deprecated; use `strerror' or `strerror_r' instead
 135
 ----------------------------------------
@@ -611,7 +611,7 @@ checking for System V shared memory
 ----------------------------------------
 checking for POSIX semaphores
 
-/tmp/cc8L9VzP.o: In function `main':
+/tmp/ccb91koh.o: In function `main':
 /home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:8: undefined reference to `sem_init'
 /home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:9: undefined reference to `sem_destroy'
 collect2: error: ld returned 1 exit status

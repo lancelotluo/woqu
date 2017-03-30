@@ -1223,6 +1223,9 @@ ngx_http_add_addresses(ngx_conf_t *cf, ngx_http_core_srv_conf_t *cscf,
 #if (NGX_HTTP_V2)
     ngx_uint_t             http2;
 #endif
+#if (NGX_HTTP_QUIC)
+    ngx_uint_t             quic;
+#endif
 
     /*
      * we cannot compare whole sockaddr struct's as kernel
@@ -1258,6 +1261,9 @@ ngx_http_add_addresses(ngx_conf_t *cf, ngx_http_core_srv_conf_t *cscf,
 #if (NGX_HTTP_V2)
         http2 = lsopt->http2 || addr[i].opt.http2;
 #endif
+#if (NGX_HTTP_QUIC)
+        quic = lsopt->quic || addr[i].opt.quic;
+#endif
 
         if (lsopt->set) {
 
@@ -1291,6 +1297,9 @@ ngx_http_add_addresses(ngx_conf_t *cf, ngx_http_core_srv_conf_t *cscf,
 #endif
 #if (NGX_HTTP_V2)
         addr[i].opt.http2 = http2;
+#endif
+#if (NGX_HTTP_QUIC)
+        addr[i].opt.quic = quic;
 #endif
 
         return NGX_OK;
@@ -1734,18 +1743,17 @@ ngx_http_add_listening(ngx_conf_t *cf, ngx_http_conf_addr_t *addr)
         return NULL;
     }
 
+#if NGX_HTTP_QUIC
+	ngx_log_error(NGX_LOG_EMERG, cf->log, 0,
+				  "lcdebug opt.port: opt.quic %ui", addr->opt.quic);
+	if (addr->opt.quic) {
+		ls->type = SOCK_DGRAM;
+	}
+#endif
 
     ls->addr_ntop = 1;
 
     ls->handler = ngx_http_init_connection;
-
-#if NGX_HTTP_QUIC
-	if (addr->opt.quic) {
-		ls->type = SOCK_DGRAM;//default is SOCK_STREAM
-	}
-
-	ls->handler = NULL;
-#endif
 
     cscf = addr->default_server;
     ls->pool_size = cscf->connection_pool_size;
@@ -1904,6 +1912,9 @@ ngx_http_add_addrs6(ngx_conf_t *cf, ngx_http_port_t *hport,
 #endif
 #if (NGX_HTTP_V2)
         addrs6[i].conf.http2 = addr[i].opt.http2;
+#endif
+#if (NGX_HTTP_QUIC)
+        addrs6[i].conf.quic = addr[i].opt.quic;
 #endif
         addrs6[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
 

@@ -1,6 +1,6 @@
 
 CC =	cc
-CFLAGS = -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/
+CFLAGS = -g -O0 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/
 CPP =	g++
 CPPFLAGS =	-fpermissive -std=gnu++11 -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/
 LINK =	g++
