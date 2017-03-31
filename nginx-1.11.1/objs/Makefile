@@ -225,6 +225,7 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/modules/ngx_http_not_modified_filter_module.o \
 	objs/src/http/quic/ngx_http_quic.o \
 	objs/src/http/quic/ngx_http_quic_module.o \
+	objs/src/http/quic/quic_dispatcher.o \
 	objs/src/http/v2/ngx_http_v2.o \
 	objs/src/http/v2/ngx_http_v2_table.o \
 	objs/src/http/v2/ngx_http_v2_huff_decode.o \
@@ -368,6 +369,7 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/modules/ngx_http_not_modified_filter_module.o \
 	objs/src/http/quic/ngx_http_quic.o \
 	objs/src/http/quic/ngx_http_quic_module.o \
+	objs/src/http/quic/quic_dispatcher.o \
 	objs/src/http/v2/ngx_http_v2.o \
 	objs/src/http/v2/ngx_http_v2_table.o \
 	objs/src/http/v2/ngx_http_v2_huff_decode.o \
@@ -1090,6 +1092,13 @@ objs/src/http/quic/ngx_http_quic_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
 	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
 		-o objs/src/http/quic/ngx_http_quic_module.o \
 		src/http/quic/ngx_http_quic_module.c
+
+
+objs/src/http/quic/quic_dispatcher.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/quic_dispatcher.cc
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/quic_dispatcher.o \
+		src/http/quic/quic_dispatcher.cc
 
 
 objs/src/http/v2/ngx_http_v2.o:	$(CORE_DEPS) $(HTTP_DEPS) \

@@ -104,11 +104,6 @@ bool QuicConnectionPeer::IsSilentCloseEnabled(QuicConnection* connection) {
 }
 
 // static
-bool QuicConnectionPeer::IsMultipathEnabled(QuicConnection* connection) {
-  return connection->multipath_enabled_;
-}
-
-// static
 void QuicConnectionPeer::SwapCrypters(QuicConnection* connection,
                                       QuicFramer* framer) {
   QuicFramerPeer::SwapCrypters(framer, &connection->framer_);
@@ -116,7 +111,7 @@ void QuicConnectionPeer::SwapCrypters(QuicConnection* connection,
 
 // static
 void QuicConnectionPeer::SetCurrentPacket(QuicConnection* connection,
-                                          base::StringPiece current_packet) {
+                                          QuicStringPiece current_packet) {
   connection->current_packet_data_ = current_packet.data();
   connection->last_size_ = current_packet.size();
 }

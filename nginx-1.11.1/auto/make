@@ -4,7 +4,7 @@
 
 
 echo "creating $NGX_MAKEFILE"
-
+echo "begin:$HTTP_SRCS"
 mkdir -p $NGX_OBJS/src/core $NGX_OBJS/src/event $NGX_OBJS/src/event/modules \
          $NGX_OBJS/src/os/unix $NGX_OBJS/src/os/win32 \
          $NGX_OBJS/src/http $NGX_OBJS/src/http/v2 $NGX_OBJS/src/http/modules \
@@ -286,7 +286,6 @@ if [ $HTTP = YES ]; then
         ngx_perl_cc="\$(CC) $ngx_compile_opt \$(NGX_PERL_CFLAGS)"
         ngx_perl_cc="$ngx_perl_cc \$(CORE_INCS) \$(HTTP_INCS)"
     fi
-
     for ngx_source in $HTTP_SRCS
     do
         ngx_src=`echo $ngx_source | sed -e "s/\//$ngx_regex_dirsep/g"`
@@ -304,6 +303,9 @@ $ngx_obj:	\$(CORE_DEPS) \$(HTTP_DEPS)$ngx_cont$ngx_src
 	$ngx_perl_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
 
 END
+#	elif [ $ngx_source =~ .*\.cc ];then
+#			echo "find cc"
+#			exit 1
         else
 
             cat << END                                        >> $NGX_MAKEFILE

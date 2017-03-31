@@ -298,6 +298,7 @@ QuicChromiumClientSession::QuicChromiumClientSession(
 }
 
 QuicChromiumClientSession::~QuicChromiumClientSession() {
+  net_log_.EndEvent(NetLogEventType::QUIC_SESSION);
   if (!dynamic_streams().empty())
     RecordUnexpectedOpenStreams(DESTRUCTOR);
   if (!observers_.empty())
@@ -426,7 +427,6 @@ QuicChromiumClientSession::~QuicChromiumClientSession() {
   UMA_HISTOGRAM_COUNTS(
       "Net.QuicSession.MaxReordering",
       static_cast<base::HistogramBase::Sample>(stats.max_sequence_reordering));
-  net_log_.EndEvent(NetLogEventType::QUIC_SESSION);
 }
 
 void QuicChromiumClientSession::Initialize() {
@@ -919,7 +919,7 @@ void QuicChromiumClientSession::OnCryptoHandshakeMessageReceived(
     UMA_HISTOGRAM_CUSTOM_COUNTS("Net.QuicSession.RejectLength",
                                 message.GetSerialized().length(), 1000, 10000,
                                 50);
-    base::StringPiece proof;
+    QuicStringPiece proof;
     UMA_HISTOGRAM_BOOLEAN("Net.QuicSession.RejectHasProof",
                           message.GetStringPiece(kPROF, &proof));
   }
@@ -1178,7 +1178,7 @@ void QuicChromiumClientSession::OnNetworkConnected(
   // migration process. Allows tests to be more uniform.
   stream_factory_->OnSessionGoingAway(this);
   stream_factory_->MigrateSessionToNewNetwork(
-      this, network, /*close_session_on_error=*/true, net_log_);
+      this, network, /*close_session_on_error=*/true, net_log);
 }
 
 void QuicChromiumClientSession::OnWriteError(int error_code) {

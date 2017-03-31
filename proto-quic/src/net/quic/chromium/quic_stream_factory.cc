@@ -675,7 +675,7 @@ int QuicStreamRequest::Request(const HostPortPair& destination,
                                PrivacyMode privacy_mode,
                                int cert_verify_flags,
                                const GURL& url,
-                               base::StringPiece method,
+                               QuicStringPiece method,
                                const NetLogWithSource& net_log,
                                const CompletionCallback& callback) {
   DCHECK(callback_.is_null());
@@ -967,7 +967,7 @@ int QuicStreamFactory::Create(const QuicServerId& server_id,
                               const HostPortPair& destination,
                               int cert_verify_flags,
                               const GURL& url,
-                              base::StringPiece method,
+                              QuicStringPiece method,
                               const NetLogWithSource& net_log,
                               QuicStreamRequest* request) {
   if (clock_skew_detector_.ClockSkewDetected(base::TimeTicks::Now(),
@@ -1947,16 +1947,18 @@ void QuicStreamFactory::ProcessGoingAwaySession(
   const QuicConnectionStats& stats = session->connection()->GetStats();
   const AlternativeService alternative_service(kProtoQUIC,
                                                server_id.host_port_pair());
+  url::SchemeHostPort server("https", server_id.host_port_pair().host(),
+                             server_id.host_port_pair().port());
   if (session->IsCryptoHandshakeConfirmed()) {
     http_server_properties_->ConfirmAlternativeService(alternative_service);
     ServerNetworkStats network_stats;
     network_stats.srtt = base::TimeDelta::FromMicroseconds(stats.srtt_us);
     network_stats.bandwidth_estimate = stats.estimated_bandwidth;
-    url::SchemeHostPort server("https", server_id.host_port_pair().host(),
-                               server_id.host_port_pair().port());
     http_server_properties_->SetServerNetworkStats(server, network_stats);
     return;
   }
+
+  http_server_properties_->ClearServerNetworkStats(server);
 
   UMA_HISTOGRAM_COUNTS("Net.QuicHandshakeNotConfirmedNumPacketsReceived",
                        stats.packets_received);

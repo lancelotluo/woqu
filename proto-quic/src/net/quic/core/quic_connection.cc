@@ -35,7 +35,6 @@
 #include "net/quic/platform/api/quic_str_cat.h"
 #include "net/quic/platform/api/quic_text_utils.h"
 
-using base::StringPiece;
 using std::string;
 
 namespace net {
@@ -260,7 +259,6 @@ QuicConnection::QuicConnection(QuicConnectionId connection_id,
       largest_received_packet_size_(0),
       goaway_sent_(false),
       goaway_received_(false),
-      multipath_enabled_(false),
       write_error_occured_(false),
       no_stop_waiting_frames_(false) {
   QUIC_DLOG(INFO) << ENDPOINT
@@ -276,7 +274,7 @@ QuicConnection::QuicConnection(QuicConnectionId connection_id,
                          ? kDefaultServerMaxPacketSize
                          : kDefaultMaxPacketSize);
   if (packet_generator_.latched_flag_no_stop_waiting_frames()) {
-    QUIC_FLAG_COUNT_N(gfe2_reloadable_flag_quic_no_stop_waiting_frame, 1, 2);
+    QUIC_FLAG_COUNT_N(quic_reloadable_flag_quic_no_stop_waiting_frames, 1, 2);
     received_packet_manager_.set_max_ack_ranges(255);
   }
 }
@@ -307,10 +305,6 @@ void QuicConnection::SetFromConfig(const QuicConfig& config) {
     if (config.SilentClose()) {
       idle_timeout_connection_close_behavior_ =
           ConnectionCloseBehavior::SILENT_CLOSE;
-    }
-    if (FLAGS_quic_reloadable_flag_quic_enable_multipath &&
-        config.MultipathEnabled()) {
-      multipath_enabled_ = true;
     }
   } else {
     SetNetworkTimeouts(config.max_time_before_crypto_handshake(),
@@ -353,7 +347,7 @@ void QuicConnection::SetFromConfig(const QuicConfig& config) {
   }
   if (packet_generator_.latched_flag_no_stop_waiting_frames() &&
       config.HasClientSentConnectionOption(kNSTP, perspective_)) {
-    QUIC_FLAG_COUNT_N(gfe2_reloadable_flag_quic_no_stop_waiting_frame, 2, 2);
+    QUIC_FLAG_COUNT_N(quic_reloadable_flag_quic_no_stop_waiting_frames, 2, 2);
     no_stop_waiting_frames_ = true;
   }
 }
@@ -910,16 +904,6 @@ bool QuicConnection::OnBlockedFrame(const QuicBlockedFrame& frame) {
   return connected_;
 }
 
-bool QuicConnection::OnPathCloseFrame(const QuicPathCloseFrame& frame) {
-  DCHECK(connected_);
-  if (debug_visitor_ != nullptr) {
-    debug_visitor_->OnPathCloseFrame(frame);
-  }
-  QUIC_DLOG(INFO) << ENDPOINT
-                  << "PATH_CLOSE_FRAME received for path: " << frame.path_id;
-  return connected_;
-}
-
 void QuicConnection::OnPacketComplete() {
   // Don't do anything if this packet closed the connection.
   if (!connected_) {
@@ -1315,7 +1299,7 @@ bool QuicConnection::ProcessValidatedPacket(const QuicPacketHeader& header) {
 
   // Multipath is not enabled, but a packet with multipath flag on is
   // received.
-  if (!multipath_enabled_ && header.public_header.multipath_flag) {
+  if (header.public_header.multipath_flag) {
     const string error_details =
         "Received a packet with multipath flag but multipath is not enabled.";
     QUIC_BUG << error_details;
@@ -1521,8 +1505,8 @@ bool QuicConnection::WritePacket(SerializedPacket* packet) {
                 << QuicUtils::EncryptionLevelToString(packet->encryption_level)
                 << ", encrypted length:" << encrypted_length;
   QUIC_DVLOG(2) << ENDPOINT << "packet(" << packet_number << "): " << std::endl
-                << QuicTextUtils::HexDump(
-                       StringPiece(packet->encrypted_buffer, encrypted_length));
+                << QuicTextUtils::HexDump(QuicStringPiece(
+                       packet->encrypted_buffer, encrypted_length));
 
   // Measure the RTT from before the write begins to avoid underestimating the
   // min_rtt_, especially in cases where the thread blocks or gets swapped out
@@ -2350,11 +2334,11 @@ bool QuicConnection::ack_frame_updated() const {
   return received_packet_manager_.ack_frame_updated();
 }
 
-StringPiece QuicConnection::GetCurrentPacket() {
+QuicStringPiece QuicConnection::GetCurrentPacket() {
   if (current_packet_data_ == nullptr) {
-    return StringPiece();
+    return QuicStringPiece();
   }
-  return StringPiece(current_packet_data_, last_size_);
+  return QuicStringPiece(current_packet_data_, last_size_);
 }
 
 bool QuicConnection::MaybeConsiderAsMemoryCorruption(

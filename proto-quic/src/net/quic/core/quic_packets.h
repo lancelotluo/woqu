@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "base/macros.h"
-#include "base/strings/string_piece.h"
 #include "net/base/iovec.h"
 #include "net/quic/core/frames/quic_frame.h"
 #include "net/quic/core/quic_ack_listener_interface.h"
@@ -27,6 +26,7 @@
 #include "net/quic/core/quic_versions.h"
 #include "net/quic/platform/api/quic_export.h"
 #include "net/quic/platform/api/quic_socket_address.h"
+#include "net/quic/platform/api/quic_string_piece.h"
 
 namespace net {
 
@@ -64,6 +64,8 @@ struct QUIC_EXPORT_PRIVATE QuicPacketPublicHeader {
   // public flags.
   QuicConnectionId connection_id;
   QuicConnectionIdLength connection_id_length;
+  // TODO(fayang): Remove multipath_flag when deprecating
+  // quic_reloadable_flag_quic_remove_multipath_bit.
   bool multipath_flag;
   bool reset_flag;
   bool version_flag;
@@ -108,8 +110,8 @@ class QUIC_EXPORT_PRIVATE QuicData {
   QuicData(const char* buffer, size_t length, bool owns_buffer);
   virtual ~QuicData();
 
-  base::StringPiece AsStringPiece() const {
-    return base::StringPiece(data(), length());
+  QuicStringPiece AsStringPiece() const {
+    return QuicStringPiece(data(), length());
   }
 
   const char* data() const { return buffer_; }
@@ -136,8 +138,8 @@ class QUIC_EXPORT_PRIVATE QuicPacket : public QuicData {
              bool includes_diversification_nonce,
              QuicPacketNumberLength packet_number_length);
 
-  base::StringPiece AssociatedData(QuicVersion version) const;
-  base::StringPiece Plaintext(QuicVersion version) const;
+  QuicStringPiece AssociatedData(QuicVersion version) const;
+  QuicStringPiece Plaintext(QuicVersion version) const;
 
   char* mutable_data() { return buffer_; }
 
