@@ -1,6 +1,6 @@
 
 CC =	cc
-CFLAGS = -g -O0 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/
+CFLAGS = -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/
 CPP =	g++
 CPPFLAGS =	-fpermissive -std=gnu++11 -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/
 LINK =	g++
@@ -15,6 +15,7 @@ ALL_INCS = -I src/core \
 	-I objs \
 	-I src/http \
 	-I src/http/modules \
+	-I src/http/quic \
 	-I src/http/v2 \
 	-I src/stream
 
@@ -104,6 +105,8 @@ HTTP_DEPS = src/http/ngx_http.h \
 	src/http/ngx_http_upstream.h \
 	src/http/ngx_http_upstream_round_robin.h \
 	src/http/modules/ngx_http_ssi_filter_module.h \
+	src/http/quic/ngx_http_quic.h \
+	src/http/quic/ngx_http_quic_module.h \
 	src/http/v2/ngx_http_v2.h \
 	src/http/v2/ngx_http_v2_module.h \
 	src/http/modules/ngx_http_ssl_module.h
@@ -111,6 +114,7 @@ HTTP_DEPS = src/http/ngx_http.h \
 
 HTTP_INCS = -I src/http \
 	-I src/http/modules \
+	-I src/http/quic \
 	-I src/http/v2
 
 
@@ -120,9 +124,6 @@ STREAM_DEPS = src/stream/ngx_stream.h \
 
 
 STREAM_INCS = -I src/stream
-
-
-ADDON_DEPS = $(CORE_DEPS)  $(HTTP_DEPS) $(STREAM_DEPS)
 
 
 build:	binary modules manpage
@@ -222,6 +223,8 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/modules/ngx_http_headers_filter_module.o \
 	objs/src/http/ngx_http_copy_filter_module.o \
 	objs/src/http/modules/ngx_http_not_modified_filter_module.o \
+	objs/src/http/quic/ngx_http_quic.o \
+	objs/src/http/quic/ngx_http_quic_module.o \
 	objs/src/http/v2/ngx_http_v2.o \
 	objs/src/http/v2/ngx_http_v2_table.o \
 	objs/src/http/v2/ngx_http_v2_huff_decode.o \
@@ -266,7 +269,6 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/stream/ngx_stream_upstream_hash_module.o \
 	objs/src/stream/ngx_stream_upstream_least_conn_module.o \
 	objs/src/stream/ngx_stream_upstream_zone_module.o \
-	objs/addon/ngx_http_quic_module/ngx_http_quic_module.o \
 	objs/ngx_modules.o \
 	/home/lancelotluo/github/woqu/third-lib/pcre-8.40/.libs/libpcre.a
 
@@ -364,6 +366,8 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/modules/ngx_http_headers_filter_module.o \
 	objs/src/http/ngx_http_copy_filter_module.o \
 	objs/src/http/modules/ngx_http_not_modified_filter_module.o \
+	objs/src/http/quic/ngx_http_quic.o \
+	objs/src/http/quic/ngx_http_quic_module.o \
 	objs/src/http/v2/ngx_http_v2.o \
 	objs/src/http/v2/ngx_http_v2_table.o \
 	objs/src/http/v2/ngx_http_v2_huff_decode.o \
@@ -408,7 +412,6 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/stream/ngx_stream_upstream_hash_module.o \
 	objs/src/stream/ngx_stream_upstream_least_conn_module.o \
 	objs/src/stream/ngx_stream_upstream_zone_module.o \
-	objs/addon/ngx_http_quic_module/ngx_http_quic_module.o \
 	objs/ngx_modules.o \
 	-lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -ldl -lpthread -lcrypt /home/lancelotluo/github/woqu/third-lib/pcre-8.40/.libs/libpcre.a -ldl -lz \
 	-Wl,-E
@@ -1075,6 +1078,20 @@ objs/src/http/modules/ngx_http_not_modified_filter_module.o:	$(CORE_DEPS) $(HTTP
 		src/http/modules/ngx_http_not_modified_filter_module.c
 
 
+objs/src/http/quic/ngx_http_quic.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/ngx_http_quic.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/ngx_http_quic.o \
+		src/http/quic/ngx_http_quic.c
+
+
+objs/src/http/quic/ngx_http_quic_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/ngx_http_quic_module.c
+	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/ngx_http_quic_module.o \
+		src/http/quic/ngx_http_quic_module.c
+
+
 objs/src/http/v2/ngx_http_v2.o:	$(CORE_DEPS) $(HTTP_DEPS) \
 	src/http/v2/ngx_http_v2.c
 	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
@@ -1381,13 +1398,6 @@ objs/src/stream/ngx_stream_upstream_zone_module.o:	$(CORE_DEPS) $(STREAM_DEPS) \
 	$(CC) -c $(CFLAGS) $(CORE_INCS) $(STREAM_INCS) \
 		-o objs/src/stream/ngx_stream_upstream_zone_module.o \
 		src/stream/ngx_stream_upstream_zone_module.c
-
-
-objs/addon/ngx_http_quic_module/ngx_http_quic_module.o:	$(ADDON_DEPS) \
-	/home/lancelotluo/github/woqu/third-modules//ngx_http_quic_module//ngx_http_quic_module.cpp
-	$(CPP) $(CPPFLAGS) -c $(CFLAGS)  $(ALL_INCS) \
-		-o objs/addon/ngx_http_quic_module/ngx_http_quic_module.o \
-		/home/lancelotluo/github/woqu/third-modules//ngx_http_quic_module//ngx_http_quic_module.cpp
 
 
 /home/lancelotluo/github/woqu/third-lib/pcre-8.40/pcre.h:	/home/lancelotluo/github/woqu/third-lib/pcre-8.40/Makefile

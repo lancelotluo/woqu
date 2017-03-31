@@ -423,7 +423,20 @@ fi
 
 ngx_module_type=HTTP
 
-have=NGX_HTTP_QUIC . auto/have
+
+if [ $HTTP_QUIC = YES ]; then
+	have=NGX_HTTP_QUIC . auto/have
+
+    ngx_module_name=ngx_http_quic_module
+    ngx_module_incs=src/http/quic
+    ngx_module_deps="src/http/quic/ngx_http_quic.h src/http/quic/ngx_http_quic_module.h"
+    ngx_module_srcs="src/http/quic/ngx_http_quic.c \
+                     src/http/quic/ngx_http_quic_module.c"
+    ngx_module_libs=
+    ngx_module_link=$HTTP_QUIC
+
+    . auto/module
+fi
 
 if [ $HTTP_V2 = YES ]; then
     have=NGX_HTTP_V2 . auto/have

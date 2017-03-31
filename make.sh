@@ -43,6 +43,7 @@ export CFLAGS="-g -O2"
 --with-http_realip_module \
 --with-http_addition_module \
 --with-http_v2_module \
+--with-http_quic_module \
 --with-http_gzip_static_module \
 --with-pcre=$pcre_path \
 --with-openssl="../${openssl_path}" \
@@ -50,8 +51,8 @@ export CFLAGS="-g -O2"
 --with-http_stub_status_module \
 --with-stream \
 --with-boringssl_so="YES" \
---add-module=${third_module_path}/ngx_http_quic_module/ \
 --with-debug
+#--add-module=${third_module_path}/ngx_http_quic_module/ \
 
 if [ $? -ne 0 ]; then
     echo "fail to configure for nginx"
