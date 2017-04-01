@@ -16,6 +16,7 @@ ALL_INCS = -I src/core \
 	-I src/http \
 	-I src/http/modules \
 	-I src/http/quic \
+	-I src/http/quic/adaptor \
 	-I src/http/v2 \
 	-I src/stream
 
@@ -115,6 +116,7 @@ HTTP_DEPS = src/http/ngx_http.h \
 HTTP_INCS = -I src/http \
 	-I src/http/modules \
 	-I src/http/quic \
+	-I src/http/quic/adaptor \
 	-I src/http/v2
 
 
@@ -225,7 +227,12 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/modules/ngx_http_not_modified_filter_module.o \
 	objs/src/http/quic/ngx_http_quic.o \
 	objs/src/http/quic/ngx_http_quic_module.o \
-	objs/src/http/quic/quic_dispatcher.o \
+	objs/src/http/quic/adaptor/quic_dispatcher.o \
+	objs/src/http/quic/adaptor/quic_per_connection_packet_writer.o \
+	objs/src/http/quic/adaptor/quic_simple_server_session.o \
+	objs/src/http/quic/adaptor/quic_time_wait_list_manager.o \
+	objs/src/http/quic/adaptor/stateless_rejector.o \
+	objs/src/http/quic/adaptor/chlo_extractor.o \
 	objs/src/http/v2/ngx_http_v2.o \
 	objs/src/http/v2/ngx_http_v2_table.o \
 	objs/src/http/v2/ngx_http_v2_huff_decode.o \
@@ -369,7 +376,12 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/modules/ngx_http_not_modified_filter_module.o \
 	objs/src/http/quic/ngx_http_quic.o \
 	objs/src/http/quic/ngx_http_quic_module.o \
-	objs/src/http/quic/quic_dispatcher.o \
+	objs/src/http/quic/adaptor/quic_dispatcher.o \
+	objs/src/http/quic/adaptor/quic_per_connection_packet_writer.o \
+	objs/src/http/quic/adaptor/quic_simple_server_session.o \
+	objs/src/http/quic/adaptor/quic_time_wait_list_manager.o \
+	objs/src/http/quic/adaptor/stateless_rejector.o \
+	objs/src/http/quic/adaptor/chlo_extractor.o \
 	objs/src/http/v2/ngx_http_v2.o \
 	objs/src/http/v2/ngx_http_v2_table.o \
 	objs/src/http/v2/ngx_http_v2_huff_decode.o \
@@ -415,7 +427,7 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/stream/ngx_stream_upstream_least_conn_module.o \
 	objs/src/stream/ngx_stream_upstream_zone_module.o \
 	objs/ngx_modules.o \
-	-lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -ldl -lpthread -lcrypt /home/lancelotluo/github/woqu/third-lib/pcre-8.40/.libs/libpcre.a -ldl -lz \
+	-lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_globals -ldl -lpthread -lcrypt /home/lancelotluo/github/woqu/third-lib/pcre-8.40/.libs/libpcre.a -ldl -lz \
 	-Wl,-E
 	
 
@@ -1094,11 +1106,46 @@ objs/src/http/quic/ngx_http_quic_module.o:	$(CORE_DEPS) $(HTTP_DEPS) \
 		src/http/quic/ngx_http_quic_module.c
 
 
-objs/src/http/quic/quic_dispatcher.o:	$(CORE_DEPS) $(HTTP_DEPS) \
-	src/http/quic/quic_dispatcher.cc
-	$(CC) -c $(CFLAGS) $(CORE_INCS) $(HTTP_INCS) \
-		-o objs/src/http/quic/quic_dispatcher.o \
-		src/http/quic/quic_dispatcher.cc
+objs/src/http/quic/adaptor/quic_dispatcher.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/quic_dispatcher.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/quic_dispatcher.o \
+		src/http/quic/adaptor/quic_dispatcher.cc
+
+
+objs/src/http/quic/adaptor/quic_per_connection_packet_writer.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/quic_per_connection_packet_writer.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/quic_per_connection_packet_writer.o \
+		src/http/quic/adaptor/quic_per_connection_packet_writer.cc
+
+
+objs/src/http/quic/adaptor/quic_simple_server_session.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/quic_simple_server_session.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/quic_simple_server_session.o \
+		src/http/quic/adaptor/quic_simple_server_session.cc
+
+
+objs/src/http/quic/adaptor/quic_time_wait_list_manager.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/quic_time_wait_list_manager.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/quic_time_wait_list_manager.o \
+		src/http/quic/adaptor/quic_time_wait_list_manager.cc
+
+
+objs/src/http/quic/adaptor/stateless_rejector.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/stateless_rejector.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/stateless_rejector.o \
+		src/http/quic/adaptor/stateless_rejector.cc
+
+
+objs/src/http/quic/adaptor/chlo_extractor.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/chlo_extractor.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/chlo_extractor.o \
+		src/http/quic/adaptor/chlo_extractor.cc
 
 
 objs/src/http/v2/ngx_http_v2.o:	$(CORE_DEPS) $(HTTP_DEPS) \

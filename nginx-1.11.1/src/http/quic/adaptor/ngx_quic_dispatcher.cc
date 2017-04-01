@@ -15,11 +15,12 @@
 #include "net/quic/platform/api/quic_ptr_util.h"
 #include "net/quic/platform/api/quic_stack_trace.h"
 #include "net/quic/platform/api/quic_string_piece.h"
-#include "net/tools/quic/chlo_extractor.h"
-#include "net/tools/quic/quic_per_connection_packet_writer.h"
-#include "net/tools/quic/quic_simple_server_session.h"
-#include "net/tools/quic/quic_time_wait_list_manager.h"
-#include "net/tools/quic/stateless_rejector.h"
+
+#include "ngx_chlo_extractor.h"
+#include "ngx_quic_per_connection_packet_writer.h"
+#include "ngx_quic_simple_server_session.h"
+#include "ngx_quic_time_wait_list_manager.h"
+#include "ngx_stateless_rejector.h"
 
 using std::string;
 

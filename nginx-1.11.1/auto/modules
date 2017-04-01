@@ -428,11 +428,22 @@ if [ $HTTP_QUIC = YES ]; then
 	have=NGX_HTTP_QUIC . auto/have
 
     ngx_module_name=ngx_http_quic_module
-    ngx_module_incs=src/http/quic
+    ngx_module_incs="src/http/quic src/http/quic/adaptor"
     ngx_module_deps="src/http/quic/ngx_http_quic.h src/http/quic/ngx_http_quic_module.h"
     ngx_module_srcs="src/http/quic/ngx_http_quic.c \
                      src/http/quic/ngx_http_quic_module.c \
-                     src/http/quic/quic_dispatcher.cc"
+                     src/http/quic/adaptor/quic_dispatcher.cc \
+                     src/http/quic/adaptor/quic_per_connection_packet_writer.cc \
+                     src/http/quic/adaptor/quic_simple_server_session.cc \
+                     src/http/quic/adaptor/quic_time_wait_list_manager.cc \
+                     src/http/quic/adaptor/stateless_rejector.cc \
+                     src/http/quic/adaptor/chlo_extractor.cc"
+#src/http/quic/adaptor/ngx_quic_dispatcher.cc \
+#                    src/http/quic/adaptor/ngx_quic_per_connection_packet_writer.cc \
+#                    src/http/quic/adaptor/ngx_quic_simple_server_session.cc \
+#                    src/http/quic/adaptor/ngx_quic_time_wait_list_manager.cc \
+#                    src/http/quic/adaptor/ngx_stateless_rejector.cc \
+#                    src/http/quic/adaptor/ngx_chlo_extractor.cc"
     ngx_module_libs=
     ngx_module_link=$HTTP_QUIC
 
