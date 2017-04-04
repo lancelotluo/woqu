@@ -1,10 +1,9 @@
 
-#CC =	clang
 CC =	~/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/bin/clang
 CFLAGS = -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/
 CPP =	~/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/bin/clang
-CPPFLAGS = -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -std=gnu++11 -fvisibility-inlines-hidden -Wno-undefined-bool-conversion -Wno-tautological-undefined-compare -std=gnu++11  -fno-exceptions -fno-strict-aliasing --param=ssp-buffer-size=4 -fstack-protector -Wno-builtin-macro-redefined -D__DATE__= -D__TIME__= -D__TIMESTAMP__= -funwind-tables -fPIC -pipe -B~/github/woqu/proto-quic/src/third_party/binutils/Linux_x64/Releasrc/se/bin -fcolor-diagnostics -m64 -march=x86-64 -pthread -Wall -Werror -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-c++11-narrowing -Wno-covered-switch-default -Wno-deprecated-register -Wno-unneeded-internal-declaration -Wno-inconsistent-missing-override -Wno-shift-negative-value -Wno-undefined-var-template -Wno-nonportable-include-path -Wno-address-of-packed-member -Wno-block-capture-autoreleasing -Wno-unused-lambda-capture -Wno-user-defined-warnings -O0 -fno-omit-frame-pointer -g2 -gsplit-dwarf --sysroot=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/ -fvisibility=hidden -Xclang -load -Xclang ~/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/lib/libFindBadConstructs.so -Xclang -add-plugin -Xclang find-bad-constructs -Xclang -plugin-arg-find-bad-constructs -Xclang check-auto-raw-pointer -Xclang -plugin-arg-find-bad-constructs -Xclang check-ipc -Wheader-hygiene -Wstring-conversion -Wtautological-overlap-compare -Wno-header-guard
-LINK =	~/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/bin/clang++
+CPPFLAGS = -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -std=gnu++11 -fno-rtti -fvisibility-inlines-hidden -Wno-undefined-bool-conversion -Wno-tautological-undefined-compare -std=gnu++11  -fno-exceptions -fno-strict-aliasing --param=ssp-buffer-size=4 -fstack-protector -Wno-builtin-macro-redefined -D__DATE__= -D__TIME__= -D__TIMESTAMP__= -funwind-tables -fPIC -pipe -B~/github/woqu/proto-quic/src/third_party/binutils/Linux_x64/Releasrc/se/bin -fcolor-diagnostics -m64 -march=x86-64 -pthread -Wall -Werror -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-c++11-narrowing -Wno-covered-switch-default -Wno-deprecated-register -Wno-unneeded-internal-declaration -Wno-inconsistent-missing-override -Wno-shift-negative-value -Wno-undefined-var-template -Wno-nonportable-include-path -Wno-address-of-packed-member -Wno-block-capture-autoreleasing -Wno-unused-lambda-capture -Wno-user-defined-warnings -O0 -fno-omit-frame-pointer -g2 -gsplit-dwarf --sysroot=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/ -fvisibility=hidden -Xclang -load -Xclang ~/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/lib/libFindBadConstructs.so -Xclang -add-plugin -Xclang find-bad-constructs -Xclang -plugin-arg-find-bad-constructs -Xclang check-auto-raw-pointer -Xclang -plugin-arg-find-bad-constructs -Xclang check-ipc -Wheader-hygiene -Wstring-conversion -Wtautological-overlap-compare -Wno-header-guard  -DV8_DEPRECATION_WARNINGS -DUSE_UDEV -DUI_COMPOSITOR_IMAGE_TRANSPORT -DUSE_AURA=1 -DUSE_PANGO=1 -DUSE_CAIRO=1 -DUSE_GLIB=1 -DUSE_NSS_CERTS=1 -DUSE_X11=1 -DFULL_SAFE_BROWSING -DSAFE_BROWSING_CSD -DSAFE_BROWSING_DB_LOCAL -DCHROMIUM_BUILD -DENABLE_MEDIA_ROUTER=1 -DFIELDTRIAL_TESTING_ENABLED -DCR_CLANG_REVISION=\"296320-1\" -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -DCOMPONENT_BUILD -D_DEBUG -DDYNAMIC_ANNOTATIONS_ENABLED=1 -DWTF_USE_DYNAMIC_ANNOTATIONS=1 -D_GLIBCXX_DEBUG=1 -DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_32 -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_26 -DGOOGLE_PROTOBUF_NO_RTTI -DGOOGLE_PROTOBUF_NO_STATIC_INITIALIZER -DHAVE_PTHREAD -DPROTOBUF_USE_DLLS -DBORINGSSL_SHARED_LIBRARY
+LINK = ~/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/bin/clang++
 
 
 ALL_INCS = -I src/core \
@@ -230,6 +229,14 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/quic/adaptor/quic_simple_server_session.o \
 	objs/src/http/quic/adaptor/quic_time_wait_list_manager.o \
 	objs/src/http/quic/adaptor/stateless_rejector.o \
+	objs/src/http/quic/adaptor/quic_default_packet_writer.o \
+	objs/src/http/quic/adaptor/quic_http_response_cache.o \
+	objs/src/http/quic/adaptor/quic_packet_reader.o \
+	objs/src/http/quic/adaptor/quic_packet_writer_wrapper.o \
+	objs/src/http/quic/adaptor/quic_simple_server_packet_writer.o \
+	objs/src/http/quic/adaptor/quic_simple_server_stream.o \
+	objs/src/http/quic/adaptor/quic_spdy_server_stream_base.o \
+	objs/src/http/quic/adaptor/quic_socket_utils.o \
 	objs/src/http/quic/adaptor/chlo_extractor.o \
 	objs/src/http/v2/ngx_http_v2.o \
 	objs/src/http/v2/ngx_http_v2_table.o \
@@ -378,6 +385,14 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/quic/adaptor/quic_simple_server_session.o \
 	objs/src/http/quic/adaptor/quic_time_wait_list_manager.o \
 	objs/src/http/quic/adaptor/stateless_rejector.o \
+	objs/src/http/quic/adaptor/quic_default_packet_writer.o \
+	objs/src/http/quic/adaptor/quic_http_response_cache.o \
+	objs/src/http/quic/adaptor/quic_packet_reader.o \
+	objs/src/http/quic/adaptor/quic_packet_writer_wrapper.o \
+	objs/src/http/quic/adaptor/quic_simple_server_packet_writer.o \
+	objs/src/http/quic/adaptor/quic_simple_server_stream.o \
+	objs/src/http/quic/adaptor/quic_spdy_server_stream_base.o \
+	objs/src/http/quic/adaptor/quic_socket_utils.o \
 	objs/src/http/quic/adaptor/chlo_extractor.o \
 	objs/src/http/v2/ngx_http_v2.o \
 	objs/src/http/v2/ngx_http_v2_table.o \
@@ -1136,6 +1151,62 @@ objs/src/http/quic/adaptor/stateless_rejector.o:	$(CORE_DEPS) $(HTTP_DEPS) \
 	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
 		-o objs/src/http/quic/adaptor/stateless_rejector.o \
 		src/http/quic/adaptor/stateless_rejector.cc
+
+
+objs/src/http/quic/adaptor/quic_default_packet_writer.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/quic_default_packet_writer.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/quic_default_packet_writer.o \
+		src/http/quic/adaptor/quic_default_packet_writer.cc
+
+
+objs/src/http/quic/adaptor/quic_http_response_cache.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/quic_http_response_cache.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/quic_http_response_cache.o \
+		src/http/quic/adaptor/quic_http_response_cache.cc
+
+
+objs/src/http/quic/adaptor/quic_packet_reader.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/quic_packet_reader.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/quic_packet_reader.o \
+		src/http/quic/adaptor/quic_packet_reader.cc
+
+
+objs/src/http/quic/adaptor/quic_packet_writer_wrapper.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/quic_packet_writer_wrapper.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/quic_packet_writer_wrapper.o \
+		src/http/quic/adaptor/quic_packet_writer_wrapper.cc
+
+
+objs/src/http/quic/adaptor/quic_simple_server_packet_writer.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/quic_simple_server_packet_writer.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/quic_simple_server_packet_writer.o \
+		src/http/quic/adaptor/quic_simple_server_packet_writer.cc
+
+
+objs/src/http/quic/adaptor/quic_simple_server_stream.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/quic_simple_server_stream.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/quic_simple_server_stream.o \
+		src/http/quic/adaptor/quic_simple_server_stream.cc
+
+
+objs/src/http/quic/adaptor/quic_spdy_server_stream_base.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/quic_spdy_server_stream_base.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/quic_spdy_server_stream_base.o \
+		src/http/quic/adaptor/quic_spdy_server_stream_base.cc
+
+
+objs/src/http/quic/adaptor/quic_socket_utils.o:	$(CORE_DEPS) $(HTTP_DEPS) \
+	src/http/quic/adaptor/quic_socket_utils.cc
+	$(CPP) -c $(CPPFLAGS) $(CORE_INCS) $(HTTP_INCS) \
+		-o objs/src/http/quic/adaptor/quic_socket_utils.o \
+		src/http/quic/adaptor/quic_socket_utils.cc
 
 
 objs/src/http/quic/adaptor/chlo_extractor.o:	$(CORE_DEPS) $(HTTP_DEPS) \

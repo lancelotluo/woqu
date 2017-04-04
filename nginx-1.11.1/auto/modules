@@ -437,6 +437,14 @@ if [ $HTTP_QUIC = YES ]; then
                      src/http/quic/adaptor/quic_simple_server_session.cc \
                      src/http/quic/adaptor/quic_time_wait_list_manager.cc \
                      src/http/quic/adaptor/stateless_rejector.cc \
+                     src/http/quic/adaptor/quic_default_packet_writer.cc \
+                     src/http/quic/adaptor/quic_http_response_cache.cc \
+                     src/http/quic/adaptor/quic_packet_reader.cc \
+                     src/http/quic/adaptor/quic_packet_writer_wrapper.cc \
+                     src/http/quic/adaptor/quic_simple_server_packet_writer.cc \
+                     src/http/quic/adaptor/quic_simple_server_stream.cc \
+                     src/http/quic/adaptor/quic_spdy_server_stream_base.cc \
+                     src/http/quic/adaptor/quic_socket_utils.cc \
                      src/http/quic/adaptor/chlo_extractor.cc"
 #src/http/quic/adaptor/ngx_quic_dispatcher.cc \
 #                    src/http/quic/adaptor/ngx_quic_per_connection_packet_writer.cc \
