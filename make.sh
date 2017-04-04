@@ -16,7 +16,7 @@ protobuf_lib_path=${protobuf_path}/protobuf_lib/lib
 protobuf_c_path=${protobuf_path}/protobuf_c_lib/
 stgw_engine_proto_lib_path=${protobuf_path}/stgw_engine_proto/
 third_module_path=${BASE_DIR}/third-modules/
-
+#CC = ~/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/bin/clang
 function syntax()
 {
     echo "Usage: $prog [options]"
@@ -28,6 +28,7 @@ function syntax()
     exit 1;
 }
 
+#--with-ld-opt="-lrt -L${boringssl_lib} -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror --sysroot=./proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/ -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L." \
 cd $ngx_src
 
 [[ -f Makefile ]] && make clean
@@ -37,15 +38,15 @@ export CFLAGS="-g -O2"
 --sbin-path=$install_path/nginx \
 --conf-path=$install_path/nginx.conf \
 --pid-path=$install_path/nginx.pid \
+--with-cc="~/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/bin/clang" \
 --with-cc-opt="-I ${protobuf_path} -I ${stgw_engine_proto_lib_path} -I ${proto_quic_src}" \
---with-ld-opt="-lrt -L${boringssl_lib} -lcrcrypto -lboringssl" \
+--with-ld-opt="-lrt -L${boringssl_lib} -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L." \
 --with-http_ssl_module \
 --with-http_realip_module \
 --with-http_addition_module \
 --with-http_v2_module \
 --with-http_quic_module \
 --with-http_gzip_static_module \
---with-pcre=$pcre_path \
 --with-openssl="../${openssl_path}" \
 --with-openssl-opt="$openssl_opt" \
 --with-http_stub_status_module \
@@ -53,6 +54,7 @@ export CFLAGS="-g -O2"
 --with-boringssl_so="YES" \
 --with-debug
 #--add-module=${third_module_path}/ngx_http_quic_module/ \
+#--with-pcre=$pcre_path \
 
 if [ $? -ne 0 ]; then
     echo "fail to configure for nginx"
@@ -70,4 +72,4 @@ echo "done"
 
 #CPP = g++   
 #CPPFLAGS = ${CFLAGS} -Wall -std=gnu++11
-#LINK =  $(CPP)
+#LINK =  /home/luocn99/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/bin/clang++
