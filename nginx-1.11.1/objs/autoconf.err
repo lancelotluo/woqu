@@ -5,7 +5,7 @@ checking for C compiler
 
 
 ----------------------------------------
-checking for --with-ld-opt="-lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite"
+checking for --with-ld-opt="-lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L."
 
 
 ----------------------------------------
@@ -27,6 +27,24 @@ checking for gcc variadic macros
 ----------------------------------------
 checking for gcc builtin 64 bit byteswap
 
+objs/autotest.c:7:5: error: ignoring return value of function declared with const attribute [-Werror,-Wunused-value]
+    __builtin_bswap64(0);
+    ^~~~~~~~~~~~~~~~~ ~
+1 error generated.
+----------
+
+#include <sys/types.h>
+
+
+
+int main() {
+    __builtin_bswap64(0);
+    return 0;
+}
+
+----------
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
+----------
 
 ----------------------------------------
 checking for unistd.h
@@ -43,8 +61,10 @@ checking for limits.h
 ----------------------------------------
 checking for sys/filio.h
 
-objs/autotest.c:3:23: fatal error: sys/filio.h: No such file or directory
-compilation terminated.
+objs/autotest.c:3:10: fatal error: 'sys/filio.h' file not found
+#include <sys/filio.h>
+         ^
+1 error generated.
 ----------
 
 
@@ -55,7 +75,7 @@ int main() {
 }
 
 ----------
-cc -o objs/autotest objs/autotest.c
+clang -o objs/autotest objs/autotest.c
 ----------
 
 ----------------------------------------
@@ -121,8 +141,10 @@ checking for poll()
 ----------------------------------------
 checking for /dev/poll
 
-objs/autotest.c:4:25: fatal error: sys/devpoll.h: No such file or directory
-compilation terminated.
+objs/autotest.c:4:10: fatal error: 'sys/devpoll.h' file not found
+#include <sys/devpoll.h>
+         ^
+1 error generated.
 ----------
 
 #include <sys/types.h>
@@ -141,14 +163,16 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
 checking for kqueue
 
-objs/autotest.c:4:23: fatal error: sys/event.h: No such file or directory
-compilation terminated.
+objs/autotest.c:4:10: fatal error: 'sys/event.h' file not found
+#include <sys/event.h>
+         ^
+1 error generated.
 ----------
 
 #include <sys/types.h>
@@ -161,15 +185,14 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
 checking for crypt()
 
-/tmp/ccRSAbPO.o: In function `main':
-/home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:7: undefined reference to `crypt'
-collect2: error: ld returned 1 exit status
+objs/autotest.c:7: error: undefined reference to 'crypt'
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
 ----------
 
 #include <sys/types.h>
@@ -182,7 +205,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
@@ -192,11 +215,10 @@ checking for crypt() in libcrypt
 ----------------------------------------
 checking for F_READAHEAD
 
-objs/autotest.c: In function 'main':
-objs/autotest.c:7:14: error: 'F_READAHEAD' undeclared (first use in this function)
-     fcntl(0, F_READAHEAD, 1);;
-              ^
-objs/autotest.c:7:14: note: each undeclared identifier is reported only once for each function it appears in
+objs/autotest.c:7:14: error: use of undeclared identifier 'F_READAHEAD'
+    fcntl(0, F_READAHEAD, 1);;
+             ^
+1 error generated.
 ----------
 
 #include <sys/types.h>
@@ -209,7 +231,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
@@ -223,11 +245,10 @@ checking for O_DIRECT
 ----------------------------------------
 checking for F_NOCACHE
 
-objs/autotest.c: In function 'main':
-objs/autotest.c:7:14: error: 'F_NOCACHE' undeclared (first use in this function)
-     fcntl(0, F_NOCACHE, 1);;
-              ^
-objs/autotest.c:7:14: note: each undeclared identifier is reported only once for each function it appears in
+objs/autotest.c:7:14: error: use of undeclared identifier 'F_NOCACHE'
+    fcntl(0, F_NOCACHE, 1);;
+             ^
+1 error generated.
 ----------
 
 #include <sys/types.h>
@@ -240,20 +261,19 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
 checking for directio()
 
-objs/autotest.c: In function 'main':
-objs/autotest.c:8:5: warning: implicit declaration of function 'directio' [-Wimplicit-function-declaration]
-     directio(0, DIRECTIO_ON);;
-     ^
-objs/autotest.c:8:17: error: 'DIRECTIO_ON' undeclared (first use in this function)
-     directio(0, DIRECTIO_ON);;
-                 ^
-objs/autotest.c:8:17: note: each undeclared identifier is reported only once for each function it appears in
+objs/autotest.c:8:5: error: implicit declaration of function 'directio' is invalid in C99 [-Werror,-Wimplicit-function-declaration]
+    directio(0, DIRECTIO_ON);;
+    ^
+objs/autotest.c:8:17: error: use of undeclared identifier 'DIRECTIO_ON'
+    directio(0, DIRECTIO_ON);;
+                ^
+2 errors generated.
 ----------
 
 #include <sys/types.h>
@@ -267,7 +287,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
@@ -281,14 +301,10 @@ checking for statvfs()
 ----------------------------------------
 checking for dlopen()
 
-objs/autotest.c: In function 'main':
-objs/autotest.c:7:5: warning: null argument where non-null required (argument 2) [-Wnonnull]
-     dlopen(NULL, RTLD_NOW | RTLD_GLOBAL); dlsym(NULL, NULL);
-     ^
-/tmp/ccdT2Zgk.o: In function `main':
-/home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:7: undefined reference to `dlopen'
-/home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:7: undefined reference to `dlsym'
-collect2: error: ld returned 1 exit status
+objs/autotest.c:7:59: error: null passed to a callee that requires a non-null argument [-Werror,-Wnonnull]
+    dlopen(NULL, RTLD_NOW | RTLD_GLOBAL); dlsym(NULL, NULL);
+                                                      ~~~~^
+1 error generated.
 ----------
 
 #include <sys/types.h>
@@ -301,16 +317,30 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
 checking for dlopen() in libdl
 
-objs/autotest.c: In function 'main':
-objs/autotest.c:7:5: warning: null argument where non-null required (argument 2) [-Wnonnull]
-     dlopen(NULL, RTLD_NOW | RTLD_GLOBAL); dlsym(NULL, NULL);
-     ^
+objs/autotest.c:7:59: error: null passed to a callee that requires a non-null argument [-Werror,-Wnonnull]
+    dlopen(NULL, RTLD_NOW | RTLD_GLOBAL); dlsym(NULL, NULL);
+                                                      ~~~~^
+1 error generated.
+----------
+
+#include <sys/types.h>
+#include <unistd.h>
+#include <dlfcn.h>
+
+int main() {
+    dlopen(NULL, RTLD_NOW | RTLD_GLOBAL); dlsym(NULL, NULL);
+    return 0;
+}
+
+----------
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L. -ldl
+----------
 
 ----------------------------------------
 checking for sched_yield()
@@ -319,11 +349,10 @@ checking for sched_yield()
 ----------------------------------------
 checking for SO_SETFIB
 
-objs/autotest.c: In function 'main':
-objs/autotest.c:7:31: error: 'SO_SETFIB' undeclared (first use in this function)
-     setsockopt(0, SOL_SOCKET, SO_SETFIB, NULL, 0);
-                               ^
-objs/autotest.c:7:31: note: each undeclared identifier is reported only once for each function it appears in
+objs/autotest.c:7:31: error: use of undeclared identifier 'SO_SETFIB'
+    setsockopt(0, SOL_SOCKET, SO_SETFIB, NULL, 0);
+                              ^
+1 error generated.
 ----------
 
 #include <sys/types.h>
@@ -336,7 +365,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
@@ -346,11 +375,10 @@ checking for SO_REUSEPORT
 ----------------------------------------
 checking for SO_ACCEPTFILTER
 
-objs/autotest.c: In function 'main':
-objs/autotest.c:7:31: error: 'SO_ACCEPTFILTER' undeclared (first use in this function)
-     setsockopt(0, SOL_SOCKET, SO_ACCEPTFILTER, NULL, 0);
-                               ^
-objs/autotest.c:7:31: note: each undeclared identifier is reported only once for each function it appears in
+objs/autotest.c:7:31: error: use of undeclared identifier 'SO_ACCEPTFILTER'
+    setsockopt(0, SOL_SOCKET, SO_ACCEPTFILTER, NULL, 0);
+                              ^
+1 error generated.
 ----------
 
 #include <sys/types.h>
@@ -363,17 +391,16 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
 checking for SO_BINDANY
 
-objs/autotest.c: In function 'main':
-objs/autotest.c:7:31: error: 'SO_BINDANY' undeclared (first use in this function)
-     setsockopt(0, SOL_SOCKET, SO_BINDANY, NULL, 0);
-                               ^
-objs/autotest.c:7:31: note: each undeclared identifier is reported only once for each function it appears in
+objs/autotest.c:7:31: error: use of undeclared identifier 'SO_BINDANY'
+    setsockopt(0, SOL_SOCKET, SO_BINDANY, NULL, 0);
+                              ^
+1 error generated.
 ----------
 
 #include <sys/types.h>
@@ -386,7 +413,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
@@ -396,11 +423,10 @@ checking for IP_TRANSPARENT
 ----------------------------------------
 checking for IP_BINDANY
 
-objs/autotest.c: In function 'main':
-objs/autotest.c:8:31: error: 'IP_BINDANY' undeclared (first use in this function)
-     setsockopt(0, IPPROTO_IP, IP_BINDANY, NULL, 0);
-                               ^
-objs/autotest.c:8:31: note: each undeclared identifier is reported only once for each function it appears in
+objs/autotest.c:8:31: error: use of undeclared identifier 'IP_BINDANY'
+    setsockopt(0, IPPROTO_IP, IP_BINDANY, NULL, 0);
+                              ^
+1 error generated.
 ----------
 
 #include <sys/types.h>
@@ -414,17 +440,16 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
 checking for IP_RECVDSTADDR
 
-objs/autotest.c: In function 'main':
-objs/autotest.c:8:31: error: 'IP_RECVDSTADDR' undeclared (first use in this function)
-     setsockopt(0, IPPROTO_IP, IP_RECVDSTADDR, NULL, 0);
-                               ^
-objs/autotest.c:8:31: note: each undeclared identifier is reported only once for each function it appears in
+objs/autotest.c:8:31: error: use of undeclared identifier 'IP_RECVDSTADDR'
+    setsockopt(0, IPPROTO_IP, IP_RECVDSTADDR, NULL, 0);
+                              ^
+1 error generated.
 ----------
 
 #include <sys/types.h>
@@ -438,7 +463,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
@@ -544,13 +569,10 @@ checking for time_t size
 ----------------------------------------
 checking for setproctitle()
 
-objs/autotest.c: In function 'main':
-objs/autotest.c:7:5: warning: implicit declaration of function 'setproctitle' [-Wimplicit-function-declaration]
-     setproctitle("test");;
-     ^
-/tmp/ccyakg2d.o: In function `main':
-/home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:7: undefined reference to `setproctitle'
-collect2: error: ld returned 1 exit status
+objs/autotest.c:7:5: error: implicit declaration of function 'setproctitle' is invalid in C99 [-Werror,-Wimplicit-function-declaration]
+    setproctitle("test");;
+    ^
+1 error generated.
 ----------
 
 #include <sys/types.h>
@@ -563,7 +585,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
@@ -581,8 +603,28 @@ checking for pwritev()
 ----------------------------------------
 checking for sys_nerr
 
-/tmp/cc3Gwc5E.o: In function `printf':
-/usr/include/x86_64-linux-gnu/bits/stdio2.h:104: warning: `sys_nerr' is deprecated; use `strerror' or `strerror_r' instead
+objs/autotest.c:8: warning: `sys_nerr' is deprecated; use `strerror' or `strerror_r' instead
+/usr/bin/ld.gold: error: treating warnings as errors
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+----------
+
+#include <sys/types.h>
+#include <unistd.h>
+#include <errno.h>
+                  #include <stdio.h>
+
+int main() {
+    printf("%d", sys_nerr);;
+    return 0;
+}
+
+----------
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
+----------
+
+----------------------------------------
+checking for _sys_nerr
+
 135
 ----------------------------------------
 checking for localtime_r()
@@ -611,30 +653,6 @@ checking for System V shared memory
 ----------------------------------------
 checking for POSIX semaphores
 
-/tmp/cc39VfLn.o: In function `main':
-/home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:8: undefined reference to `sem_init'
-/home/lancelotluo/github/woqu/nginx-1.11.1/objs/autotest.c:9: undefined reference to `sem_destroy'
-collect2: error: ld returned 1 exit status
-----------
-
-#include <sys/types.h>
-#include <unistd.h>
-#include <semaphore.h>
-
-int main() {
-    sem_t  sem;
-                  if (sem_init(&sem, 1, 0) == -1) return 1;
-                  sem_destroy(&sem);;
-    return 0;
-}
-
-----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
-----------
-
-----------------------------------------
-checking for POSIX semaphores in libpthread
-
 
 ----------------------------------------
 checking for struct msghdr.msg_control
@@ -651,13 +669,24 @@ checking for struct tm.tm_gmtoff
 ----------------------------------------
 checking for struct dirent.d_namlen
 
-objs/autotest.c: In function 'main':
-objs/autotest.c:8:28: error: 'struct dirent' has no member named 'd_namlen'
-     struct dirent  dir; dir.d_namlen = 0;
-                            ^
-objs/autotest.c:9:41: error: 'struct dirent' has no member named 'd_namlen'
-                   printf("%d", (int) dir.d_namlen);
-                                         ^
+objs/autotest.c:8:29: error: no member named 'd_namlen' in 'struct dirent'; did you mean 'd_name'?
+    struct dirent  dir; dir.d_namlen = 0;
+                            ^~~~~~~~
+                            d_name
+/usr/include/x86_64-linux-gnu/bits/dirent.h:33:10: note: 'd_name' declared here
+    char d_name[256];           /* We must not include limits.h! */
+         ^
+objs/autotest.c:8:38: error: array type 'char [256]' is not assignable
+    struct dirent  dir; dir.d_namlen = 0;
+                        ~~~~~~~~~~~~ ^
+objs/autotest.c:9:42: error: no member named 'd_namlen' in 'struct dirent'; did you mean 'd_name'?
+                  printf("%d", (int) dir.d_namlen);
+                                         ^~~~~~~~
+                                         d_name
+/usr/include/x86_64-linux-gnu/bits/dirent.h:33:10: note: 'd_name' declared here
+    char d_name[256];           /* We must not include limits.h! */
+         ^
+3 errors generated.
 ----------
 
 #include <sys/types.h>
@@ -672,7 +701,7 @@ int main() {
 }
 
 ----------
-cc -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite
+clang -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.
 ----------
 
 ----------------------------------------
@@ -689,6 +718,14 @@ checking for openat(), fstatat()
 
 ----------------------------------------
 checking for getaddrinfo()
+
+
+----------------------------------------
+checking for PCRE library
+
+
+----------------------------------------
+checking for PCRE JIT support
 
 
 ----------------------------------------

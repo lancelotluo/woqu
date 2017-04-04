@@ -1,4 +1,4 @@
-#define NGX_CONFIGURE " --prefix=/home/lancelotluo/nginx --sbin-path=/home/lancelotluo/nginx/nginx --conf-path=/home/lancelotluo/nginx/nginx.conf --pid-path=/home/lancelotluo/nginx/nginx.pid --with-cc-opt='-I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/' --with-ld-opt='-lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_lite' --with-http_ssl_module --with-http_realip_module --with-http_addition_module --with-http_v2_module --with-http_quic_module --with-http_gzip_static_module --with-pcre=/home/lancelotluo/github/woqu/third-lib/pcre-8.40 --with-openssl=.././proto-quic/src/third_party/boringssl/src/ --with-openssl-opt=-fPIC --with-http_stub_status_module --with-stream --with-boringssl_so=YES --with-debug"
+#define NGX_CONFIGURE " --prefix=/home/luocn99/nginx --sbin-path=/home/luocn99/nginx/nginx --conf-path=/home/luocn99/nginx/nginx.conf --pid-path=/home/luocn99/nginx/nginx.pid --with-cc=clang --with-cc-opt='-I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/' --with-ld-opt='-lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L.' --with-http_ssl_module --with-http_realip_module --with-http_addition_module --with-http_v2_module --with-http_quic_module --with-http_gzip_static_module --with-openssl=.././proto-quic/src/third_party/boringssl/src/ --with-openssl-opt=-fPIC --with-http_stub_status_module --with-stream --with-boringssl_so=YES --with-debug"
 
 #ifndef NGX_DEBUG
 #define NGX_DEBUG  1
@@ -17,11 +17,6 @@
 
 #ifndef NGX_HAVE_GCC_VARIADIC_MACROS
 #define NGX_HAVE_GCC_VARIADIC_MACROS  1
-#endif
-
-
-#ifndef NGX_HAVE_GCC_BSWAP64
-#define NGX_HAVE_GCC_BSWAP64  1
 #endif
 
 
@@ -105,11 +100,6 @@
 
 #ifndef NGX_HAVE_STATVFS
 #define NGX_HAVE_STATVFS  1
-#endif
-
-
-#ifndef NGX_HAVE_DLOPEN
-#define NGX_HAVE_DLOPEN  1
 #endif
 
 
@@ -398,6 +388,11 @@
 #endif
 
 
+#ifndef NGX_HAVE_PCRE_JIT
+#define NGX_HAVE_PCRE_JIT  1
+#endif
+
+
 #ifndef NGX_OPENSSL
 #define NGX_OPENSSL  1
 #endif
@@ -439,27 +434,27 @@
 
 
 #ifndef NGX_PREFIX
-#define NGX_PREFIX  "/home/lancelotluo/nginx/"
+#define NGX_PREFIX  "/home/luocn99/nginx/"
 #endif
 
 
 #ifndef NGX_CONF_PREFIX
-#define NGX_CONF_PREFIX  "/home/lancelotluo/nginx/"
+#define NGX_CONF_PREFIX  "/home/luocn99/nginx/"
 #endif
 
 
 #ifndef NGX_SBIN_PATH
-#define NGX_SBIN_PATH  "/home/lancelotluo/nginx/nginx"
+#define NGX_SBIN_PATH  "/home/luocn99/nginx/nginx"
 #endif
 
 
 #ifndef NGX_CONF_PATH
-#define NGX_CONF_PATH  "/home/lancelotluo/nginx/nginx.conf"
+#define NGX_CONF_PATH  "/home/luocn99/nginx/nginx.conf"
 #endif
 
 
 #ifndef NGX_PID_PATH
-#define NGX_PID_PATH  "/home/lancelotluo/nginx/nginx.pid"
+#define NGX_PID_PATH  "/home/luocn99/nginx/nginx.pid"
 #endif
 
 

@@ -1,16 +1,16 @@
 
-CC =	cc
-CFLAGS = -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/
-CPP =	g++
-CPPFLAGS =	-fpermissive -std=gnu++11 -g -O2 -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/lancelotluo/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/lancelotluo/github/woqu/proto-quic/src/
-LINK =	g++
+#CC =	clang
+CC =	~/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/bin/clang
+CFLAGS = -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/
+CPP =	~/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/bin/clang
+CPPFLAGS = -g -O2 -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src/ -I /home/luocn99/github/woqu/proto-quic/src/third_party/protobuf/src//stgw_engine_proto/ -I /home/luocn99/github/woqu/proto-quic/src/ -std=gnu++11 -fvisibility-inlines-hidden -Wno-undefined-bool-conversion -Wno-tautological-undefined-compare -std=gnu++11  -fno-exceptions -fno-strict-aliasing --param=ssp-buffer-size=4 -fstack-protector -Wno-builtin-macro-redefined -D__DATE__= -D__TIME__= -D__TIMESTAMP__= -funwind-tables -fPIC -pipe -B~/github/woqu/proto-quic/src/third_party/binutils/Linux_x64/Releasrc/se/bin -fcolor-diagnostics -m64 -march=x86-64 -pthread -Wall -Werror -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-c++11-narrowing -Wno-covered-switch-default -Wno-deprecated-register -Wno-unneeded-internal-declaration -Wno-inconsistent-missing-override -Wno-shift-negative-value -Wno-undefined-var-template -Wno-nonportable-include-path -Wno-address-of-packed-member -Wno-block-capture-autoreleasing -Wno-unused-lambda-capture -Wno-user-defined-warnings -O0 -fno-omit-frame-pointer -g2 -gsplit-dwarf --sysroot=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/ -fvisibility=hidden -Xclang -load -Xclang ~/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/lib/libFindBadConstructs.so -Xclang -add-plugin -Xclang find-bad-constructs -Xclang -plugin-arg-find-bad-constructs -Xclang check-auto-raw-pointer -Xclang -plugin-arg-find-bad-constructs -Xclang check-ipc -Wheader-hygiene -Wstring-conversion -Wtautological-overlap-compare -Wno-header-guard
+LINK =	~/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/bin/clang++
 
 
 ALL_INCS = -I src/core \
 	-I src/event \
 	-I src/event/modules \
 	-I src/os/unix \
-	-I /home/lancelotluo/github/woqu/third-lib/pcre-8.40 \
 	-I .././proto-quic/src/third_party/boringssl/src//include \
 	-I objs \
 	-I src/http \
@@ -82,7 +82,6 @@ CORE_DEPS = src/core/nginx.h \
 	src/os/unix/ngx_linux.h \
 	src/event/ngx_event_openssl.h \
 	src/core/ngx_regex.h \
-	/home/lancelotluo/github/woqu/third-lib/pcre-8.40/pcre.h \
 	.././proto-quic/src/third_party/boringssl/src//include/openssl/ssl.h \
 	objs/ngx_auto_config.h
 
@@ -91,7 +90,6 @@ CORE_INCS = -I src/core \
 	-I src/event \
 	-I src/event/modules \
 	-I src/os/unix \
-	-I /home/lancelotluo/github/woqu/third-lib/pcre-8.40 \
 	-I .././proto-quic/src/third_party/boringssl/src//include \
 	-I objs
 
@@ -277,8 +275,7 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/stream/ngx_stream_upstream_hash_module.o \
 	objs/src/stream/ngx_stream_upstream_least_conn_module.o \
 	objs/src/stream/ngx_stream_upstream_zone_module.o \
-	objs/ngx_modules.o \
-	/home/lancelotluo/github/woqu/third-lib/pcre-8.40/.libs/libpcre.a
+	objs/ngx_modules.o
 
 	$(LINK) -o objs/nginx \
 	objs/src/core/nginx.o \
@@ -427,7 +424,7 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/stream/ngx_stream_upstream_least_conn_module.o \
 	objs/src/stream/ngx_stream_upstream_zone_module.o \
 	objs/ngx_modules.o \
-	-lrt -L/home/lancelotluo/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase -lnet -lurl -lbase_i18n -licui18n -licuuc -lprotobuf_globals -ldl -lpthread -lcrypt /home/lancelotluo/github/woqu/third-lib/pcre-8.40/.libs/libpcre.a -ldl -lz \
+	-lrt -L/home/luocn99/github/woqu/proto-quic/lib/ -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L. -lcrypt -lpcre -lz \
 	-Wl,-E
 	
 
@@ -1456,23 +1453,10 @@ objs/src/stream/ngx_stream_upstream_zone_module.o:	$(CORE_DEPS) $(STREAM_DEPS) \
 		src/stream/ngx_stream_upstream_zone_module.c
 
 
-/home/lancelotluo/github/woqu/third-lib/pcre-8.40/pcre.h:	/home/lancelotluo/github/woqu/third-lib/pcre-8.40/Makefile
-
-/home/lancelotluo/github/woqu/third-lib/pcre-8.40/Makefile:	objs/Makefile
-	cd /home/lancelotluo/github/woqu/third-lib/pcre-8.40 \
-	&& if [ -f Makefile ]; then $(MAKE) distclean; fi \
-	&& CC="$(CC)" CFLAGS="" \
-	./configure --disable-shared 
-
-/home/lancelotluo/github/woqu/third-lib/pcre-8.40/.libs/libpcre.a:	/home/lancelotluo/github/woqu/third-lib/pcre-8.40/Makefile
-	cd /home/lancelotluo/github/woqu/third-lib/pcre-8.40 \
-	&& $(MAKE) libpcre.la
-
-
 .././proto-quic/src/third_party/boringssl/src//.openssl/include/openssl/ssl.h:	objs/Makefile
 	cd .././proto-quic/src/third_party/boringssl/src/ \
 	&& if [ -f Makefile ]; then $(MAKE) clean; fi \
-	&& ./config --prefix=/home/lancelotluo/github/woqu/nginx-1.11.1/.././proto-quic/src/third_party/boringssl/src//.openssl no-shared -fPIC  \
+	&& ./config --prefix=/home/luocn99/github/woqu/nginx-1.11.1/.././proto-quic/src/third_party/boringssl/src//.openssl no-shared -fPIC  \
 	&& $(MAKE) \
 	&& $(MAKE) install_sw LIBDIR=lib
 
@@ -1480,64 +1464,64 @@ objs/src/stream/ngx_stream_upstream_zone_module.o:	$(CORE_DEPS) $(STREAM_DEPS) \
 manpage:	objs/nginx.8
 
 objs/nginx.8:	man/nginx.8 objs/ngx_auto_config.h
-	sed -e "s|%%PREFIX%%|/home/lancelotluo/nginx|" \
-		-e "s|%%PID_PATH%%|/home/lancelotluo/nginx/nginx.pid|" \
-		-e "s|%%CONF_PATH%%|/home/lancelotluo/nginx/nginx.conf|" \
-		-e "s|%%ERROR_LOG_PATH%%|/home/lancelotluo/nginx/logs/error.log|" \
+	sed -e "s|%%PREFIX%%|/home/luocn99/nginx|" \
+		-e "s|%%PID_PATH%%|/home/luocn99/nginx/nginx.pid|" \
+		-e "s|%%CONF_PATH%%|/home/luocn99/nginx/nginx.conf|" \
+		-e "s|%%ERROR_LOG_PATH%%|/home/luocn99/nginx/logs/error.log|" \
 		< man/nginx.8 > $@
 
 install:	build 
-	test -d '$(DESTDIR)/home/lancelotluo/nginx' || mkdir -p '$(DESTDIR)/home/lancelotluo/nginx'
+	test -d '$(DESTDIR)/home/luocn99/nginx' || mkdir -p '$(DESTDIR)/home/luocn99/nginx'
 
-	test -d '$(DESTDIR)/home/lancelotluo/nginx' \
-		|| mkdir -p '$(DESTDIR)/home/lancelotluo/nginx'
-	test ! -f '$(DESTDIR)/home/lancelotluo/nginx/nginx' \
-		|| mv '$(DESTDIR)/home/lancelotluo/nginx/nginx' \
-			'$(DESTDIR)/home/lancelotluo/nginx/nginx.old'
-	cp objs/nginx '$(DESTDIR)/home/lancelotluo/nginx/nginx'
+	test -d '$(DESTDIR)/home/luocn99/nginx' \
+		|| mkdir -p '$(DESTDIR)/home/luocn99/nginx'
+	test ! -f '$(DESTDIR)/home/luocn99/nginx/nginx' \
+		|| mv '$(DESTDIR)/home/luocn99/nginx/nginx' \
+			'$(DESTDIR)/home/luocn99/nginx/nginx.old'
+	cp objs/nginx '$(DESTDIR)/home/luocn99/nginx/nginx'
 
-	test -d '$(DESTDIR)/home/lancelotluo/nginx' \
-		|| mkdir -p '$(DESTDIR)/home/lancelotluo/nginx'
+	test -d '$(DESTDIR)/home/luocn99/nginx' \
+		|| mkdir -p '$(DESTDIR)/home/luocn99/nginx'
 
-	cp conf/koi-win '$(DESTDIR)/home/lancelotluo/nginx'
-	cp conf/koi-utf '$(DESTDIR)/home/lancelotluo/nginx'
-	cp conf/win-utf '$(DESTDIR)/home/lancelotluo/nginx'
+	cp conf/koi-win '$(DESTDIR)/home/luocn99/nginx'
+	cp conf/koi-utf '$(DESTDIR)/home/luocn99/nginx'
+	cp conf/win-utf '$(DESTDIR)/home/luocn99/nginx'
 
-	test -f '$(DESTDIR)/home/lancelotluo/nginx/mime.types' \
-		|| cp conf/mime.types '$(DESTDIR)/home/lancelotluo/nginx'
-	cp conf/mime.types '$(DESTDIR)/home/lancelotluo/nginx/mime.types.default'
+	test -f '$(DESTDIR)/home/luocn99/nginx/mime.types' \
+		|| cp conf/mime.types '$(DESTDIR)/home/luocn99/nginx'
+	cp conf/mime.types '$(DESTDIR)/home/luocn99/nginx/mime.types.default'
 
-	test -f '$(DESTDIR)/home/lancelotluo/nginx/fastcgi_params' \
-		|| cp conf/fastcgi_params '$(DESTDIR)/home/lancelotluo/nginx'
+	test -f '$(DESTDIR)/home/luocn99/nginx/fastcgi_params' \
+		|| cp conf/fastcgi_params '$(DESTDIR)/home/luocn99/nginx'
 	cp conf/fastcgi_params \
-		'$(DESTDIR)/home/lancelotluo/nginx/fastcgi_params.default'
+		'$(DESTDIR)/home/luocn99/nginx/fastcgi_params.default'
 
-	test -f '$(DESTDIR)/home/lancelotluo/nginx/fastcgi.conf' \
-		|| cp conf/fastcgi.conf '$(DESTDIR)/home/lancelotluo/nginx'
-	cp conf/fastcgi.conf '$(DESTDIR)/home/lancelotluo/nginx/fastcgi.conf.default'
+	test -f '$(DESTDIR)/home/luocn99/nginx/fastcgi.conf' \
+		|| cp conf/fastcgi.conf '$(DESTDIR)/home/luocn99/nginx'
+	cp conf/fastcgi.conf '$(DESTDIR)/home/luocn99/nginx/fastcgi.conf.default'
 
-	test -f '$(DESTDIR)/home/lancelotluo/nginx/uwsgi_params' \
-		|| cp conf/uwsgi_params '$(DESTDIR)/home/lancelotluo/nginx'
+	test -f '$(DESTDIR)/home/luocn99/nginx/uwsgi_params' \
+		|| cp conf/uwsgi_params '$(DESTDIR)/home/luocn99/nginx'
 	cp conf/uwsgi_params \
-		'$(DESTDIR)/home/lancelotluo/nginx/uwsgi_params.default'
+		'$(DESTDIR)/home/luocn99/nginx/uwsgi_params.default'
 
-	test -f '$(DESTDIR)/home/lancelotluo/nginx/scgi_params' \
-		|| cp conf/scgi_params '$(DESTDIR)/home/lancelotluo/nginx'
+	test -f '$(DESTDIR)/home/luocn99/nginx/scgi_params' \
+		|| cp conf/scgi_params '$(DESTDIR)/home/luocn99/nginx'
 	cp conf/scgi_params \
-		'$(DESTDIR)/home/lancelotluo/nginx/scgi_params.default'
+		'$(DESTDIR)/home/luocn99/nginx/scgi_params.default'
 
-	test -f '$(DESTDIR)/home/lancelotluo/nginx/nginx.conf' \
-		|| cp conf/nginx.conf '$(DESTDIR)/home/lancelotluo/nginx/nginx.conf'
-	cp conf/nginx.conf '$(DESTDIR)/home/lancelotluo/nginx/nginx.conf.default'
+	test -f '$(DESTDIR)/home/luocn99/nginx/nginx.conf' \
+		|| cp conf/nginx.conf '$(DESTDIR)/home/luocn99/nginx/nginx.conf'
+	cp conf/nginx.conf '$(DESTDIR)/home/luocn99/nginx/nginx.conf.default'
 
-	test -d '$(DESTDIR)/home/lancelotluo/nginx' \
-		|| mkdir -p '$(DESTDIR)/home/lancelotluo/nginx'
+	test -d '$(DESTDIR)/home/luocn99/nginx' \
+		|| mkdir -p '$(DESTDIR)/home/luocn99/nginx'
 
-	test -d '$(DESTDIR)/home/lancelotluo/nginx/logs' \
-		|| mkdir -p '$(DESTDIR)/home/lancelotluo/nginx/logs'
+	test -d '$(DESTDIR)/home/luocn99/nginx/logs' \
+		|| mkdir -p '$(DESTDIR)/home/luocn99/nginx/logs'
 
-	test -d '$(DESTDIR)/home/lancelotluo/nginx/html' \
-		|| cp -R html '$(DESTDIR)/home/lancelotluo/nginx'
+	test -d '$(DESTDIR)/home/luocn99/nginx/html' \
+		|| cp -R html '$(DESTDIR)/home/luocn99/nginx'
 
-	test -d '$(DESTDIR)/home/lancelotluo/nginx/logs' \
-		|| mkdir -p '$(DESTDIR)/home/lancelotluo/nginx/logs'
+	test -d '$(DESTDIR)/home/luocn99/nginx/logs' \
+		|| mkdir -p '$(DESTDIR)/home/luocn99/nginx/logs'
