@@ -1,7 +1,6 @@
 
 /*
  * Copyright (C) Nginx, Inc.
- * Copyright (C) Valentin V. Bartenev
  */
 
 

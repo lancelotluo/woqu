@@ -445,7 +445,10 @@ if [ $HTTP_QUIC = YES ]; then
                      src/http/quic/adaptor/quic_simple_server_stream.cc \
                      src/http/quic/adaptor/quic_spdy_server_stream_base.cc \
                      src/http/quic/adaptor/quic_socket_utils.cc \
-                     src/http/quic/adaptor/chlo_extractor.cc"
+                     src/http/quic/adaptor/chlo_extractor.cc \
+                     src/http/quic/adaptor/quic_simple_dispatcher.cc \
+                     src/http/quic/adaptor/quic_simple_server_session_helper.cc \
+                     src/http/quic/adaptor/ngx_http_quic_adaptor.cc "
 #src/http/quic/adaptor/ngx_quic_dispatcher.cc \
 #                    src/http/quic/adaptor/ngx_quic_per_connection_packet_writer.cc \
 #                    src/http/quic/adaptor/ngx_quic_simple_server_session.cc \
