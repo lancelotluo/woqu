@@ -8,6 +8,7 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 #include <ngx_http_quic_module.h>
+#include <adaptor/ngx_http_quic_adaptor.h>
 
 
 static void ngx_http_quic_read_handler(ngx_event_t *rev);
@@ -71,7 +72,10 @@ ngx_http_quic_init(ngx_event_t *rev)
     rev->handler = ngx_http_quic_read_handler;
     c->write->handler = ngx_http_quic_write_handler;
 
-    ngx_http_quic_read_handler(rev);
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "create dispatcher for debug");
+	ngx_http_quic_create_dispatcher();
+
+    //ngx_http_quic_read_handler(rev);
 }
 
 
@@ -95,16 +99,8 @@ ngx_http_quic_read_handler(ngx_event_t *rev)
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic read handler");
 
-    qc->blocked = 1;
-
-    qmcf = ngx_http_get_module_main_conf(qc->http_connection->conf_ctx,
-                                          ngx_http_quic_module);
-
-    available = qmcf->recv_buffer_size - 2 * NGX_HTTP_V2_STATE_BUFFER_SIZE;
-
-    if (ngx_handle_read_event(rev, 0) != NGX_OK) {
-        return;
-    }
+    //qmcf = ngx_http_get_module_main_conf(qc->http_connection->conf_ctx,
+    //                                      ngx_http_quic_module);
 
     ngx_http_quic_handle_connection(qc);
 }
@@ -139,6 +135,8 @@ ngx_http_quic_handle_connection(ngx_http_quic_connection_t *qc)
 {
     ngx_connection_t          *c;
     ngx_http_quic_srv_conf_t  *qscf;
+    
+	ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "handle quic connection");
 
     c = qc->connection;
 
@@ -152,4 +150,8 @@ ngx_http_quic_handle_connection(ngx_http_quic_connection_t *qc)
     }
 
     ngx_add_timer(c->read, qscf->idle_timeout);
+
+	ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "create quic dispatcher");
+
+	ngx_http_quic_create_dispatcher();
 }

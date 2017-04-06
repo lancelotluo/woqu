@@ -3,6 +3,7 @@
 #include "ngx_http_quic_alarm_factory.h"
 #include "net/quic/platform/impl/quic_chromium_clock.h"
 
+#include "base/at_exit.h"
 #include "base/logging.h"
 #include "base/run_loop.h"
 #include "base/strings/string_number_conversions.h"
@@ -42,7 +43,14 @@ void *ngx_http_quic_create_dispatcher()
     int64_t go_task_runner,
     QuicCryptoServerConfig* crypto_config) {
 */
-  QuicConfig* config = new QuicConfig();
+	base::AtExitManager exit_manager;
+	
+	printf("hello");
+	logging::LoggingSettings settings;
+  	settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
+  	logging::InitLogging(settings);
+
+	QuicConfig* config = new QuicConfig();
 
   // Deleted by ~GoQuicDispatcher()
   QuicChromiumClock* clock = new QuicChromiumClock();  // Deleted by scoped ptr of GoQuicConnectionHelper

@@ -327,6 +327,8 @@ ngx_http_init_connection(ngx_connection_t *c)
         ngx_log_error(NGX_LOG_ERR, c->log, 0,
                           "quic init handler");
 		rev->handler = ngx_http_quic_init;
+		// for debug
+		rev->handler(rev);
 	}
 #endif
 
