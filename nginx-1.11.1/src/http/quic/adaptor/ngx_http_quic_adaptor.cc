@@ -1,4 +1,7 @@
 #include "ngx_http_quic_adaptor.h"
+#include "ngx_http_quic_connection_helper.h"
+#include "ngx_http_quic_alarm_factory.h"
+#include "net/quic/platform/impl/quic_chromium_clock.h"
 
 #include "base/logging.h"
 #include "base/run_loop.h"
@@ -10,6 +13,7 @@
 #include "net/quic/platform/api/quic_socket_address.h"
 #include "net/tools/quic/quic_http_response_cache.h"
 #include "net/tools/quic/quic_server.h"
+#include "net/tools/quic/quic_simple_dispatcher.h"
 
 using namespace net;
 // The port the quic server will listen on.
@@ -25,6 +29,7 @@ std::unique_ptr<net::ProofSource> CreateProofSource(
 
 void *ngx_http_quic_create_dispatcher()
 {
+	const char kSourceAddressTokenSecret[] = "secret";
 /*
 	QuicSimpleDispatcher *dispatcher = new QuicSimpleDispatcher(
       config_, &crypto_config_, &version_manager_,
@@ -38,20 +43,25 @@ void *ngx_http_quic_create_dispatcher()
     QuicCryptoServerConfig* crypto_config) {
 */
   QuicConfig* config = new QuicConfig();
+
   // Deleted by ~GoQuicDispatcher()
-  QuicClock* clock =
-      new QuicClock();  // Deleted by scoped ptr of GoQuicConnectionHelper
-  QuicRandom* random_generator = QuicRandom::GetInstance();
+  QuicChromiumClock* clock = new QuicChromiumClock();  // Deleted by scoped ptr of GoQuicConnectionHelper
+	QuicRandom* random_generator = QuicRandom::GetInstance();
   
-  std::unique_ptr<QuicConnectionHelperInterface> helper(new GoQuicConnectionHelper(clock, random_generator));
-  std::unique_ptr<QuicAlarmFactory> alarm_factory(new GoQuicAlarmFactory(clock, go_task_runner));
-  std::unique_ptr<QuicCryptoServerStream::Helper> session_helper(new GoQuicSimpleServerSessionHelper(QuicRandom::GetInstance()));
+	std::unique_ptr<QuicConnectionHelperInterface> helper(new NgxQuicConnectionHelper(clock, random_generator));
+	std::unique_ptr<QuicAlarmFactory> alarm_factory(new QuicEpollAlarmFactory());
+	std::unique_ptr<QuicCryptoServerStream::Helper> session_helper(new						  QuicSimpleServerSessionHelper(QuicRandom::GetInstance()));
   // XXX: quic_server uses QuicSimpleCryptoServerStreamHelper, 
   // while quic_simple_server uses QuicSimpleServerSessionHelper.
   // Pick one and remove the other later
-  
-  QuicVersionManager* version_manager = new QuicVersionManager(net::AllSupportedVersions());
 
+	std::unique_ptr<ProofSource> proof_source = CreateProofSource(base::FilePath("./cert/quic.cert"), base::FilePath("./cert/quic.key"));
+	QuicCryptoServerConfig crypto_config(kSourceAddressTokenSecret, QuicRandom::GetInstance(),
+			  std::move(proof_source));
+  
+	QuicVersionManager* version_manager = new QuicVersionManager(net::AllSupportedVersions());
+	QuicHttpResponseCache* response_cache = new QuicHttpResponseCache();
+	response_cache->InitializeFromDirectory("./html/quic/html");
   /* Initialize Configs ------------------------------------------------*/
 
   // If an initial flow control window has not explicitly been set, then use a
@@ -70,18 +80,15 @@ void *ngx_http_quic_create_dispatcher()
   }
   /* Initialize Configs Ends ----------------------------------------*/
 
-  // Deleted by delete_go_quic_dispatcher()
-/*
-  QuicSimpleDispatcher* dispatcher =
-      new GoQuicSimpleDispatcher(*config, crypto_config, version_manager,
-          std::move(helper), std::move(session_helper), std::move(alarm_factory), go_quic_dispatcher);
+	QuicSimpleDispatcher* dispatcher =
+      new QuicSimpleDispatcher(*config, &crypto_config, version_manager,
+          std::move(helper), std::move(session_helper), std::move(alarm_factory), response_cache);
 
-  GoQuicServerPacketWriter* writer = new GoQuicServerPacketWriter(
+	/*QuicServerPacketWriter* writer = new QuicServerPacketWriter(
       go_writer, dispatcher);  // Deleted by scoped ptr of GoQuicDispatcher
 
-  dispatcher->InitializeWithWriter(writer);
-*/
-
+	dispatcher->InitializeWithWriter(writer);
+	*/
 	return (reinterpret_cast< void * >(dispatcher));
 }
 

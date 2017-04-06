@@ -10,12 +10,12 @@
 
 namespace net {
 
-class EpollServer;
 
 // Creates alarms that use the supplied EpollServer for timing and firing.
 class QuicEpollAlarmFactory : public QuicAlarmFactory {
  public:
-  explicit QuicEpollAlarmFactory(EpollServer* epoll_server);
+	QuicEpollAlarmFactory();
+  //explicit QuicEpollAlarmFactory();
   ~QuicEpollAlarmFactory() override;
 
   // QuicAlarmFactory interface.
@@ -25,7 +25,6 @@ class QuicEpollAlarmFactory : public QuicAlarmFactory {
       QuicConnectionArena* arena) override;
 
  private:
-  EpollServer* epoll_server_;  // Not owned.
 
   DISALLOW_COPY_AND_ASSIGN(QuicEpollAlarmFactory);
 };

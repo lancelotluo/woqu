@@ -448,9 +448,12 @@ if [ $HTTP_QUIC = YES ]; then
                      src/http/quic/adaptor/chlo_extractor.cc \
                      src/http/quic/adaptor/quic_simple_dispatcher.cc \
                      src/http/quic/adaptor/quic_simple_server_session_helper.cc \
+                     src/http/quic/adaptor/ngx_http_quic_alarm_factory.cc \
+                     src/http/quic/adaptor/ngx_http_quic_connection_helper.cc \
                      src/http/quic/adaptor/ngx_http_quic_adaptor.cc "
 #src/http/quic/adaptor/ngx_quic_dispatcher.cc \
 #                    src/http/quic/adaptor/ngx_quic_per_connection_packet_writer.cc \
+#                     src/http/quic/adaptor/ngx_http_quic_alarm_factory.cc \
 #                    src/http/quic/adaptor/ngx_quic_simple_server_session.cc \
 #                    src/http/quic/adaptor/ngx_quic_time_wait_list_manager.cc \
 #                    src/http/quic/adaptor/ngx_stateless_rejector.cc \
