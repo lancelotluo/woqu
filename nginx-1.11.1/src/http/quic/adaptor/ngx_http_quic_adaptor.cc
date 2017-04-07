@@ -4,6 +4,7 @@
 #include "net/quic/platform/impl/quic_chromium_clock.h"
 
 #include "base/at_exit.h"
+#include "base/command_line.h"
 #include "base/logging.h"
 #include "base/run_loop.h"
 #include "base/strings/string_number_conversions.h"
@@ -14,7 +15,6 @@
 #include "net/quic/platform/api/quic_socket_address.h"
 #include "net/tools/quic/quic_http_response_cache.h"
 #include "net/tools/quic/quic_server.h"
-#include "net/tools/quic/quic_simple_dispatcher.h"
 
 using namespace net;
 // The port the quic server will listen on.
@@ -22,38 +22,30 @@ using namespace net;
 std::unique_ptr<net::ProofSource> CreateProofSource(
     const base::FilePath& cert_path,
     const base::FilePath& key_path) {
-  std::unique_ptr<net::ProofSourceChromium> proof_source(
+  	std::unique_ptr<net::ProofSourceChromium> proof_source(
       new net::ProofSourceChromium());
-  CHECK(proof_source->Initialize(cert_path, key_path, base::FilePath()));
-  return std::move(proof_source);
+  	CHECK(proof_source->Initialize(cert_path, key_path, base::FilePath()));
+
+  	return std::move(proof_source);
 }
 
-void *ngx_http_quic_create_dispatcher()
+void *ngx_http_quic_create_dispatcher(int fd)
 {
 	const char kSourceAddressTokenSecret[] = "secret";
-/*
-	QuicSimpleDispatcher *dispatcher = new QuicSimpleDispatcher(
-      config_, &crypto_config_, &version_manager_,
-      std::unique_ptr<QuicConnectionHelperInterface>(helper_),
-      std::unique_ptr<QuicCryptoServerStream::Helper>(
-          new QuicSimpleServerSessionHelper(QuicRandom::GetInstance())),
-      std::unique_ptr<QuicAlarmFactory>(alarm_factory_), response_cache_);
-    int64_t go_writer,
-    int64_t go_quic_dispatcher,
-    int64_t go_task_runner,
-    QuicCryptoServerConfig* crypto_config) {
-*/
-	base::AtExitManager exit_manager;
 	
-	printf("hello");
+	logging::SetMinLogLevel(1);
+	/*
 	logging::LoggingSettings settings;
   	settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
   	logging::InitLogging(settings);
+	*/
+	base::AtExitManager exit_manager;
+
 
 	QuicConfig* config = new QuicConfig();
 
   // Deleted by ~GoQuicDispatcher()
-  QuicChromiumClock* clock = new QuicChromiumClock();  // Deleted by scoped ptr of GoQuicConnectionHelper
+	QuicChromiumClock* clock = new QuicChromiumClock();  // Deleted by scoped ptr of GoQuicConnectionHelper
 	QuicRandom* random_generator = QuicRandom::GetInstance();
   
 	std::unique_ptr<QuicConnectionHelperInterface> helper(new NgxQuicConnectionHelper(clock, random_generator));
@@ -63,7 +55,7 @@ void *ngx_http_quic_create_dispatcher()
   // while quic_simple_server uses QuicSimpleServerSessionHelper.
   // Pick one and remove the other later
 
-	std::unique_ptr<ProofSource> proof_source = CreateProofSource(base::FilePath("./cert/quic.cert"), base::FilePath("./cert/quic.key"));
+	std::unique_ptr<ProofSource> proof_source = CreateProofSource(base::FilePath("/home/lancelotluo/nginx/cert/quic.cert"), base::FilePath("/home/lancelotluo/nginx/cert/quic.key.pkcs8"));
 	QuicCryptoServerConfig crypto_config(kSourceAddressTokenSecret, QuicRandom::GetInstance(),
 			  std::move(proof_source));
   
@@ -92,15 +84,37 @@ void *ngx_http_quic_create_dispatcher()
       new QuicSimpleDispatcher(*config, &crypto_config, version_manager,
           std::move(helper), std::move(session_helper), std::move(alarm_factory), response_cache);
 
-	/*QuicServerPacketWriter* writer = new QuicServerPacketWriter(
-      go_writer, dispatcher);  // Deleted by scoped ptr of GoQuicDispatcher
+	QuicDefaultPacketWriter* writer = new QuicDefaultPacketWriter(fd);
 
 	dispatcher->InitializeWithWriter(writer);
-	*/
+
 	return (reinterpret_cast< void * >(dispatcher));
 }
 
 void ngx_http_quic_set_log_level(int level)
 {
 	logging::SetMinLogLevel(level);
+}
+
+void ngx_http_quic_dispatcher_process_packet(ngx_quic_dispatcher_t* dispatcher,
+                                    uint8_t* self_address_ip,
+                                    size_t self_address_len,
+                                    uint16_t self_address_port,
+                                    uint8_t* peer_address_ip,
+                                    size_t peer_address_len,
+                                    uint16_t peer_address_port,
+                                    char* buffer,
+                                    size_t length) {
+	QuicSimpleDispatcher *quic_dispatcher = reinterpret_cast< QuicSimpleDispatcher*> (dispatcher->proto_quic_dispatcher);
+
+	IPAddress self_ip_addr(self_address_ip, self_address_len);
+	IPEndPoint self_address(self_ip_addr, self_address_port);
+	IPAddress peer_ip_addr(peer_address_ip, peer_address_len);
+	IPEndPoint peer_address(peer_ip_addr, peer_address_port);
+
+	QuicReceivedPacket packet(
+      buffer, length, quic_dispatcher->helper()->GetClock()->Now(),
+      false /* Do not own the buffer, so will not free buffer in the destructor */);
+
+	quic_dispatcher->ProcessPacket(QuicSocketAddress(QuicSocketAddressImpl(self_address)),QuicSocketAddress(QuicSocketAddressImpl(peer_address)), packet);
 }

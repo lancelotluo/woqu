@@ -73,7 +73,7 @@ ngx_http_quic_init(ngx_event_t *rev)
     c->write->handler = ngx_http_quic_write_handler;
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "create dispatcher for debug");
-	ngx_http_quic_create_dispatcher();
+	ngx_http_quic_create_dispatcher(c->fd);
 
     //ngx_http_quic_read_handler(rev);
 }
@@ -153,5 +153,5 @@ ngx_http_quic_handle_connection(ngx_http_quic_connection_t *qc)
 
 	ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "create quic dispatcher");
 
-	ngx_http_quic_create_dispatcher();
+	ngx_http_quic_create_dispatcher(c->fd);
 }
