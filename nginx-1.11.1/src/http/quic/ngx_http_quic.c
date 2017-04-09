@@ -73,9 +73,12 @@ ngx_http_quic_init(ngx_event_t *rev)
     c->write->handler = ngx_http_quic_write_handler;
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "create dispatcher for debug");
-	ngx_http_quic_create_dispatcher(c->fd);
 
-    //ngx_http_quic_read_handler(rev);
+	//if (qscf->quic_dispatcher->proto_quic_dispatcher == NULL) {
+		qscf->quic_dispatcher->proto_quic_dispatcher = ngx_http_quic_create_dispatcher(c->fd);
+	//}
+
+    ngx_http_quic_dispatcher_process_packet(qscf->quic_dispatcher->proto_quic_dispatcher, c->buffer->start, c->buffer->pos - c->buffer->start, c->sockaddr, c->local_sockaddr);
 }
 
 
@@ -88,9 +91,8 @@ ngx_http_quic_read_handler(ngx_event_t *rev)
     ngx_connection_t          *c;
     ngx_http_quic_main_conf_t   *qmcf;
     ngx_http_quic_connection_t  *qc;
-
     c = rev->data;
-    qc = c->data;
+	qc = c->data;
 
     if (rev->timedout) {
         ngx_log_error(NGX_LOG_INFO, c->log, NGX_ETIMEDOUT, "client timed out");
@@ -98,9 +100,6 @@ ngx_http_quic_read_handler(ngx_event_t *rev)
     }
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic read handler");
-
-    //qmcf = ngx_http_get_module_main_conf(qc->http_connection->conf_ctx,
-    //                                      ngx_http_quic_module);
 
     ngx_http_quic_handle_connection(qc);
 }
@@ -135,10 +134,11 @@ ngx_http_quic_handle_connection(ngx_http_quic_connection_t *qc)
 {
     ngx_connection_t          *c;
     ngx_http_quic_srv_conf_t  *qscf;
+
+    c = qc->connection;
     
 	ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "handle quic connection");
 
-    c = qc->connection;
 
     qscf = ngx_http_get_module_srv_conf(qc->http_connection->conf_ctx,
                                          ngx_http_quic_module);
@@ -153,5 +153,5 @@ ngx_http_quic_handle_connection(ngx_http_quic_connection_t *qc)
 
 	ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "create quic dispatcher");
 
-	ngx_http_quic_create_dispatcher(c->fd);
+	//ngx_http_quic_create_dispatcher(c->fd);
 }

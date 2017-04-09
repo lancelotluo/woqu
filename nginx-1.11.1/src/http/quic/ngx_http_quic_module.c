@@ -229,25 +229,27 @@ ngx_http_quic_module_init(ngx_cycle_t *cycle)
 static void *
 ngx_http_quic_create_main_conf(ngx_conf_t *cf)
 {
-    ngx_http_quic_main_conf_t  *h2mcf;
+    ngx_http_quic_main_conf_t  *hqmcf;
 
-    h2mcf = ngx_pcalloc(cf->pool, sizeof(ngx_http_quic_main_conf_t));
-    if (h2mcf == NULL) {
+    hqmcf = ngx_pcalloc(cf->pool, sizeof(ngx_http_quic_main_conf_t));
+    if (hqmcf == NULL) {
         return NULL;
     }
 
-    h2mcf->recv_buffer_size = NGX_CONF_UNSET_SIZE;
+    hqmcf->recv_buffer_size = NGX_CONF_UNSET_SIZE;
 
-    return h2mcf;
+    return hqmcf;
 }
 
 
 static char *
 ngx_http_quic_init_main_conf(ngx_conf_t *cf, void *conf)
 {
-    ngx_http_quic_main_conf_t *h2mcf = conf;
+    ngx_http_quic_main_conf_t *hqmcf = conf;
 
-    ngx_conf_init_size_value(h2mcf->recv_buffer_size, 256 * 1024);
+    ngx_conf_init_size_value(hqmcf->recv_buffer_size, 256 * 1024);
+
+	//hqmcf->quic_dispatcher = 
 
     return NGX_CONF_OK;
 }
@@ -256,28 +258,33 @@ ngx_http_quic_init_main_conf(ngx_conf_t *cf, void *conf)
 static void *
 ngx_http_quic_create_srv_conf(ngx_conf_t *cf)
 {
-    ngx_http_quic_srv_conf_t  *h2scf;
+    ngx_http_quic_srv_conf_t  *hqscf;
 
-    h2scf = ngx_pcalloc(cf->pool, sizeof(ngx_http_quic_srv_conf_t));
-    if (h2scf == NULL) {
+    hqscf = ngx_pcalloc(cf->pool, sizeof(ngx_http_quic_srv_conf_t));
+    if (hqscf == NULL) {
         return NULL;
     }
 
-    h2scf->pool_size = NGX_CONF_UNSET_SIZE;
+    hqscf->pool_size = NGX_CONF_UNSET_SIZE;
 
-    h2scf->concurrent_streams = NGX_CONF_UNSET_UINT;
+    hqscf->concurrent_streams = NGX_CONF_UNSET_UINT;
 
-    h2scf->max_field_size = NGX_CONF_UNSET_SIZE;
-    h2scf->max_header_size = NGX_CONF_UNSET_SIZE;
+    hqscf->max_field_size = NGX_CONF_UNSET_SIZE;
+    hqscf->max_header_size = NGX_CONF_UNSET_SIZE;
 
-    h2scf->preread_size = NGX_CONF_UNSET_SIZE;
+    hqscf->preread_size = NGX_CONF_UNSET_SIZE;
 
-    h2scf->streams_index_mask = NGX_CONF_UNSET_UINT;
+    hqscf->streams_index_mask = NGX_CONF_UNSET_UINT;
 
-    h2scf->recv_timeout = NGX_CONF_UNSET_MSEC;
-    h2scf->idle_timeout = NGX_CONF_UNSET_MSEC;
+    hqscf->recv_timeout = NGX_CONF_UNSET_MSEC;
+    hqscf->idle_timeout = NGX_CONF_UNSET_MSEC;
 
-    return h2scf;
+	hqscf->quic_dispatcher = ngx_palloc(cf->pool, sizeof(ngx_http_quic_dispatcher_t));
+	if (hqscf->quic_dispatcher == NULL) {
+		return NULL;
+	}
+
+    return hqscf;
 }
 
 

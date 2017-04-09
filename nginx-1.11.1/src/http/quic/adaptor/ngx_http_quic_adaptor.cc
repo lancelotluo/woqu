@@ -55,7 +55,7 @@ void *ngx_http_quic_create_dispatcher(int fd)
   // while quic_simple_server uses QuicSimpleServerSessionHelper.
   // Pick one and remove the other later
 
-	std::unique_ptr<ProofSource> proof_source = CreateProofSource(base::FilePath("/home/lancelotluo/nginx/cert/quic.cert"), base::FilePath("/home/lancelotluo/nginx/cert/quic.key.pkcs8"));
+	std::unique_ptr<ProofSource> proof_source = CreateProofSource(base::FilePath("./cert/quic.cert"), base::FilePath("./cert/quic.key.pkcs8"));
 	QuicCryptoServerConfig crypto_config(kSourceAddressTokenSecret, QuicRandom::GetInstance(),
 			  std::move(proof_source));
   
@@ -66,18 +66,18 @@ void *ngx_http_quic_create_dispatcher(int fd)
 
   // If an initial flow control window has not explicitly been set, then use a
   // sensible value for a server: 1 MB for session, 64 KB for each stream.
-  const uint32_t kInitialSessionFlowControlWindow = 1 * 1024 * 1024;  // 1 MB
-  const uint32_t kInitialStreamFlowControlWindow = 64 * 1024;         // 64 KB
-  if (config->GetInitialStreamFlowControlWindowToSend() ==
+	const uint32_t kInitialSessionFlowControlWindow = 1 * 1024 * 1024;  // 1 MB
+	const uint32_t kInitialStreamFlowControlWindow = 64 * 1024;         // 64 KB
+	if (config->GetInitialStreamFlowControlWindowToSend() ==
       kMinimumFlowControlSendWindow) {
-    config->SetInitialStreamFlowControlWindowToSend(
-        kInitialStreamFlowControlWindow);
-  }
-  if (config->GetInitialSessionFlowControlWindowToSend() ==
+		config->SetInitialStreamFlowControlWindowToSend(
+			kInitialStreamFlowControlWindow);
+	}
+	if (config->GetInitialSessionFlowControlWindowToSend() ==
       kMinimumFlowControlSendWindow) {
-    config->SetInitialSessionFlowControlWindowToSend(
-        kInitialSessionFlowControlWindow);
-  }
+		config->SetInitialSessionFlowControlWindowToSend(
+			kInitialSessionFlowControlWindow);
+	}
   /* Initialize Configs Ends ----------------------------------------*/
 
 	QuicSimpleDispatcher* dispatcher =
@@ -93,28 +93,28 @@ void *ngx_http_quic_create_dispatcher(int fd)
 
 void ngx_http_quic_set_log_level(int level)
 {
-	logging::SetMinLogLevel(level);
+	//logging::LoggingSettings settings;
+	//settings.logging_dest = logging::LOG_TO_ALL;
+	//logging::InitLogging(settings)
+	logging::SetMinLogLevel(level); //work
+	//logging::InitLogging("debug2.log", LOG_TO_BOTH_FILE_AND_SYSTEM_DEBUG_LOG,
+//				                DONT_LOCK_LOG_FILE, DELETE_OLD_LOG_FILE,
+//								DISABLE_DCHECK_FOR_NON_OFFICIAL_RELEASE_BUILDS);
 }
 
-void ngx_http_quic_dispatcher_process_packet(ngx_quic_dispatcher_t* dispatcher,
-                                    uint8_t* self_address_ip,
-                                    size_t self_address_len,
-                                    uint16_t self_address_port,
-                                    uint8_t* peer_address_ip,
-                                    size_t peer_address_len,
-                                    uint16_t peer_address_port,
-                                    char* buffer,
-                                    size_t length) {
-	QuicSimpleDispatcher *quic_dispatcher = reinterpret_cast< QuicSimpleDispatcher*> (dispatcher->proto_quic_dispatcher);
-
-	IPAddress self_ip_addr(self_address_ip, self_address_len);
-	IPEndPoint self_address(self_ip_addr, self_address_port);
-	IPAddress peer_ip_addr(peer_address_ip, peer_address_len);
-	IPEndPoint peer_address(peer_ip_addr, peer_address_port);
+void ngx_http_quic_dispatcher_process_packet(void* dispatcher,
+			char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
+			struct sockaddr *local_sockaddr) {
+	QuicSimpleDispatcher *quic_dispatcher = reinterpret_cast< QuicSimpleDispatcher*> (dispatcher);
+	
+	struct sockaddr_storage *generic_localsock = (struct sockaddr_storage*) local_sockaddr;
+	struct sockaddr_storage *generic_peersock = (struct sockaddr_storage*) peer_sockaddr;
+	QuicSocketAddress server_address(*generic_localsock);
+	QuicSocketAddress client_address(*generic_peersock);
 
 	QuicReceivedPacket packet(
       buffer, length, quic_dispatcher->helper()->GetClock()->Now(),
       false /* Do not own the buffer, so will not free buffer in the destructor */);
 
-	quic_dispatcher->ProcessPacket(QuicSocketAddress(QuicSocketAddressImpl(self_address)),QuicSocketAddress(QuicSocketAddressImpl(peer_address)), packet);
+	quic_dispatcher->ProcessPacket(server_address, client_address, packet);
 }

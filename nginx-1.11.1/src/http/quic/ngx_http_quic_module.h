@@ -13,6 +13,11 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 
+struct ngx_http_quic_dispatcher_s {
+	void *proto_quic_dispatcher;
+};
+
+typedef struct ngx_http_quic_dispatcher_s ngx_http_quic_dispatcher_t;
 
 typedef struct {
     size_t                          recv_buffer_size;
@@ -29,6 +34,7 @@ typedef struct {
     ngx_uint_t                      streams_index_mask;
     ngx_msec_t                      recv_timeout;
     ngx_msec_t                      idle_timeout;
+	ngx_http_quic_dispatcher_t     *quic_dispatcher;
 } ngx_http_quic_srv_conf_t;
 
 
