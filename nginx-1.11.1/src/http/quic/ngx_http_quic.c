@@ -72,13 +72,13 @@ ngx_http_quic_init(ngx_event_t *rev)
     rev->handler = ngx_http_quic_read_handler;
     c->write->handler = ngx_http_quic_write_handler;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "create dispatcher for debug");
-
-	//if (qscf->quic_dispatcher->proto_quic_dispatcher == NULL) {
+	if (qscf->quic_dispatcher->proto_quic_dispatcher == NULL) {
+		ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "create dispatcher for debug");
 		qscf->quic_dispatcher->proto_quic_dispatcher = ngx_http_quic_create_dispatcher(c->fd);
-	//}
+	}
 
     ngx_http_quic_dispatcher_process_packet(qscf->quic_dispatcher->proto_quic_dispatcher, c->buffer->start, c->buffer->pos - c->buffer->start, c->sockaddr, c->local_sockaddr);
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic process packet for debug");
 }
 
 

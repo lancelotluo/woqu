@@ -329,6 +329,7 @@ ngx_http_init_connection(ngx_connection_t *c)
 		rev->handler = ngx_http_quic_init;
 		// for debug
 		rev->handler(rev);
+		return;
 	}
 #endif
 

@@ -279,7 +279,7 @@ ngx_http_quic_create_srv_conf(ngx_conf_t *cf)
     hqscf->recv_timeout = NGX_CONF_UNSET_MSEC;
     hqscf->idle_timeout = NGX_CONF_UNSET_MSEC;
 
-	hqscf->quic_dispatcher = ngx_palloc(cf->pool, sizeof(ngx_http_quic_dispatcher_t));
+	hqscf->quic_dispatcher = ngx_pcalloc(cf->pool, sizeof(ngx_http_quic_dispatcher_t));
 	if (hqscf->quic_dispatcher == NULL) {
 		return NULL;
 	}

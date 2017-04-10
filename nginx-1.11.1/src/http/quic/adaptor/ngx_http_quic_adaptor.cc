@@ -33,7 +33,7 @@ void *ngx_http_quic_create_dispatcher(int fd)
 {
 	const char kSourceAddressTokenSecret[] = "secret";
 	
-	logging::SetMinLogLevel(1);
+	//logging::SetMinLogLevel(1);
 	/*
 	logging::LoggingSettings settings;
   	settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
@@ -93,10 +93,10 @@ void *ngx_http_quic_create_dispatcher(int fd)
 
 void ngx_http_quic_set_log_level(int level)
 {
-	//logging::LoggingSettings settings;
-	//settings.logging_dest = logging::LOG_TO_ALL;
-	//logging::InitLogging(settings)
-	logging::SetMinLogLevel(level); //work
+	logging::LoggingSettings settings;
+	settings.logging_dest = logging::LOG_TO_ALL;
+	logging::InitLogging(settings);
+	//logging::SetMinLogLevel(level); //work
 	//logging::InitLogging("debug2.log", LOG_TO_BOTH_FILE_AND_SYSTEM_DEBUG_LOG,
 //				                DONT_LOCK_LOG_FILE, DELETE_OLD_LOG_FILE,
 //								DISABLE_DCHECK_FOR_NON_OFFICIAL_RELEASE_BUILDS);
