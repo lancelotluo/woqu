@@ -234,6 +234,8 @@ void QuicDispatcher::ProcessPacket(const QuicSocketAddress& server_address,
   // ProcessPacket will cause the packet to be dispatched in
   // OnUnauthenticatedPublicHeader, or sent to the time wait list manager
   // in OnUnauthenticatedHeader.
+//lance_debug
+  QuicRandom::GetInstance();
   framer_.ProcessPacket(packet);
   // TODO(rjshade): Return a status describing if/why a packet was dropped,
   //                and log somehow.  Maybe expose as a varz.
@@ -715,8 +717,6 @@ void QuicDispatcher::ProcessChlo() {
       !ShouldCreateOrBufferPacketForConnection(current_connection_id_)) {
     return;
   }
-    QUIC_DLOG(INFO)
-        << "lance_debug ProcessChlo";
   if (FLAGS_quic_allow_chlo_buffering &&
       FLAGS_quic_reloadable_flag_quic_limit_num_new_sessions_per_epoll_loop &&
       new_sessions_allowed_per_event_loop_ <= 0) {

@@ -46,10 +46,14 @@ void *ngx_http_quic_create_dispatcher(int fd)
 
   // Deleted by ~GoQuicDispatcher()
 	QuicChromiumClock* clock = new QuicChromiumClock();  // Deleted by scoped ptr of GoQuicConnectionHelper
-	//QuicRandom* random_generator = QuicRandom::GetInstance();
+	QuicRandom* random_generator = QuicRandom::GetInstance();
+	if (random_generator == nullptr) {
+		QUIC_DVLOG(1) << "lance_debug get null random";	
+	}
+
   
-	//std::unique_ptr<QuicConnectionHelperInterface> helper(new NgxQuicConnectionHelper(clock, random_generator));
-	std::unique_ptr<QuicConnectionHelperInterface> helper(new QuicChromiumConnectionHelper(clock, QuicRandom::GetInstance()));
+	std::unique_ptr<QuicConnectionHelperInterface> helper(new NgxQuicConnectionHelper(clock, random_generator));
+	//std::unique_ptr<QuicConnectionHelperInterface> helper(new QuicChromiumConnectionHelper(clock, QuicRandom::GetInstance()));
 	std::unique_ptr<QuicAlarmFactory> alarm_factory(new QuicEpollAlarmFactory());
 	std::unique_ptr<QuicCryptoServerStream::Helper> session_helper(new						  QuicSimpleServerSessionHelper(QuicRandom::GetInstance()));
   // XXX: quic_server uses QuicSimpleCryptoServerStreamHelper, 
@@ -120,5 +124,8 @@ void ngx_http_quic_dispatcher_process_packet(void* dispatcher,
       buffer, length, quic_dispatcher->helper()->GetClock()->Now(),
       false /* Do not own the buffer, so will not free buffer in the destructor */);
 
+	//lance_debug
+	base::AtExitManager exit_manager;
+  QuicRandom::GetInstance();
 	quic_dispatcher->ProcessPacket(server_address, client_address, packet);
 }
