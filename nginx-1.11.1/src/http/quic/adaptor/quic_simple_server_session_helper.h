@@ -24,6 +24,7 @@ class QuicSimpleServerSessionHelper : public QuicCryptoServerStream::Helper {
   bool CanAcceptClientHello(const CryptoHandshakeMessage& message,
                             const QuicSocketAddress& self_address,
                             std::string* error_details) const override;
+  void MockRandom();
 
  private:
   QuicRandom* random_;  // Unowned.

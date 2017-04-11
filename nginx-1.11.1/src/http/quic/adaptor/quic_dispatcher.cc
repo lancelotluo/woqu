@@ -210,7 +210,7 @@ QuicDispatcher::QuicDispatcher(
               /*unused*/ QuicTime::Zero(),
               Perspective::IS_SERVER),
       last_error_(QUIC_NO_ERROR),
-      new_sessions_allowed_per_event_loop_(0u) {
+      new_sessions_allowed_per_event_loop_(16) {
   framer_.set_visitor(this);
 }
 
@@ -346,6 +346,8 @@ bool QuicDispatcher::OnUnauthenticatedHeader(const QuicPacketHeader& header) {
   if (fate == kFateProcess) {
     // Execute stateless rejection logic to determine the packet fate, then
     // invoke ProcessUnauthenticatedHeaderFate.
+    QUIC_DLOG(INFO)
+        << "lance_debug fate is kFateProcess";
     MaybeRejectStatelessly(connection_id, header);
   } else {
     // If the fate is already known, process it without executing stateless
@@ -713,9 +715,12 @@ void QuicDispatcher::ProcessChlo() {
       !ShouldCreateOrBufferPacketForConnection(current_connection_id_)) {
     return;
   }
+    QUIC_DLOG(INFO)
+        << "lance_debug ProcessChlo";
   if (FLAGS_quic_allow_chlo_buffering &&
       FLAGS_quic_reloadable_flag_quic_limit_num_new_sessions_per_epoll_loop &&
       new_sessions_allowed_per_event_loop_ <= 0) {
+    QUIC_DLOG(INFO) << "Can't create new session any more";
     // Can't create new session any more. Wait till next event loop.
     QUIC_BUG_IF(buffered_packets_.HasChloForConnection(current_connection_id_));
     bool is_new_connection =
@@ -836,6 +841,8 @@ void QuicDispatcher::MaybeRejectStatelessly(QuicConnectionId connection_id,
                                      header.packet_number);
     return;
   }
+	QUIC_DLOG(INFO)
+        << "lance_debug rejector";
 
   std::unique_ptr<StatelessRejector> rejector(new StatelessRejector(
       header.public_header.versions.front(), GetSupportedVersions(),
@@ -846,6 +853,8 @@ void QuicDispatcher::MaybeRejectStatelessly(QuicConnectionId connection_id,
                           rejector.get());
   if (!ChloExtractor::Extract(*current_packet_, GetSupportedVersions(),
                               &validator)) {
+	QUIC_DLOG(INFO)
+        << "lance_debug fail to Extract";
     ProcessUnauthenticatedHeaderFate(kFateBuffer, connection_id,
                                      header.packet_number);
     return;
@@ -866,6 +875,8 @@ void QuicDispatcher::MaybeRejectStatelessly(QuicConnectionId connection_id,
   // If we were able to make a decision about this CHLO based purely on the
   // information available in OnChlo, just invoke the done callback immediately.
   if (rejector->state() != StatelessRejector::UNKNOWN) {
+	QUIC_DLOG(INFO)
+        << "lance_debug begin to ProcessStatelessRejectorState";
     ProcessStatelessRejectorState(std::move(rejector), header.packet_number,
                                   header.public_header.versions.front());
     return;

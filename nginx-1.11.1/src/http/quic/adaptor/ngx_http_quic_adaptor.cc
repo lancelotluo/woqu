@@ -32,23 +32,24 @@ std::unique_ptr<net::ProofSource> CreateProofSource(
 void *ngx_http_quic_create_dispatcher(int fd)
 {
 	const char kSourceAddressTokenSecret[] = "secret";
-	
-	//logging::SetMinLogLevel(1);
-	/*
-	logging::LoggingSettings settings;
-  	settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
-  	logging::InitLogging(settings);
-	*/
-	base::AtExitManager exit_manager;
 
+	int fake_argc = 2 ;
+	char arg0[] = "-h" ;
+	char arg1[] = "help" ;
+	char **fake_argv = new char *[fake_argc]{ arg0 , arg1 } ;
+
+	base::CommandLine::Init(fake_argc, fake_argv);
+	ngx_http_quic_set_log_level(-1);
+	base::AtExitManager exit_manager;
 
 	QuicConfig* config = new QuicConfig();
 
   // Deleted by ~GoQuicDispatcher()
 	QuicChromiumClock* clock = new QuicChromiumClock();  // Deleted by scoped ptr of GoQuicConnectionHelper
-	QuicRandom* random_generator = QuicRandom::GetInstance();
+	//QuicRandom* random_generator = QuicRandom::GetInstance();
   
-	std::unique_ptr<QuicConnectionHelperInterface> helper(new NgxQuicConnectionHelper(clock, random_generator));
+	//std::unique_ptr<QuicConnectionHelperInterface> helper(new NgxQuicConnectionHelper(clock, random_generator));
+	std::unique_ptr<QuicConnectionHelperInterface> helper(new QuicChromiumConnectionHelper(clock, QuicRandom::GetInstance()));
 	std::unique_ptr<QuicAlarmFactory> alarm_factory(new QuicEpollAlarmFactory());
 	std::unique_ptr<QuicCryptoServerStream::Helper> session_helper(new						  QuicSimpleServerSessionHelper(QuicRandom::GetInstance()));
   // XXX: quic_server uses QuicSimpleCryptoServerStreamHelper, 
@@ -82,7 +83,7 @@ void *ngx_http_quic_create_dispatcher(int fd)
 
 	QuicSimpleDispatcher* dispatcher =
       new QuicSimpleDispatcher(*config, &crypto_config, version_manager,
-          std::move(helper), std::move(session_helper), std::move(alarm_factory), response_cache);
+          std::move(helper), std::unique_ptr<QuicCryptoServerStream::Helper>(new QuicSimpleServerSessionHelper(QuicRandom::GetInstance())), std::move(alarm_factory), response_cache);
 
 	QuicDefaultPacketWriter* writer = new QuicDefaultPacketWriter(fd);
 
@@ -95,8 +96,9 @@ void ngx_http_quic_set_log_level(int level)
 {
 	logging::LoggingSettings settings;
 	settings.logging_dest = logging::LOG_TO_ALL;
+	settings.log_file = "./logs/quic.log";
 	logging::InitLogging(settings);
-	//logging::SetMinLogLevel(level); //work
+	logging::SetMinLogLevel(level); //work
 	//logging::InitLogging("debug2.log", LOG_TO_BOTH_FILE_AND_SYSTEM_DEBUG_LOG,
 //				                DONT_LOCK_LOG_FILE, DELETE_OLD_LOG_FILE,
 //								DISABLE_DCHECK_FOR_NON_OFFICIAL_RELEASE_BUILDS);
@@ -111,6 +113,8 @@ void ngx_http_quic_dispatcher_process_packet(void* dispatcher,
 	struct sockaddr_storage *generic_peersock = (struct sockaddr_storage*) peer_sockaddr;
 	QuicSocketAddress server_address(*generic_localsock);
 	QuicSocketAddress client_address(*generic_peersock);
+
+	QUIC_DVLOG(1) << "bufferlen:" << length;	
 
 	QuicReceivedPacket packet(
       buffer, length, quic_dispatcher->helper()->GetClock()->Now(),

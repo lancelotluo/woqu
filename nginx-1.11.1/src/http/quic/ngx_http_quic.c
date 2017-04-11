@@ -77,7 +77,7 @@ ngx_http_quic_init(ngx_event_t *rev)
 		qscf->quic_dispatcher->proto_quic_dispatcher = ngx_http_quic_create_dispatcher(c->fd);
 	}
 
-    ngx_http_quic_dispatcher_process_packet(qscf->quic_dispatcher->proto_quic_dispatcher, c->buffer->start, c->buffer->pos - c->buffer->start, c->sockaddr, c->local_sockaddr);
+    ngx_http_quic_dispatcher_process_packet(qscf->quic_dispatcher->proto_quic_dispatcher, c->buffer->start, c->buffer->last - c->buffer->start, c->sockaddr, c->local_sockaddr);
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic process packet for debug");
 }
 
