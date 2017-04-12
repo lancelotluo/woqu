@@ -61,8 +61,14 @@ void *ngx_http_quic_create_dispatcher(int fd)
   // Pick one and remove the other later
 
 	std::unique_ptr<ProofSource> proof_source = CreateProofSource(base::FilePath("./cert/quic.cert"), base::FilePath("./cert/quic.key.pkcs8"));
-	QuicCryptoServerConfig crypto_config(kSourceAddressTokenSecret, QuicRandom::GetInstance(),
+	//QuicCryptoServerConfig *crypto_config = new QuicCryptoServerConfig(kSourceAddressTokenSecret, QuicRandom::GetInstance(),
+	QuicCryptoServerConfig *crypto_config = new QuicCryptoServerConfig(kSourceAddressTokenSecret, random_generator,
 			  std::move(proof_source));
+	//net::EphemeralKeySource* keySource = new GoEphemeralKeySource();
+	//crypto_config->SetEphemeralKeySource(keySource); 
+	crypto_config->set_replay_protection(false); 
+	std::unique_ptr<CryptoHandshakeMessage> scfg(crypto_config->AddDefaultConfig( 
+					helper->GetRandomGenerator(), clock, net::QuicCryptoServerConfig::ConfigOptions()));
   
 	QuicVersionManager* version_manager = new QuicVersionManager(net::AllSupportedVersions());
 	QuicHttpResponseCache* response_cache = new QuicHttpResponseCache();
@@ -86,7 +92,7 @@ void *ngx_http_quic_create_dispatcher(int fd)
   /* Initialize Configs Ends ----------------------------------------*/
 
 	QuicSimpleDispatcher* dispatcher =
-      new QuicSimpleDispatcher(*config, &crypto_config, version_manager,
+    new QuicSimpleDispatcher(*config, crypto_config, version_manager,
           std::move(helper), std::unique_ptr<QuicCryptoServerStream::Helper>(new QuicSimpleServerSessionHelper(QuicRandom::GetInstance())), std::move(alarm_factory), response_cache);
 
 	QuicDefaultPacketWriter* writer = new QuicDefaultPacketWriter(fd);
@@ -126,6 +132,6 @@ void ngx_http_quic_dispatcher_process_packet(void* dispatcher,
 
 	//lance_debug
 	base::AtExitManager exit_manager;
-  QuicRandom::GetInstance();
+	//QuicRandom::GetInstance();
 	quic_dispatcher->ProcessPacket(server_address, client_address, packet);
 }
