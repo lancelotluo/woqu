@@ -211,6 +211,10 @@ QuicDispatcher::QuicDispatcher(
               Perspective::IS_SERVER),
       last_error_(QUIC_NO_ERROR),
       new_sessions_allowed_per_event_loop_(16) {
+// lance_debug
+    QUIC_DLOG(INFO)
+        << "lance_debug  crypto_config: " << crypto_config << "config: " << &config << "QuicConnectionHelperInterface: " << &helper_ << "bmove: "<< &helper;
+//
   framer_.set_visitor(this);
 }
 
@@ -236,6 +240,9 @@ void QuicDispatcher::ProcessPacket(const QuicSocketAddress& server_address,
   // in OnUnauthenticatedHeader.
 //lance_debug
   QuicRandom::GetInstance();
+QUIC_DLOG(INFO)
+        << "lance_debug  crypto_config: " << crypto_config_ << "config: " << &config_ << "QuicConnectionHelperInterface: " << &helper_;
+//
   framer_.ProcessPacket(packet);
   // TODO(rjshade): Return a status describing if/why a packet was dropped,
   //                and log somehow.  Maybe expose as a varz.

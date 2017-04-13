@@ -25,7 +25,6 @@ std::unique_ptr<net::ProofSource> CreateProofSource(
   	std::unique_ptr<net::ProofSourceChromium> proof_source(
       new net::ProofSourceChromium());
   	CHECK(proof_source->Initialize(cert_path, key_path, base::FilePath()));
-
   	return std::move(proof_source);
 }
 
@@ -47,28 +46,42 @@ void *ngx_http_quic_create_dispatcher(int fd)
   // Deleted by ~GoQuicDispatcher()
 	QuicChromiumClock* clock = new QuicChromiumClock();  // Deleted by scoped ptr of GoQuicConnectionHelper
 	QuicRandom* random_generator = QuicRandom::GetInstance();
+  //lance_debug
+    QUIC_DVLOG(1)
+        << "get connection from session()";
+	std::string ret;
+    ret.resize(52);
+    char* data = &ret[0];
+    QUIC_DVLOG(1)
+        << "begin to get randbytes";
+    random_generator->RandBytes(data, 12);
+    QUIC_DVLOG(1)
+        << "finish to get randbytes";
+  // 
+
 	if (random_generator == nullptr) {
 		QUIC_DVLOG(1) << "lance_debug get null random";	
 	}
 
+	QUIC_DVLOG(1) << "lance_debug create quic dispatcher";	
   
-	std::unique_ptr<QuicConnectionHelperInterface> helper(new NgxQuicConnectionHelper(clock, random_generator));
-	//std::unique_ptr<QuicConnectionHelperInterface> helper(new QuicChromiumConnectionHelper(clock, QuicRandom::GetInstance()));
+	//std::unique_ptr<QuicConnectionHelperInterface> helper(new NgxQuicConnectionHelper(clock, random_generator));
+	std::unique_ptr<QuicConnectionHelperInterface> helper(new QuicChromiumConnectionHelper(clock, QuicRandom::GetInstance()));
+
 	std::unique_ptr<QuicAlarmFactory> alarm_factory(new QuicEpollAlarmFactory());
-	std::unique_ptr<QuicCryptoServerStream::Helper> session_helper(new						  QuicSimpleServerSessionHelper(QuicRandom::GetInstance()));
   // XXX: quic_server uses QuicSimpleCryptoServerStreamHelper, 
   // while quic_simple_server uses QuicSimpleServerSessionHelper.
   // Pick one and remove the other later
 
 	std::unique_ptr<ProofSource> proof_source = CreateProofSource(base::FilePath("./cert/quic.cert"), base::FilePath("./cert/quic.key.pkcs8"));
-	//QuicCryptoServerConfig *crypto_config = new QuicCryptoServerConfig(kSourceAddressTokenSecret, QuicRandom::GetInstance(),
 	QuicCryptoServerConfig *crypto_config = new QuicCryptoServerConfig(kSourceAddressTokenSecret, random_generator,
 			  std::move(proof_source));
 	//net::EphemeralKeySource* keySource = new GoEphemeralKeySource();
 	//crypto_config->SetEphemeralKeySource(keySource); 
 	crypto_config->set_replay_protection(false); 
+	net::QuicCryptoServerConfig::ConfigOptions *crypto_scfg = new net::QuicCryptoServerConfig::ConfigOptions();
 	std::unique_ptr<CryptoHandshakeMessage> scfg(crypto_config->AddDefaultConfig( 
-					helper->GetRandomGenerator(), clock, net::QuicCryptoServerConfig::ConfigOptions()));
+					helper->GetRandomGenerator(), clock, *crypto_scfg));
   
 	QuicVersionManager* version_manager = new QuicVersionManager(net::AllSupportedVersions());
 	QuicHttpResponseCache* response_cache = new QuicHttpResponseCache();
@@ -99,6 +112,12 @@ void *ngx_http_quic_create_dispatcher(int fd)
 
 	dispatcher->InitializeWithWriter(writer);
 
+	QUIC_DVLOG(1) << "lance_debug return  quic dispatcher" << dispatcher;	
+    QUIC_DLOG(INFO) << "lance_debug helper(): " << &helper ;
+	/*<< "config(): " << config
+				<< "session_helper(): " << session_helper()
+				<< "crypto_config(): " << crypto_config();
+				*/
 	return (reinterpret_cast< void * >(dispatcher));
 }
 

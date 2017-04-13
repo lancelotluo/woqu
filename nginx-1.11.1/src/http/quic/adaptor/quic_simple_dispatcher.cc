@@ -39,6 +39,14 @@ QuicServerSessionBase* QuicSimpleDispatcher::CreateQuicSession(
       config(), connection, this, session_helper(), crypto_config(),
       compressed_certs_cache(), response_cache_);
   session->Initialize();
+  //lance_debug
+  QuicConnectionHelperInterface *test_h = helper();
+  QUIC_DLOG(INFO) << "lance_debug helper(): " << test_h;
+  /*<< "config(): " << config()
+				<< "session_helper(): " << session_helper()
+				<< "crypto_config(): " << crypto_config();
+				*/
+  //
   return session;
 }
 
