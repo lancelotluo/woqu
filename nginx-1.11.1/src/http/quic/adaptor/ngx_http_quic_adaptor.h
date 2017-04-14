@@ -27,9 +27,10 @@ void *ngx_http_quic_create_dispatcher(int fd);
 
 void ngx_http_quic_set_log_level(int level);
 
-void ngx_http_quic_dispatcher_process_packet(void *dispatcher,
+//void ngx_http_quic_dispatcher_process_packet(void *dispatcher,
+void ngx_http_quic_dispatcher_process_packet(
 			char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
-			struct sockaddr *local_sockaddr);
+			struct sockaddr *local_sockaddr, int fd);
 
 #ifdef __cplusplus
 }

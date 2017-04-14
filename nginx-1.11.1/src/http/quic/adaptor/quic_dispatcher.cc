@@ -212,6 +212,14 @@ QuicDispatcher::QuicDispatcher(
       last_error_(QUIC_NO_ERROR),
       new_sessions_allowed_per_event_loop_(16) {
 // lance_debug
+    string ret;
+    ret.resize(52);
+    char* data = &ret[0];
+	QuicRandom *rand1 = QuicRandom::GetInstance();
+	rand1->RandBytes(data, 12);
+	QuicRandom *rand2 = helper_->GetRandomGenerator();
+	QUIC_DLOG(INFO) << "helper->GetRandomGenerator(): " << helper_->GetRandomGenerator();
+	rand2->RandBytes(data, 12);
     QUIC_DLOG(INFO)
         << "lance_debug  crypto_config: " << crypto_config << "config: " << &config << "QuicConnectionHelperInterface: " << &helper_ << "bmove: "<< &helper;
 //

@@ -30,11 +30,19 @@ QuicServerSessionBase* QuicSimpleDispatcher::CreateQuicSession(
     QuicConnectionId connection_id,
     const QuicSocketAddress& client_address) {
   // The QuicServerSessionBase takes ownership of |connection| below.
+  QUIC_DLOG(INFO)  << "begin to new Connection, helper: " << helper();
   QuicConnection* connection = new QuicConnection(
       connection_id, client_address, helper(), alarm_factory(),
       CreatePerConnectionWriter(),
       /* owns_writer= */ true, Perspective::IS_SERVER, GetSupportedVersions());
-
+//lance debug	
+  std::string data;
+	data.resize(52);
+	char *ret = &data[0];
+  QuicRandom *rand = connection->random_generator(); 
+  QUIC_DLOG(INFO)  << "begin to get randbytes after Connection";
+  rand->RandBytes(ret, 12);
+  //
   QuicServerSessionBase* session = new QuicSimpleServerSession(
       config(), connection, this, session_helper(), crypto_config(),
       compressed_certs_cache(), response_cache_);

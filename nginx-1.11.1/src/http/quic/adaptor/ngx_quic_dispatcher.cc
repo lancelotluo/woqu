@@ -212,7 +212,17 @@ QuicDispatcher::QuicDispatcher(
               Perspective::IS_SERVER),
       last_error_(QUIC_NO_ERROR),
       new_sessions_allowed_per_event_loop_(0u) {
-  framer_.set_visitor(this);
+  //lance_debug
+    string ret; 
+    ret.resize(52);
+    char* data = &ret[0];
+    QuicRandom *rand1 = QuicRandom::GetInstance();
+    rand1->RandBytes(data, 12); 
+    QuicRandom *rand2 = helper->GetRandomGenerator();
+    QUIC_DLOG(INFO) << "helper->GetRandomGenerator(): " << helper->GetRandomGenerator();
+    rand2->RandBytes(data, 12); 
+    // 
+ framer_.set_visitor(this);
 }
 
 QuicDispatcher::~QuicDispatcher() {
