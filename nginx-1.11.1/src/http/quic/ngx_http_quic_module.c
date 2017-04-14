@@ -17,6 +17,7 @@ static ngx_int_t ngx_http_quic_variable(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data);
 
 static ngx_int_t ngx_http_quic_module_init(ngx_cycle_t *cycle);
+static ngx_int_t ngx_http_quic_proto_init(ngx_cycle_t *cycle);
 
 static void *ngx_http_quic_create_main_conf(ngx_conf_t *cf);
 static char *ngx_http_quic_init_main_conf(ngx_conf_t *cf, void *conf);
@@ -147,8 +148,8 @@ ngx_module_t  ngx_http_quic_module = {
     ngx_http_quic_commands,                  /* module directives */
     NGX_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
-    ngx_http_quic_module_init,               /* init module */
-    NULL,                                  /* init process */
+    ngx_http_quic_module_init,             /* init module */
+    ngx_http_quic_proto_init,              /* init process */
     NULL,                                  /* init thread */
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
@@ -437,5 +438,10 @@ ngx_http_quic_chunk_size(ngx_conf_t *cf, void *post, void *data)
     }
 
     return NGX_CONF_OK;
+}
+
+static ngx_int_t ngx_http_quic_proto_init(ngx_cycle_t *cycle) 
+{
+	return NGX_OK;
 }
 
