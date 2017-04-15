@@ -18,6 +18,7 @@
 
 using namespace net;
 // The port the quic server will listen on.
+static base::AtExitManager* exit_manager;
 
 std::unique_ptr<net::ProofSource> CreateProofSource(
     const base::FilePath& cert_path,
@@ -28,7 +29,7 @@ std::unique_ptr<net::ProofSource> CreateProofSource(
   	return std::move(proof_source);
 }
 
-void *ngx_http_quic_create_dispatcher(int fd)
+QuicSimpleDispatcher* ngx_http_quic_create_dispatcher(int fd)
 {
 	const char kSourceAddressTokenSecret[] = "secret";
 
@@ -39,7 +40,7 @@ void *ngx_http_quic_create_dispatcher(int fd)
 
 	base::CommandLine::Init(fake_argc, fake_argv);
 	ngx_http_quic_set_log_level(-1);
-	base::AtExitManager exit_manager;
+	exit_manager = new base::AtExitManager;
 
 	QuicConfig* config = new QuicConfig();
 
@@ -125,7 +126,8 @@ void *ngx_http_quic_create_dispatcher(int fd)
 				<< "session_helper(): " << session_helper()
 				<< "crypto_config(): " << crypto_config();
 				*/
-	return (reinterpret_cast< void * >(dispatcher));
+	//return (reinterpret_cast< void * >(dispatcher));
+	return dispatcher;
 }
 
 void ngx_http_quic_set_log_level(int level)
@@ -251,5 +253,26 @@ void ngx_http_quic_dispatcher_process_packet(
 	//lance_debug
 	//base::AtExitManager exit_manager;
 	//QuicRandom::GetInstance();
+	dispatcher->ProcessPacket(server_address, client_address, packet);
+}
+
+void ngx_http_quic_dispatcher_process_packet1(QuicSimpleDispatcher* dispatcher,
+			char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
+			struct sockaddr *local_sockaddr, int fd) {
+	
+
+	QUIC_DVLOG(1) << "lance_debug return  quic dispatcher" << dispatcher;	
+	
+	struct sockaddr_storage *generic_localsock = (struct sockaddr_storage*) local_sockaddr;
+	struct sockaddr_storage *generic_peersock = (struct sockaddr_storage*) peer_sockaddr;
+	QuicSocketAddress server_address(*generic_localsock);
+	QuicSocketAddress client_address(*generic_peersock);
+
+	QUIC_DVLOG(1) << "bufferlen:" << length;	
+
+	QuicReceivedPacket packet(
+      buffer, length, dispatcher->helper()->GetClock()->Now(),
+      false /* Do not own the buffer, so will not free buffer in the destructor */);
+
 	dispatcher->ProcessPacket(server_address, client_address, packet);
 }

@@ -152,81 +152,81 @@ class QuicDispatcher : public QuicTimeWaitListManager::Visitor,
   virtual void ProcessBufferedChlos(size_t max_connections_to_create);
 
   // Return true if there is CHLO buffered.
-  virtual bool HasChlosBuffered() const;
-
- protected:
-  virtual QuicSession* CreateQuicSession(
-      QuicConnectionId connection_id,
-      const QuicSocketAddress& client_address) = 0;
-
-  // Called when a connection is rejected statelessly.
-  virtual void OnConnectionRejectedStatelessly();
-
-  // Called when a connection is closed statelessly.
-  virtual void OnConnectionClosedStatelessly(QuicErrorCode error);
-
-  // Returns true if cheap stateless rejection should be attempted.
-  virtual bool ShouldAttemptCheapStatelessRejection();
-
-  // Values to be returned by ValidityChecks() to indicate what should be done
-  // with a packet.  Fates with greater values are considered to be higher
-  // priority, in that if one validity check indicates a lower-valued fate and
-  // another validity check indicates a higher-valued fate, the higher-valued
-  // fate should be obeyed.
-  enum QuicPacketFate {
-    // Process the packet normally, which is usually to establish a connection.
-    kFateProcess,
-    // Put the connection ID into time-wait state and send a public reset.
-    kFateTimeWait,
-    // Buffer the packet.
-    kFateBuffer,
-    // Drop the packet (ignore and give no response).
-    kFateDrop,
-  };
-
-  // This method is called by OnUnauthenticatedHeader on packets not associated
-  // with a known connection ID.  It applies validity checks and returns a
-  // QuicPacketFate to tell what should be done with the packet.
-  virtual QuicPacketFate ValidityChecks(const QuicPacketHeader& header);
-
-  // Create and return the time wait list manager for this dispatcher, which
-  // will be owned by the dispatcher as time_wait_list_manager_
-  virtual QuicTimeWaitListManager* CreateQuicTimeWaitListManager();
-
-  // Called when |connection_id| doesn't have an open connection yet, to buffer
-  // |current_packet_| until it can be delivered to the connection.
-  void BufferEarlyPacket(QuicConnectionId connection_id);
-
-  // Called when |current_packet_| is a CHLO packet. Creates a new connection
-  // and delivers any buffered packets for that connection id.
-  void ProcessChlo();
-
-  QuicTimeWaitListManager* time_wait_list_manager() {
-    return time_wait_list_manager_.get();
-  }
-
-  const QuicVersionVector& GetSupportedVersions();
-
-  QuicConnectionId current_connection_id() { return current_connection_id_; }
-  const QuicSocketAddress& current_server_address() {
-    return current_server_address_;
-  }
-  const QuicSocketAddress& current_client_address() {
-    return current_client_address_;
-  }
-  const QuicReceivedPacket& current_packet() { return *current_packet_; }
-
-  const QuicConfig& config() const { return config_; }
-
-  const QuicCryptoServerConfig* crypto_config() const { return crypto_config_; }
-
-  QuicCompressedCertsCache* compressed_certs_cache() {
-    return &compressed_certs_cache_;
-  }
-
-  QuicFramer* framer() { return &framer_; }
-
+ virtual bool HasChlosBuffered() const;
   QuicConnectionHelperInterface* helper() { return helper_.get(); }
+
+protected:
+ virtual QuicSession* CreateQuicSession(
+     QuicConnectionId connection_id,
+     const QuicSocketAddress& client_address) = 0;
+
+ // Called when a connection is rejected statelessly.
+ virtual void OnConnectionRejectedStatelessly();
+
+ // Called when a connection is closed statelessly.
+ virtual void OnConnectionClosedStatelessly(QuicErrorCode error);
+
+ // Returns true if cheap stateless rejection should be attempted.
+ virtual bool ShouldAttemptCheapStatelessRejection();
+
+ // Values to be returned by ValidityChecks() to indicate what should be done
+ // with a packet.  Fates with greater values are considered to be higher
+ // priority, in that if one validity check indicates a lower-valued fate and
+ // another validity check indicates a higher-valued fate, the higher-valued
+ // fate should be obeyed.
+ enum QuicPacketFate {
+   // Process the packet normally, which is usually to establish a connection.
+   kFateProcess,
+   // Put the connection ID into time-wait state and send a public reset.
+   kFateTimeWait,
+   // Buffer the packet.
+   kFateBuffer,
+   // Drop the packet (ignore and give no response).
+   kFateDrop,
+ };
+
+ // This method is called by OnUnauthenticatedHeader on packets not associated
+ // with a known connection ID.  It applies validity checks and returns a
+ // QuicPacketFate to tell what should be done with the packet.
+ virtual QuicPacketFate ValidityChecks(const QuicPacketHeader& header);
+
+ // Create and return the time wait list manager for this dispatcher, which
+ // will be owned by the dispatcher as time_wait_list_manager_
+ virtual QuicTimeWaitListManager* CreateQuicTimeWaitListManager();
+
+ // Called when |connection_id| doesn't have an open connection yet, to buffer
+ // |current_packet_| until it can be delivered to the connection.
+ void BufferEarlyPacket(QuicConnectionId connection_id);
+
+ // Called when |current_packet_| is a CHLO packet. Creates a new connection
+ // and delivers any buffered packets for that connection id.
+ void ProcessChlo();
+
+ QuicTimeWaitListManager* time_wait_list_manager() {
+   return time_wait_list_manager_.get();
+ }
+
+ const QuicVersionVector& GetSupportedVersions();
+
+ QuicConnectionId current_connection_id() { return current_connection_id_; }
+ const QuicSocketAddress& current_server_address() {
+   return current_server_address_;
+ }
+ const QuicSocketAddress& current_client_address() {
+   return current_client_address_;
+ }
+ const QuicReceivedPacket& current_packet() { return *current_packet_; }
+
+ const QuicConfig& config() const { return config_; }
+
+ const QuicCryptoServerConfig* crypto_config() const { return crypto_config_; }
+
+ QuicCompressedCertsCache* compressed_certs_cache() {
+   return &compressed_certs_cache_;
+ }
+
+ QuicFramer* framer() { return &framer_; }
+
 
   QuicCryptoServerStream::Helper* session_helper() {
     return session_helper_.get();
