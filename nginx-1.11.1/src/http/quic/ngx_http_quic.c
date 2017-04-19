@@ -155,3 +155,35 @@ ngx_http_quic_handle_connection(ngx_http_quic_connection_t *qc)
 
 	//ngx_http_quic_create_dispatcher(c->fd);
 }
+
+static void
+ngx_http_quic_run_request(ngx_http_request_t *r)
+{
+    if (ngx_http_quic_construct_request_line(r) != NGX_OK) {
+        return;
+    }
+
+    if (ngx_http_quic_construct_cookie_header(r) != NGX_OK) {
+        return;
+    }
+
+    r->http_state = NGX_HTTP_PROCESS_REQUEST_STATE;
+
+    if (ngx_http_process_request_header(r) != NGX_OK) {
+        return;
+    }
+
+    if (r->headers_in.content_length_n > 0 && r->stream->in_closed) {
+        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
+                      "client prematurely closed stream");
+
+        r->stream->skip_data = 1;
+
+        ngx_http_finalize_request(r, NGX_HTTP_BAD_REQUEST);
+        return;
+    }
+
+    r->headers_in.chunked = (r->headers_in.content_length_n == -1);
+
+    ngx_http_process_request(r);
+}

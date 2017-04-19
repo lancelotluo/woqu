@@ -259,7 +259,6 @@ void ngx_http_quic_dispatcher_process_packet(
 void ngx_http_quic_dispatcher_process_packet1(QuicSimpleDispatcher* dispatcher,
 			char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
 			struct sockaddr *local_sockaddr, int fd) {
-	
 
 	QUIC_DVLOG(1) << "lance_debug return  quic dispatcher" << dispatcher;	
 	
@@ -275,4 +274,11 @@ void ngx_http_quic_dispatcher_process_packet1(QuicSimpleDispatcher* dispatcher,
       false /* Do not own the buffer, so will not free buffer in the destructor */);
 
 	dispatcher->ProcessPacket(server_address, client_address, packet);
+}
+
+void ngx_http_send_quic_to_nginx(void *stream, string& host, string& path, string& body)
+{
+	QUIC_DVLOG(1) << "quic host:" << host << "quic path:" << path;	
+	//ngx_http_quic_run_request(stream, host.c_str());
+	return;
 }

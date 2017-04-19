@@ -48,4 +48,7 @@ struct ngx_http_quic_connection_s {
 
 void ngx_http_quic_init(ngx_event_t *rev);
 
+static void
+ngx_http_quic_run_request(ngx_http_request_t *r);
+
 #endif

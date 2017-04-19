@@ -50,6 +50,8 @@ class QuicSimpleServerStream : public QuicSpdyServerStreamBase {
   // The response body of error responses.
   static const char* const kErrorResponseBody;
   static const char* const kNotFoundResponseBody;
+  
+  void SendToNginx();
 
  protected:
   // Sends a basic 200 response using SendHeaders for the headers and WriteData

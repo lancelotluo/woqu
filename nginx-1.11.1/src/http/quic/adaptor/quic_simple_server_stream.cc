@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "net/tools/quic/quic_simple_server_stream.h"
+#include "ngx_http_quic_adaptor.h"
 
 #include <list>
 #include <utility>
@@ -86,7 +87,8 @@ void QuicSimpleServerStream::OnDataAvailable() {
     return;
   }
 
-  SendResponse();
+  //SendResponse();
+  SendToNginx();
 }
 
 void QuicSimpleServerStream::PushResponse(
@@ -214,8 +216,7 @@ void QuicSimpleServerStream::SendNotFoundResponse() {
 void QuicSimpleServerStream::SendErrorResponse() {
   QUIC_DVLOG(1) << "Stream " << id() << " sending error response.";
   SpdyHeaderBlock headers;
-  headers[":status"] = "500";
-  headers["content-length"] =
+  headers[":status"] = "500"; headers["content-length"] =
       QuicTextUtils::Uint64ToString(strlen(kErrorResponseBody));
   SendHeadersAndBody(std::move(headers), kErrorResponseBody);
 }
@@ -261,6 +262,13 @@ void QuicSimpleServerStream::SendHeadersAndBodyAndTrailers(
   QUIC_DLOG(INFO) << "Stream " << id() << " writing trailers (fin = true): "
                   << response_trailers.DebugString();
   WriteTrailers(std::move(response_trailers), nullptr);
+}
+
+void SendToNginx() {
+	string request_url = request_headers_[":authority"].as_string() + 
+				request_headers_[":path"].as_string();
+
+	ngx_http_quic_send_to_nginx(this , request_headers_[":authority"].as_string(), request_headers_[":path"].as_string(), body_);
 }
 
 const char* const QuicSimpleServerStream::kErrorResponseBody = "bad";

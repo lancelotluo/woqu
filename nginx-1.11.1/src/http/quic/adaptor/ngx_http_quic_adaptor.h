@@ -34,6 +34,7 @@ void ngx_http_quic_dispatcher_process_packet1(QuicSimpleDispatcher *dispatcher,
 void ngx_http_quic_dispatcher_process_packet(
 			char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
 			struct sockaddr *local_sockaddr, int fd);
+void ngx_http_send_quic_to_nginx(void *, string& host, string& path, string& body);
 
 #ifdef __cplusplus
 }
