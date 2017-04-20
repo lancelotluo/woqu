@@ -14,11 +14,42 @@
 
 
 typedef struct ngx_http_quic_connection_s   ngx_http_quic_connection_t;
+typedef struct ngx_http_quic_stream_s   ngx_http_quic_stream_t;
 
 
 typedef u_char *(*ngx_http_quic_handler_pt) (ngx_http_quic_connection_t *qc,
     u_char *pos, u_char *end);
 
+struct ngx_http_quic_stream_s {
+    ngx_http_request_t              *request;
+    ngx_http_quic_connection_t        *connection;
+
+    ngx_uint_t                       queued;
+
+    /*
+     * A change to SETTINGS_INITIAL_WINDOW_SIZE could cause the
+     * send_window to become negative, hence it's signed.
+     */
+    ssize_t                          send_window;
+    size_t                           recv_window;
+
+    ngx_buf_t                       *preread;
+
+    ngx_array_t                     *cookies;
+
+    size_t                           header_limit;
+
+    ngx_pool_t                      *pool;
+
+    unsigned                         handled:1;
+    unsigned                         blocked:1;
+    unsigned                         exhausted:1;
+    unsigned                         in_closed:1;
+    unsigned                         out_closed:1;
+    unsigned                         rst_sent:1;
+    unsigned                         no_flow_control:1;
+    unsigned                         skip_data:1;
+};
 
 struct ngx_http_quic_connection_s {
     ngx_connection_t                *connection;
@@ -48,7 +79,10 @@ struct ngx_http_quic_connection_s {
 
 void ngx_http_quic_init(ngx_event_t *rev);
 
-static void
-ngx_http_quic_run_request(ngx_http_request_t *r);
+//static void
+//ngx_http_quic_run_request(ngx_http_request_t *r);
+
+void
+ngx_http_quic_switch_in_nginx(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
 
 #endif

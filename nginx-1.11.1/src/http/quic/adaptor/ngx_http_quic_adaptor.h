@@ -9,7 +9,11 @@
 #include "net/quic/core/quic_connection.h"
 #include "net/base/ip_endpoint.h"
 #include "net/spdy/spdy_header_block.h"
+#include <string>
+
 using net::QuicSimpleDispatcher;
+using std::string;
+
 extern "C" {
 #else
 #include "ngx_http_quic_module.h"
@@ -34,8 +38,10 @@ void ngx_http_quic_dispatcher_process_packet1(QuicSimpleDispatcher *dispatcher,
 void ngx_http_quic_dispatcher_process_packet(
 			char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
 			struct sockaddr *local_sockaddr, int fd);
-void ngx_http_send_quic_to_nginx(void *, string& host, string& path, string& body);
+void ngx_http_quic_send_quic_to_nginx(void * x, char *host, int64_t host_len, char *path, int64_t path_len, char *body, int64_t body_len);
 
+void ngx_http_quic_send_to_nginx_test(void *stream);
+void ngx_http_quic_send_to_nginx(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
 #ifdef __cplusplus
 }
 #endif

@@ -1,6 +1,9 @@
 #include "ngx_http_quic_adaptor.h"
+#include "ngx_http_quic.h"
 #include "ngx_http_quic_connection_helper.h"
 #include "ngx_http_quic_alarm_factory.h"
+#include "quic_simple_server_stream.h"
+
 #include "net/quic/platform/impl/quic_chromium_clock.h"
 
 #include "base/at_exit.h"
@@ -276,9 +279,23 @@ void ngx_http_quic_dispatcher_process_packet1(QuicSimpleDispatcher* dispatcher,
 	dispatcher->ProcessPacket(server_address, client_address, packet);
 }
 
-void ngx_http_send_quic_to_nginx(void *stream, string& host, string& path, string& body)
+void ngx_http_quic_send_to_nginx(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len)
 {
-	QUIC_DVLOG(1) << "quic host:" << host << "quic path:" << path;	
-	//ngx_http_quic_run_request(stream, host.c_str());
-	return;
+	QUIC_DVLOG(1) << "lance_debug quic host:" << host << " len: "<< host_len << " quic path:" << path << " path_len: " << path_len;	
+
+	ngx_http_quic_run_request(stream, host, host_len, path, path_len, body, body_len);
+	//ngx_http_quic_switch_in_nginx(stream, host.c_str(), host.size(), path.c_str(), path.size(), body.c_str(), body.size());
+	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
+	quic_stream->OnNginxDataAvailable();
+}
+void ngx_http_quic_send_to_nginx_test(void *stream)
+{
+	QUIC_DVLOG(1) << "lance_debug quic_send_to_nginx_test";	
+	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
+	quic_stream->OnNginxDataAvailable();
+}
+
+void ngx_http_quic_send_to_quic(void *stream, string& host, string& path)
+{
+
 }

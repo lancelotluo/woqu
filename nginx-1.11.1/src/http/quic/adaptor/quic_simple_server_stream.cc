@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "net/tools/quic/quic_simple_server_stream.h"
+#include "quic_simple_server_stream.h"
+
 #include "ngx_http_quic_adaptor.h"
 
 #include <list>
@@ -264,11 +265,20 @@ void QuicSimpleServerStream::SendHeadersAndBodyAndTrailers(
   WriteTrailers(std::move(response_trailers), nullptr);
 }
 
-void SendToNginx() {
+void QuicSimpleServerStream::OnNginxDataAvailable() {
+  SendResponse();
+}
+
+void QuicSimpleServerStream::SendToNginx() {
 	string request_url = request_headers_[":authority"].as_string() + 
 				request_headers_[":path"].as_string();
 
-	ngx_http_quic_send_to_nginx(this , request_headers_[":authority"].as_string(), request_headers_[":path"].as_string(), body_);
+    QUIC_DLOG(INFO) << "begint SendToNginx";
+	//ngx_http_quic_send_to_nginx_test(this);
+	string host = request_headers_[":authority"].as_string();
+	string path = request_headers_[":path"].as_string();
+
+	ngx_http_quic_send_to_nginx(this , host.c_str(), host.size(), path.c_str(), path.size(), body_.c_str(), body_.size());
 }
 
 const char* const QuicSimpleServerStream::kErrorResponseBody = "bad";

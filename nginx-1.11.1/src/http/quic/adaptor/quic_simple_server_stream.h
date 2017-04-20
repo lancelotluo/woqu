@@ -53,6 +53,8 @@ class QuicSimpleServerStream : public QuicSpdyServerStreamBase {
   
   void SendToNginx();
 
+  void OnNginxDataAvailable();
+
  protected:
   // Sends a basic 200 response using SendHeaders for the headers and WriteData
   // for the body.
