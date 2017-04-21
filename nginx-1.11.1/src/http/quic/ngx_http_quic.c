@@ -77,8 +77,7 @@ ngx_http_quic_init(ngx_event_t *rev)
 		qscf->quic_dispatcher->proto_quic_dispatcher = ngx_http_quic_create_dispatcher(c->fd);
 	}
 
-    ngx_http_quic_dispatcher_process_packet1(qscf->quic_dispatcher->proto_quic_dispatcher, c->buffer->start, c->buffer->last - c->buffer->start, c->sockaddr, c->local_sockaddr, c->fd);
-   // ngx_http_quic_dispatcher_process_packet(c->buffer->start, c->buffer->last - c->buffer->start, c->sockaddr, c->local_sockaddr, c->fd);
+    ngx_http_quic_dispatcher_process_packet(c, qscf->quic_dispatcher->proto_quic_dispatcher, c->buffer->start, c->buffer->last - c->buffer->start, c->sockaddr, c->local_sockaddr, c->fd);
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic process packet for debug");
 }
 
@@ -157,6 +156,7 @@ ngx_http_quic_handle_connection(ngx_http_quic_connection_t *qc)
 	//ngx_http_quic_create_dispatcher(c->fd);
 }
 
+/*
 void
 ngx_http_quic_run_request(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len)
 {
@@ -176,7 +176,6 @@ ngx_http_quic_run_request(void *stream, const char *host, int64_t host_len, cons
 
     ngx_http_process_request(r);
 }
-/*
 
 static ngx_http_quic_stream_t *
 ngx_http_quic_create_stream(ngx_http_quic_connection_t *qc)

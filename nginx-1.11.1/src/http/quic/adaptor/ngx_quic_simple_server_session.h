@@ -23,7 +23,7 @@
 #include "net/quic/core/quic_server_session_base.h"
 #include "net/quic/core/quic_spdy_session.h"
 #include "net/tools/quic/quic_http_response_cache.h"
-#include "net/tools/quic/quic_simple_server_stream.h"
+#include "ngx_quic_simple_server_stream.h"
 
 namespace net {
 
@@ -80,6 +80,8 @@ class QuicSimpleServerSession : public QuicServerSessionBase {
       QuicStreamId original_stream_id,
       const SpdyHeaderBlock& original_request_headers);
 
+  void SetQuicNgxConnection(void *ngx_connection);
+  void* GetQuicNgxConnection();
  protected:
   // QuicSession methods:
   QuicSpdyStream* CreateIncomingDynamicStream(QuicStreamId id) override;
@@ -147,7 +149,7 @@ class QuicSimpleServerSession : public QuicServerSessionBase {
   std::deque<PromisedStreamInfo> promised_streams_;
 
   QuicHttpResponseCache* response_cache_;  // Not owned.
-
+  void* ngx_connection_; // Not owned.
   DISALLOW_COPY_AND_ASSIGN(QuicSimpleServerSession);
 };
 

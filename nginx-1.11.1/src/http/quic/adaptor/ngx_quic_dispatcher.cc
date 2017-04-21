@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "quic_dispatcher.h"
+#include "ngx_quic_dispatcher.h"
+#include "ngx_quic_simple_server_session.h"
 
 #include <utility>
 
@@ -15,12 +16,10 @@
 #include "net/quic/platform/api/quic_ptr_util.h"
 #include "net/quic/platform/api/quic_stack_trace.h"
 #include "net/quic/platform/api/quic_string_piece.h"
-
-#include "ngx_chlo_extractor.h"
-#include "ngx_quic_per_connection_packet_writer.h"
-#include "ngx_quic_simple_server_session.h"
-#include "ngx_quic_time_wait_list_manager.h"
-#include "ngx_stateless_rejector.h"
+#include "net/tools/quic/chlo_extractor.h"
+#include "net/tools/quic/quic_per_connection_packet_writer.h"
+#include "net/tools/quic/quic_time_wait_list_manager.h"
+#include "net/tools/quic/stateless_rejector.h"
 
 using std::string;
 
@@ -211,18 +210,20 @@ QuicDispatcher::QuicDispatcher(
               /*unused*/ QuicTime::Zero(),
               Perspective::IS_SERVER),
       last_error_(QUIC_NO_ERROR),
-      new_sessions_allowed_per_event_loop_(0u) {
-  //lance_debug
-    string ret; 
+      new_sessions_allowed_per_event_loop_(16) {
+// lance_debug
+    string ret;
     ret.resize(52);
     char* data = &ret[0];
-    QuicRandom *rand1 = QuicRandom::GetInstance();
-    rand1->RandBytes(data, 12); 
-    QuicRandom *rand2 = helper->GetRandomGenerator();
-    QUIC_DLOG(INFO) << "helper->GetRandomGenerator(): " << helper->GetRandomGenerator();
-    rand2->RandBytes(data, 12); 
-    // 
- framer_.set_visitor(this);
+	QuicRandom *rand1 = QuicRandom::GetInstance();
+	rand1->RandBytes(data, 12);
+	QuicRandom *rand2 = helper_->GetRandomGenerator();
+	QUIC_DLOG(INFO) << "helper->GetRandomGenerator(): " << helper_->GetRandomGenerator();
+	rand2->RandBytes(data, 12);
+    QUIC_DLOG(INFO)
+        << "lance_debug  crypto_config: " << crypto_config << "config: " << &config << "QuicConnectionHelperInterface: " << &helper_ << "bmove: "<< &helper;
+//
+  framer_.set_visitor(this);
 }
 
 QuicDispatcher::~QuicDispatcher() {
@@ -245,6 +246,9 @@ void QuicDispatcher::ProcessPacket(const QuicSocketAddress& server_address,
   // ProcessPacket will cause the packet to be dispatched in
   // OnUnauthenticatedPublicHeader, or sent to the time wait list manager
   // in OnUnauthenticatedHeader.
+QUIC_DLOG(INFO)
+        << "lance_debug  crypto_config: " << crypto_config_ << "config: " << &config_ << "QuicConnectionHelperInterface: " << &helper_;
+//
   framer_.ProcessPacket(packet);
   // TODO(rjshade): Return a status describing if/why a packet was dropped,
   //                and log somehow.  Maybe expose as a varz.
@@ -357,6 +361,8 @@ bool QuicDispatcher::OnUnauthenticatedHeader(const QuicPacketHeader& header) {
   if (fate == kFateProcess) {
     // Execute stateless rejection logic to determine the packet fate, then
     // invoke ProcessUnauthenticatedHeaderFate.
+    QUIC_DLOG(INFO)
+        << "lance_debug fate is kFateProcess";
     MaybeRejectStatelessly(connection_id, header);
   } else {
     // If the fate is already known, process it without executing stateless
@@ -727,6 +733,7 @@ void QuicDispatcher::ProcessChlo() {
   if (FLAGS_quic_allow_chlo_buffering &&
       FLAGS_quic_reloadable_flag_quic_limit_num_new_sessions_per_epoll_loop &&
       new_sessions_allowed_per_event_loop_ <= 0) {
+    QUIC_DLOG(INFO) << "Can't create new session any more";
     // Can't create new session any more. Wait till next event loop.
     QUIC_BUG_IF(buffered_packets_.HasChloForConnection(current_connection_id_));
     bool is_new_connection =
@@ -847,6 +854,8 @@ void QuicDispatcher::MaybeRejectStatelessly(QuicConnectionId connection_id,
                                      header.packet_number);
     return;
   }
+	QUIC_DLOG(INFO)
+        << "lance_debug rejector";
 
   std::unique_ptr<StatelessRejector> rejector(new StatelessRejector(
       header.public_header.versions.front(), GetSupportedVersions(),
@@ -857,6 +866,8 @@ void QuicDispatcher::MaybeRejectStatelessly(QuicConnectionId connection_id,
                           rejector.get());
   if (!ChloExtractor::Extract(*current_packet_, GetSupportedVersions(),
                               &validator)) {
+	QUIC_DLOG(INFO)
+        << "lance_debug fail to Extract";
     ProcessUnauthenticatedHeaderFate(kFateBuffer, connection_id,
                                      header.packet_number);
     return;
@@ -877,6 +888,8 @@ void QuicDispatcher::MaybeRejectStatelessly(QuicConnectionId connection_id,
   // If we were able to make a decision about this CHLO based purely on the
   // information available in OnChlo, just invoke the done callback immediately.
   if (rejector->state() != StatelessRejector::UNKNOWN) {
+	QUIC_DLOG(INFO)
+        << "lance_debug begin to ProcessStatelessRejectorState";
     ProcessStatelessRejectorState(std::move(rejector), header.packet_number,
                                   header.public_header.versions.front());
     return;

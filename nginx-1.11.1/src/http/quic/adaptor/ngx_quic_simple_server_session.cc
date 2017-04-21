@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "net/tools/quic/quic_simple_server_session.h"
+#include "ngx_quic_simple_server_session.h"
+#include "ngx_quic_simple_server_stream.h"
 
 #include <utility>
 
@@ -11,7 +12,6 @@
 #include "net/quic/core/quic_flags.h"
 #include "net/quic/platform/api/quic_logging.h"
 #include "net/quic/platform/api/quic_ptr_util.h"
-#include "net/tools/quic/quic_simple_server_stream.h"
 
 using std::string;
 
@@ -110,6 +110,7 @@ QuicSimpleServerStream* QuicSimpleServerSession::CreateOutgoingDynamicStream(
   QuicSimpleServerStream* stream = new QuicSimpleServerStream(
       GetNextOutgoingStreamId(), this, response_cache_);
   stream->SetPriority(priority);
+  stream->SetQuicNgxConnection(GetQuicNgxConnection());
   ActivateStream(QuicWrapUnique(stream));
   return stream;
 }
@@ -205,6 +206,14 @@ void QuicSimpleServerSession::HandlePromisedPushRequests() {
     promised_streams_.pop_front();
     promised_stream->PushResponse(std::move(request_headers));
   }
+}
+
+void QuicSimpleServerSession::SetQuicNgxConnection(void *ngx_connection) {
+	ngx_connection_ = ngx_connection;
+}
+
+void* QuicSimpleServerSession::GetQuicNgxConnection(){
+	return ngx_connection_;
 }
 
 }  // namespace net

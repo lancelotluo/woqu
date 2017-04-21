@@ -432,9 +432,9 @@ if [ $HTTP_QUIC = YES ]; then
     ngx_module_deps="src/http/quic/ngx_http_quic.h src/http/quic/ngx_http_quic_module.h"
     ngx_module_srcs="src/http/quic/ngx_http_quic.c \
                      src/http/quic/ngx_http_quic_module.c \
-                     src/http/quic/adaptor/quic_dispatcher.cc \
+                     src/http/quic/adaptor/ngx_quic_dispatcher.cc \
                      src/http/quic/adaptor/quic_per_connection_packet_writer.cc \
-                     src/http/quic/adaptor/quic_simple_server_session.cc \
+                     src/http/quic/adaptor/ngx_quic_simple_server_session.cc \
                      src/http/quic/adaptor/quic_time_wait_list_manager.cc \
                      src/http/quic/adaptor/stateless_rejector.cc \
                      src/http/quic/adaptor/quic_default_packet_writer.cc \
@@ -442,17 +442,17 @@ if [ $HTTP_QUIC = YES ]; then
                      src/http/quic/adaptor/quic_packet_reader.cc \
                      src/http/quic/adaptor/quic_packet_writer_wrapper.cc \
                      src/http/quic/adaptor/quic_simple_server_packet_writer.cc \
-                     src/http/quic/adaptor/quic_simple_server_stream.cc \
+                     src/http/quic/adaptor/ngx_quic_simple_server_stream.cc \
                      src/http/quic/adaptor/quic_spdy_server_stream_base.cc \
                      src/http/quic/adaptor/quic_socket_utils.cc \
                      src/http/quic/adaptor/chlo_extractor.cc \
-                     src/http/quic/adaptor/quic_simple_dispatcher.cc \
+                     src/http/quic/adaptor/ngx_quic_simple_dispatcher.cc \
                      src/http/quic/adaptor/quic_simple_server_session_helper.cc \
+					 src/http/quic/adaptor/quic_chromium_connection_helper.cc \
                      src/http/quic/adaptor/ngx_http_quic_alarm_factory.cc \
-                     src/http/quic/adaptor/ngx_http_quic_connection_helper.cc \
                      src/http/quic/adaptor/ngx_http_quic_adaptor.cc "
-#src/http/quic/adaptor/ngx_quic_dispatcher.cc \
 #                    src/http/quic/adaptor/ngx_quic_per_connection_packet_writer.cc \
+#src/http/quic/adaptor/ngx_http_quic_connection_helper.cc \
 #                     src/http/quic/adaptor/ngx_http_quic_alarm_factory.cc \
 #                    src/http/quic/adaptor/ngx_quic_simple_server_session.cc \
 #                    src/http/quic/adaptor/ngx_quic_time_wait_list_manager.cc \
