@@ -24,6 +24,25 @@ QuicSimpleServerSession::QuicSimpleServerSession(
     QuicCryptoServerStream::Helper* helper,
     const QuicCryptoServerConfig* crypto_config,
     QuicCompressedCertsCache* compressed_certs_cache,
+    QuicHttpResponseCache* response_cache,
+	void *ngx_connection)
+    : QuicServerSessionBase(config,
+                            connection,
+                            visitor,
+                            helper,
+                            crypto_config,
+                            compressed_certs_cache),
+      highest_promised_stream_id_(0),
+      response_cache_(response_cache),
+	  ngx_connection_(ngx_connection) {}
+
+QuicSimpleServerSession::QuicSimpleServerSession(
+    const QuicConfig& config,
+    QuicConnection* connection,
+    QuicSession::Visitor* visitor,
+    QuicCryptoServerStream::Helper* helper,
+    const QuicCryptoServerConfig* crypto_config,
+    QuicCompressedCertsCache* compressed_certs_cache,
     QuicHttpResponseCache* response_cache)
     : QuicServerSessionBase(config,
                             connection,
@@ -96,7 +115,7 @@ QuicSpdyStream* QuicSimpleServerSession::CreateIncomingDynamicStream(
   }
 
   QuicSpdyStream* stream =
-      new QuicSimpleServerStream(id, this, response_cache_);
+      new QuicSimpleServerStream(id, this, response_cache_, GetQuicNgxConnection());
   ActivateStream(QuicWrapUnique(stream));
   return stream;
 }
@@ -110,7 +129,6 @@ QuicSimpleServerStream* QuicSimpleServerSession::CreateOutgoingDynamicStream(
   QuicSimpleServerStream* stream = new QuicSimpleServerStream(
       GetNextOutgoingStreamId(), this, response_cache_);
   stream->SetPriority(priority);
-  stream->SetQuicNgxConnection(GetQuicNgxConnection());
   ActivateStream(QuicWrapUnique(stream));
   return stream;
 }

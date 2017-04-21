@@ -1,5 +1,7 @@
 #include "ngx_http_quic_adaptor.h"
+extern "C" {
 #include "ngx_http_quic.h"
+}
 #include "ngx_http_quic_connection_helper.h"
 #include "ngx_http_quic_alarm_factory.h"
 #include "ngx_quic_simple_server_stream.h"
@@ -145,7 +147,7 @@ void ngx_http_quic_set_log_level(int level)
 //								DISABLE_DCHECK_FOR_NON_OFFICIAL_RELEASE_BUILDS);
 }
 
-void ngx_http_quic_dispatcher_process_packet(void *ngx_http_connection, QuicSimpleDispatcher* dispatcher,
+void ngx_http_quic_dispatcher_process_packet(void *ngx_connection, QuicSimpleDispatcher* dispatcher,
 			char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
 			struct sockaddr *local_sockaddr, int fd) {
 
@@ -162,7 +164,8 @@ void ngx_http_quic_dispatcher_process_packet(void *ngx_http_connection, QuicSimp
       buffer, length, dispatcher->helper()->GetClock()->Now(),
       false /* Do not own the buffer, so will not free buffer in the destructor */);
 
-	dispatcher->SetQuicNgxConnection(ngx_http_connection);
+	dispatcher->SetQuicNgxConnection(ngx_connection);
+	QUIC_DVLOG(1) << "lance_debug ngx_connection: " << ngx_connection;	
 	dispatcher->ProcessPacket(server_address, client_address, packet);
 }
 
@@ -171,9 +174,15 @@ void ngx_http_quic_send_to_nginx(void *stream, const char *host, int64_t host_le
 	QUIC_DVLOG(1) << "lance_debug quic host:" << host << " len: "<< host_len << " quic path:" << path << " path_len: " << path_len;	
 
 	//ngx_http_quic_run_request(stream, host, host_len, path, path_len, body, body_len);
-	//ngx_http_quic_switch_in_nginx(stream, host.c_str(), host.size(), path.c_str(), path.size(), body.c_str(), body.size());
 	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
-	quic_stream->OnNginxDataAvailable();
+	void *ngx_connection = quic_stream->GetQuicNgxConnection();
+	if (ngx_connection == nullptr) {
+		QUIC_DVLOG(1) << "lance_debug ngx_connection is nullptr";	
+		return;
+	}
+
+	ngx_http_quic_init_http_request(stream, ngx_connection, host, host_len, path, path_len, body, body_len);
+	//quic_stream->OnNginxDataAvailable();
 }
 void ngx_http_quic_send_to_nginx_test(void *stream)
 {
@@ -182,7 +191,8 @@ void ngx_http_quic_send_to_nginx_test(void *stream)
 	quic_stream->OnNginxDataAvailable();
 }
 
-void ngx_http_quic_send_to_quic(void *stream, string& host, string& path)
+void ngx_http_quic_response_availble(void *stream)
 {
-
+	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
+	quic_stream->OnNginxDataAvailable();
 }

@@ -58,6 +58,14 @@ class QuicSimpleServerSession : public QuicServerSessionBase {
                           QuicCryptoServerStream::Helper* helper,
                           const QuicCryptoServerConfig* crypto_config,
                           QuicCompressedCertsCache* compressed_certs_cache,
+                          QuicHttpResponseCache* response_cache,
+						  void *ngx_connection);
+  QuicSimpleServerSession(const QuicConfig& config,
+                          QuicConnection* connection,
+                          QuicSession::Visitor* visitor,
+                          QuicCryptoServerStream::Helper* helper,
+                          const QuicCryptoServerConfig* crypto_config,
+                          QuicCompressedCertsCache* compressed_certs_cache,
                           QuicHttpResponseCache* response_cache);
 
   ~QuicSimpleServerSession() override;

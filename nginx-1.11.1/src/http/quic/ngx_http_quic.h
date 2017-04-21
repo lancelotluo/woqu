@@ -85,4 +85,5 @@ void ngx_http_quic_init(ngx_event_t *rev);
 void
 ngx_http_quic_switch_in_nginx(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
 
+void ngx_http_quic_init_http_request(void *stream, void *connection, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
 #endif

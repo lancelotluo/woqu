@@ -27,10 +27,20 @@ namespace net {
 QuicSimpleServerStream::QuicSimpleServerStream(
     QuicStreamId id,
     QuicSpdySession* session,
+    QuicHttpResponseCache* response_cache, void *ngx_connection)
+    : QuicSpdyServerStreamBase(id, session),
+      content_length_(-1),
+      response_cache_(response_cache),
+	  ngx_connection_(ngx_connection){
+		QUIC_DVLOG(1) << "QuicSimpleServerStream::QuicSimpleServerStream ngx_connection: " << ngx_connection_;}
+
+QuicSimpleServerStream::QuicSimpleServerStream(
+    QuicStreamId id,
+    QuicSpdySession* session,
     QuicHttpResponseCache* response_cache)
     : QuicSpdyServerStreamBase(id, session),
       content_length_(-1),
-      response_cache_(response_cache) {}
+      response_cache_(response_cache){}
 
 QuicSimpleServerStream::~QuicSimpleServerStream() {}
 
@@ -286,10 +296,12 @@ const char* const QuicSimpleServerStream::kNotFoundResponseBody =
     "file not found";
 
 void QuicSimpleServerStream::SetQuicNgxConnection(void *ngx_connection) {
+	QUIC_DLOG(INFO) << "QuicSimpleServerStream::SetQuicNgxConnection " << ngx_connection;
 	ngx_connection_ = ngx_connection;
 }
 
 void* QuicSimpleServerStream::GetQuicNgxConnection() {
+	QUIC_DLOG(INFO) << "QuicSimpleServerStream::GetQuicNgxConnection " << ngx_connection_;
 	return ngx_connection_;
 }
 }  // namespace net

@@ -5,8 +5,8 @@
 #ifndef NET_TOOLS_QUIC_QUIC_SIMPLE_DISPATCHER_H_
 #define NET_TOOLS_QUIC_QUIC_SIMPLE_DISPATCHER_H_
 
+#include "ngx_quic_dispatcher.h"
 #include "net/quic/core/quic_server_session_base.h"
-#include "net/tools/quic/quic_dispatcher.h"
 #include "net/tools/quic/quic_http_response_cache.h"
 
 namespace net {

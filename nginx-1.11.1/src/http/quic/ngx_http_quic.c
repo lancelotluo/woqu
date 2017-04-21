@@ -25,7 +25,6 @@ ngx_http_quic_init(ngx_event_t *rev)
     ngx_http_quic_srv_conf_t    *qscf;
     ngx_http_quic_main_conf_t   *qmcf;
     ngx_http_quic_connection_t  *qc;
-    ngx_http_quic_stream_t		*stream;
 
     c = rev->data;
     hc = c->data;
@@ -77,6 +76,7 @@ ngx_http_quic_init(ngx_event_t *rev)
 		qscf->quic_dispatcher->proto_quic_dispatcher = ngx_http_quic_create_dispatcher(c->fd);
 	}
 
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "lance_debug ngx_connection:%p", c);
     ngx_http_quic_dispatcher_process_packet(c, qscf->quic_dispatcher->proto_quic_dispatcher, c->buffer->start, c->buffer->last - c->buffer->start, c->sockaddr, c->local_sockaddr, c->fd);
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic process packet for debug");
 }
@@ -357,4 +357,48 @@ ngx_http_quic_construct_request_line(ngx_http_request_t *r)
                    "http2 http request line: \"%V\"", &r->request_line);
 
     return NGX_OK;
+}
+
+void ngx_http_quic_init_http_request(void *stream, void *connection, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len)
+{
+    ngx_connection_t          *c;
+    ngx_pool_cleanup_t        *cln;
+    ngx_http_connection_t     *hc;
+    ngx_http_quic_srv_conf_t    *qscf;
+    ngx_http_quic_main_conf_t   *qmcf;
+    ngx_http_quic_connection_t  *qc;
+
+    c = connection;
+    hc = c->data;
+
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "init quic http connection");
+
+    c->log->action = "processing QUIC packet";
+
+    qmcf = ngx_http_get_module_main_conf(hc->conf_ctx, ngx_http_quic_module);
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "get ngx_http_quic_module main conf");
+
+    if (qmcf->recv_buffer == NULL) {
+        qmcf->recv_buffer = ngx_palloc(ngx_cycle->pool,
+                                        qmcf->recv_buffer_size);
+        if (qmcf->recv_buffer == NULL) {
+            ngx_http_close_connection(c);
+            return;
+        }
+    }
+
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "after get ngx_http_quic_module main conf");
+    qc = ngx_pcalloc(c->pool, sizeof(ngx_http_quic_connection_t));
+    if (qc == NULL) {
+        ngx_http_close_connection(c);
+        return;
+    }
+
+    qc->connection = c;
+    qc->http_connection = hc;
+
+    c->data = qc;
+
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "http response for quic");
+	ngx_http_quic_response_availble(stream);
 }

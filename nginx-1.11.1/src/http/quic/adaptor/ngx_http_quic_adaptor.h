@@ -39,6 +39,7 @@ void ngx_http_quic_send_quic_to_nginx(void * x, char *host, int64_t host_len, ch
 
 void ngx_http_quic_send_to_nginx_test(void *stream);
 void ngx_http_quic_send_to_nginx(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
+void ngx_http_quic_response_availble(void *stream);
 #ifdef __cplusplus
 }
 #endif

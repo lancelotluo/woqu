@@ -28,6 +28,11 @@ class QuicSimpleServerStream : public QuicSpdyServerStreamBase {
   QuicSimpleServerStream(QuicStreamId id,
                          QuicSpdySession* session,
                          QuicHttpResponseCache* response_cache);
+  //lance add
+  QuicSimpleServerStream(QuicStreamId id,
+                         QuicSpdySession* session,
+                         QuicHttpResponseCache* response_cache,
+						 void *ngx_connection);
   ~QuicSimpleServerStream() override;
 
   // QuicSpdyStream
@@ -53,10 +58,9 @@ class QuicSimpleServerStream : public QuicSpdyServerStreamBase {
   
   void SendToNginx();
 
-  void OnNginxDataAvailable();
-  void SetQuicNgxConnection(void *ngx_connection);
-
-  void* GetQuicNgxConnection();
+  virtual void OnNginxDataAvailable();
+  virtual void SetQuicNgxConnection(void *ngx_connection);
+  virtual void* GetQuicNgxConnection();
 
  protected:
   // Sends a basic 200 response using SendHeaders for the headers and WriteData
