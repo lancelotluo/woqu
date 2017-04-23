@@ -23,7 +23,7 @@ typedef u_char *(*ngx_http_quic_handler_pt) (ngx_http_quic_connection_t *qc,
 struct ngx_http_quic_stream_s {
     ngx_http_request_t              *request;
     ngx_http_quic_connection_t        *connection;
-
+	void							*quic_stream;
     ngx_uint_t                       queued;
 
     /*
@@ -47,7 +47,6 @@ struct ngx_http_quic_stream_s {
     unsigned                         in_closed:1;
     unsigned                         out_closed:1;
     unsigned                         rst_sent:1;
-    unsigned                         no_flow_control:1;
     unsigned                         skip_data:1;
 };
 
