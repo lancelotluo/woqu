@@ -14,16 +14,20 @@
 
 
 typedef struct ngx_http_quic_connection_s   ngx_http_quic_connection_t;
-typedef struct ngx_http_quic_stream_s   ngx_http_quic_stream_t;
-
+typedef struct ngx_http_quic_header_s	ngx_http_quic_header_t;
 
 typedef u_char *(*ngx_http_quic_handler_pt) (ngx_http_quic_connection_t *qc,
     u_char *pos, u_char *end);
 
+struct ngx_http_quic_header_s {
+	ngx_str_t name;
+	ngx_str_t value;
+};
+
 struct ngx_http_quic_stream_s {
     ngx_http_request_t              *request;
     ngx_http_quic_connection_t        *connection;
-	void							*quic_stream;
+	void							*quic_stream;// point to stream in proto-quic
     ngx_uint_t                       queued;
 
     /*
@@ -85,4 +89,6 @@ void
 ngx_http_quic_switch_in_nginx(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
 
 void ngx_http_quic_init_http_request(void *stream, void *connection, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
+
+
 #endif

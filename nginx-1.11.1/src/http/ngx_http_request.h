@@ -441,7 +441,9 @@ struct ngx_http_request_s {
 #if (NGX_HTTP_V2)
     ngx_http_v2_stream_t             *stream;
 #endif
-
+#if (NGX_HTTP_QUIC)
+	ngx_http_quic_stream_t			 *quic_stream;
+#endif
     ngx_http_log_handler_pt           log_handler;
 
     ngx_http_cleanup_t               *cleanup;

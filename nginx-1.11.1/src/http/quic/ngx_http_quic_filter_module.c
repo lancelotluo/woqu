@@ -20,6 +20,8 @@
 
 static ngx_int_t ngx_http_quic_filter_init(ngx_conf_t *cf);
 
+static ngx_inline ngx_int_t ngx_http_quic_filter_send(
+    ngx_connection_t *fc, ngx_http_quic_stream_t *stream);
 
 static ngx_http_module_t  ngx_http_quic_filter_module_ctx = {
     NULL,                                  /* preconfiguration */
@@ -80,10 +82,7 @@ ngx_http_quic_header_filter(ngx_http_request_t *r)
         "\x8b\x84\x84\x2d\x69\x5b\x05\x44\x3c\x86\xaa\x6f";
 #endif
 
-    static size_t nginx_ver_len = ngx_http_v2_literal_size(NGINX_VER);
-    static u_char nginx_ver[ngx_http_v2_literal_size(NGINX_VER)];
-
-    if (!r->stream) {
+    if (!r->quic_stream) {
         return ngx_http_next_header_filter(r);
     }
 
@@ -107,9 +106,33 @@ ngx_http_quic_header_filter(ngx_http_request_t *r)
 
     fc = r->connection;
 
-    return ngx_http_quic_filter_send(r->quic_stream);
-    :q
- :q
+    return ngx_http_quic_filter_send(fc, r->quic_stream);
+}
+
+static ngx_inline ngx_int_t
+ngx_http_quic_filter_send(ngx_connection_t *fc, ngx_http_quic_stream_t *stream)
+{
+	ngx_http_quic_response_availble(stream->quic_stream);
+/*
+    stream->blocked = 1;
+
+    if (ngx_http_v2_send_output_queue(stream->connection) == NGX_ERROR) {
+        fc->error = 1;
+        return NGX_ERROR;
+    }
+
+    stream->blocked = 0;
+
+    if (stream->queued) {
+        fc->buffered |= NGX_HTTP_V2_BUFFERED;
+        fc->write->active = 1;
+        fc->write->ready = 0;
+        return NGX_AGAIN;
+    }
+
+    fc->buffered &= ~NGX_HTTP_V2_BUFFERED;
+*/
+    return NGX_OK;
 }
 
 static ngx_int_t
@@ -120,3 +143,4 @@ ngx_http_quic_filter_init(ngx_conf_t *cf)
 
     return NGX_OK;
 }
+
