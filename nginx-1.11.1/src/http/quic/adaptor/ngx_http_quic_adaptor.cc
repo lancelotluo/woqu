@@ -52,19 +52,6 @@ QuicSimpleDispatcher* ngx_http_quic_create_dispatcher(int fd)
   // Deleted by ~GoQuicDispatcher()
 	QuicChromiumClock* clock = new QuicChromiumClock();  // Deleted by scoped ptr of GoQuicConnectionHelper
 	QuicRandom* random_generator = QuicRandom::GetInstance();
-  //lance_debug
-    QUIC_DVLOG(1)
-        << "get connection from session()";
-	std::string ret;
-    ret.resize(52);
-    char* data = &ret[0];
-    QUIC_DVLOG(1)
-        << "begin to get randbytes";
-    random_generator->RandBytes(data, 12);
-    QUIC_DVLOG(1)
-        << "finish to get randbytes";
-  // 
-
 	if (random_generator == nullptr) {
 		QUIC_DVLOG(1) << "lance_debug get null random";	
 	}
@@ -73,7 +60,6 @@ QuicSimpleDispatcher* ngx_http_quic_create_dispatcher(int fd)
   
 	//std::unique_ptr<QuicConnectionHelperInterface> helper(new NgxQuicConnectionHelper(clock, random_generator));
 	std::unique_ptr<QuicConnectionHelperInterface> helper(new QuicChromiumConnectionHelper(clock, QuicRandom::GetInstance()));
-
 	std::unique_ptr<QuicAlarmFactory> alarm_factory(new QuicEpollAlarmFactory());
   // XXX: quic_server uses QuicSimpleCryptoServerStreamHelper, 
   // while quic_simple_server uses QuicSimpleServerSessionHelper.
@@ -110,13 +96,6 @@ QuicSimpleDispatcher* ngx_http_quic_create_dispatcher(int fd)
 			kInitialSessionFlowControlWindow);
 	}
   /* Initialize Configs Ends ----------------------------------------*/
-    QUIC_DLOG(INFO) << "lance_debug helper(): " << &helper ;
-	QuicRandom *rand1 = helper->GetRandomGenerator();
-    QUIC_DLOG(INFO) << "suc to get RandBytes helper->GetRandomGenerator(): " << helper->GetRandomGenerator() ;
-  //lance_debug
-    rand1->RandBytes(data, 12);    
-    QUIC_DLOG(INFO) << "suc to get RandBytes helper->GetRandomGenerator(): " << helper->GetRandomGenerator() ;
-    //	
 
 	QuicSimpleDispatcher* dispatcher =
     new QuicSimpleDispatcher(*config, crypto_config, version_manager,
@@ -126,12 +105,8 @@ QuicSimpleDispatcher* ngx_http_quic_create_dispatcher(int fd)
 
 	dispatcher->InitializeWithWriter(writer);
 
-	QUIC_DVLOG(1) << "lance_debug return  quic dispatcher" << dispatcher;	
-	/*<< "config(): " << config
-				<< "session_helper(): " << session_helper()
-				<< "crypto_config(): " << crypto_config();
-				*/
-	//return (reinterpret_cast< void * >(dispatcher));
+	QUIC_DVLOG(1) << "lance_debug return  quic dispatcher" << dispatcher;
+
 	return dispatcher;
 }
 

@@ -20,8 +20,9 @@ struct ngx_http_quic_dispatcher_s {
 typedef struct ngx_http_quic_dispatcher_s ngx_http_quic_dispatcher_t;
 
 typedef struct {
-    size_t                          recv_buffer_size;
-    u_char                         *recv_buffer;
+    size_t                           recv_buffer_size;
+    u_char							*recv_buffer;
+	ngx_http_quic_dispatcher_t		*quic_dispatcher;
 } ngx_http_quic_main_conf_t;
 
 

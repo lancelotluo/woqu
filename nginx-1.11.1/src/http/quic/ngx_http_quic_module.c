@@ -442,6 +442,14 @@ ngx_http_quic_chunk_size(ngx_conf_t *cf, void *post, void *data)
 
 static ngx_int_t ngx_http_quic_proto_init(ngx_cycle_t *cycle) 
 {
+	ngx_http_quic_main_conf_t *qmcf;
+	
+	qmcf = ngx_http_cycle_get_module_main_conf(cycle, ngx_http_quic_module);
+/*
+	if (qmcf) {
+		ngx_log_error(cycle->log, );
+	}
+*/
 	return NGX_OK;
 }
 

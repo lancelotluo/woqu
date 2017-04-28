@@ -73,6 +73,12 @@ ngx_http_quic_init(ngx_event_t *rev)
     qc->http_connection = hc;
 
     qscf = ngx_http_get_module_srv_conf(hc->conf_ctx, ngx_http_quic_module);
+	if (qscf == NULL) {
+		ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
+                   "fail to get ngx_http_quic_module conf");
+        ngx_http_close_connection(c);
+		return;
+	}
 
     qc->pool = ngx_create_pool(qscf->pool_size, qc->connection->log);
     if (qc->pool == NULL) {
@@ -91,12 +97,18 @@ ngx_http_quic_init(ngx_event_t *rev)
     rev->handler = ngx_http_quic_read_handler;
     c->write->handler = ngx_http_quic_write_handler;
 	if (qscf->quic_dispatcher->proto_quic_dispatcher == NULL) {
-		ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "create dispatcher for debug");
+		ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "first to create dispatcher, only once");
 		qscf->quic_dispatcher->proto_quic_dispatcher = ngx_http_quic_create_dispatcher(c->fd);
+		if (qscf->quic_dispatcher->proto_quic_dispatcher == NULL) {
+			ngx_log_error(NGX_LOG_EMERG, c->log, 0,
+                          "fail to create proto-quic dispatcher");
+			return;
+		}
 	}
 
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic process packet c:%p", c);
+
     ngx_http_quic_dispatcher_process_packet(c, qscf->quic_dispatcher->proto_quic_dispatcher, c->buffer->start, c->buffer->last - c->buffer->start, c->sockaddr, c->local_sockaddr, c->fd);
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic process packet for debug, c:%p", c);
 }
 
 
@@ -433,7 +445,7 @@ ngx_http_quic_create_stream(ngx_http_quic_connection_t *qc, void *quic_stream)
 
     r->quic_stream->request = r;
     r->quic_stream->connection = qc;
-    r->quic_stream->quic_stream = quic_stream;
+    //r->quic_stream->quic_stream = quic_stream;
 
     qc->processing++;
 

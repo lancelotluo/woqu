@@ -135,6 +135,12 @@ ngx_http_quic_filter_send(ngx_connection_t *fc, ngx_http_quic_stream_t *stream)
     return NGX_OK;
 }
 
+ngx_int_t
+ngx_http_quic_filter_send_header(ngx_http_request_t *r, ngx_buf_t *out)
+{
+	return NGX_OK;
+}
+
 static ngx_int_t
 ngx_http_quic_filter_init(ngx_conf_t *cf)
 {
