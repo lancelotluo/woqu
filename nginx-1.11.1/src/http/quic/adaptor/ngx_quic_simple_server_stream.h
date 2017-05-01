@@ -11,10 +11,10 @@
 #include "net/quic/core/quic_packets.h"
 #include "net/quic/core/quic_spdy_stream.h"
 #include "net/quic/platform/api/quic_string_piece.h"
-#include "net/spdy/spdy_framer.h"
+#include "net/spdy/core/spdy_framer.h"
 #include "net/tools/quic/quic_http_response_cache.h"
 #include "net/tools/quic/quic_spdy_server_stream_base.h"
-
+using std::string;
 namespace net {
 
 namespace test {
@@ -59,6 +59,7 @@ class QuicSimpleServerStream : public QuicSpdyServerStreamBase {
   void SendToNginx();
 
   virtual void OnNginxDataAvailable();
+  virtual void OnNginxHeaderAvailable(const string &header);
   virtual void SetQuicNgxConnection(void *ngx_connection);
   virtual void* GetQuicNgxConnection();
 

@@ -126,7 +126,7 @@ void ngx_http_quic_dispatcher_process_packet(void *ngx_connection, QuicSimpleDis
 			char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
 			struct sockaddr *local_sockaddr, int fd) {
 
-	QUIC_DVLOG(1) << "lance_debug return  quic dispatcher" << dispatcher;	
+	QUIC_DVLOG(1) << "lance_debug quic dispatcher process packet" << dispatcher;	
 	
 	struct sockaddr_storage *generic_localsock = (struct sockaddr_storage*) local_sockaddr;
 	struct sockaddr_storage *generic_peersock = (struct sockaddr_storage*) peer_sockaddr;
@@ -166,8 +166,16 @@ void ngx_http_quic_send_to_nginx_test(void *stream)
 	quic_stream->OnNginxDataAvailable();
 }
 
-void ngx_http_quic_response_availble(void *stream)
+void ngx_http_quic_response_available(void *stream)
 {
 	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
 	quic_stream->OnNginxDataAvailable();
+}
+
+int ngx_http_quic_response_header_available(void *stream, const char *buf, const int buf_len)
+{
+	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
+	string ngx_header = string(buf, buf_len);
+	quic_stream->OnNginxHeaderAvailable(ngx_header);
+	return 0;
 }

@@ -12,6 +12,7 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
+#include "ngx_http_quic_adaptor.h"
 
 struct ngx_http_quic_dispatcher_s {
 	void *proto_quic_dispatcher;

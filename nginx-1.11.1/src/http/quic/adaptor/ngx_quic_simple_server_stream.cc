@@ -4,25 +4,35 @@
 
 #include "ngx_quic_simple_server_stream.h"
 #include "ngx_quic_simple_server_session.h"
-
+#include "net/http/http_response_headers.h"
 #include "ngx_http_quic_adaptor.h"
 
 #include <list>
 #include <utility>
 
-#include "net/quic/core/quic_flags.h"
 #include "net/quic/core/quic_spdy_stream.h"
 #include "net/quic/core/spdy_utils.h"
 #include "net/quic/platform/api/quic_bug_tracker.h"
+#include "net/quic/platform/api/quic_flags.h"
 #include "net/quic/platform/api/quic_logging.h"
 #include "net/quic/platform/api/quic_map_util.h"
 #include "net/quic/platform/api/quic_text_utils.h"
-#include "net/spdy/spdy_protocol.h"
+#include "net/spdy/core/spdy_protocol.h"
 #include "net/tools/quic/quic_http_response_cache.h"
+
 
 using std::string;
 
 namespace net {
+const char* const QuicSimpleServerStream::kErrorResponseBody = "bad";
+const char* const QuicSimpleServerStream::kNotFoundResponseBody = "lance found";
+
+static void AddSpdyHeader(const std::string& name,
+                   const std::string& value,
+                   SpdyHeaderBlock* headers);
+static void CreateSpdyHeadersFromHttpResponse(
+    const HttpResponseHeaders& response_headers,
+    SpdyHeaderBlock* headers);
 
 QuicSimpleServerStream::QuicSimpleServerStream(
     QuicStreamId id,
@@ -279,11 +289,19 @@ void QuicSimpleServerStream::OnNginxDataAvailable() {
   SendResponse();
 }
 
+void QuicSimpleServerStream::OnNginxHeaderAvailable(const string &header)
+{
+	const HttpResponseHeaders *http_headers = new HttpResponseHeaders(header);	
+	SpdyHeaderBlock spdy_headers;
+	CreateSpdyHeadersFromHttpResponse(*http_headers, &spdy_headers);
+	SendHeadersAndBody(std::move(spdy_headers), kNotFoundResponseBody);
+}
+
 void QuicSimpleServerStream::SendToNginx() {
 	string request_url = request_headers_[":authority"].as_string() + 
 				request_headers_[":path"].as_string();
 
-    QUIC_DLOG(INFO) << "begint SendToNginx";
+    QUIC_DLOG(INFO) << "begin to SendToNginx";
 	//ngx_http_quic_send_to_nginx_test(this);
 	string host = request_headers_[":authority"].as_string();
 	string path = request_headers_[":path"].as_string();
@@ -291,9 +309,6 @@ void QuicSimpleServerStream::SendToNginx() {
 	ngx_http_quic_send_to_nginx(this , host.c_str(), host.size(), path.c_str(), path.size(), body_.c_str(), body_.size());
 }
 
-const char* const QuicSimpleServerStream::kErrorResponseBody = "bad";
-const char* const QuicSimpleServerStream::kNotFoundResponseBody =
-    "file not found";
 
 void QuicSimpleServerStream::SetQuicNgxConnection(void *ngx_connection) {
 	QUIC_DLOG(INFO) << "QuicSimpleServerStream::SetQuicNgxConnection " << ngx_connection;
@@ -304,4 +319,39 @@ void* QuicSimpleServerStream::GetQuicNgxConnection() {
 	QUIC_DLOG(INFO) << "QuicSimpleServerStream::GetQuicNgxConnection " << ngx_connection_;
 	return ngx_connection_;
 }
+
+void CreateSpdyHeadersFromHttpResponse(
+    const HttpResponseHeaders& response_headers,
+    SpdyHeaderBlock* headers) {
+  const std::string status_line = response_headers.GetStatusLine();
+  std::string::const_iterator after_version =
+      std::find(status_line.begin(), status_line.end(), ' ');
+  // Get status code only.
+  std::string::const_iterator after_status =
+      std::find(after_version + 1, status_line.end(), ' ');
+  (*headers)[":status"] = std::string(after_version + 1, after_status);
+  QUIC_DVLOG(1) << "AddSpdyHeader name:";
+
+  size_t iter = 0;
+  std::string raw_name, value;
+  while (response_headers.EnumerateHeaderLines(&iter, &raw_name, &value)) {
+    std::string name = base::ToLowerASCII(raw_name);
+	QUIC_DVLOG(1) << "AddSpdyHeader name:" << name << "value:" << value;
+    AddSpdyHeader(name, value, headers);
+  }
+}
+
+void AddSpdyHeader(const std::string& name,
+                   const std::string& value,
+                   SpdyHeaderBlock* headers) {
+  if (headers->find(name) == headers->end()) {
+    (*headers)[name] = value;
+  } else {
+    std::string joint_value = (*headers)[name].as_string();
+    joint_value.append(1, '\0');
+    joint_value.append(value);
+    (*headers)[name] = joint_value;
+  }
+}
+
 }  // namespace net

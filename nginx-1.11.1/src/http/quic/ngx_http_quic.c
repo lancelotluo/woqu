@@ -445,7 +445,7 @@ ngx_http_quic_create_stream(ngx_http_quic_connection_t *qc, void *quic_stream)
 
     r->quic_stream->request = r;
     r->quic_stream->connection = qc;
-    //r->quic_stream->quic_stream = quic_stream;
+    r->quic_stream->quic_stream = quic_stream;
 
     qc->processing++;
 

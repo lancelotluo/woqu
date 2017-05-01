@@ -87,6 +87,11 @@ class QuicDispatcher : public QuicTimeWaitListManager::Visitor,
   // Queues the blocked writer for later resumption.
   void OnWriteBlocked(QuicBlockedWriterInterface* blocked_writer) override;
 
+  // QuicSession::Visitor interface implementation (via inheritance of
+  // QuicTimeWaitListManager::Visitor):
+  // Collects reset error code received on streams.
+  void OnRstStreamReceived(const QuicRstStreamFrame& frame) override;
+
   // QuicTimeWaitListManager::Visitor interface implementation
   // Called whenever the time wait list manager adds a new connection to the
   // time-wait list.
@@ -202,32 +207,32 @@ protected:
 
  // Called when |current_packet_| is a CHLO packet. Creates a new connection
  // and delivers any buffered packets for that connection id.
- void ProcessChlo();
+  void ProcessChlo(QuicPacketNumber packet_number);
 
- QuicTimeWaitListManager* time_wait_list_manager() {
-   return time_wait_list_manager_.get();
- }
+  QuicTimeWaitListManager* time_wait_list_manager() {
+    return time_wait_list_manager_.get();
+  }
 
- const QuicVersionVector& GetSupportedVersions();
+  const QuicVersionVector& GetSupportedVersions();
 
- QuicConnectionId current_connection_id() { return current_connection_id_; }
- const QuicSocketAddress& current_server_address() {
-   return current_server_address_;
- }
- const QuicSocketAddress& current_client_address() {
-   return current_client_address_;
- }
- const QuicReceivedPacket& current_packet() { return *current_packet_; }
+  QuicConnectionId current_connection_id() { return current_connection_id_; }
+  const QuicSocketAddress& current_server_address() {
+    return current_server_address_;
+  }
+  const QuicSocketAddress& current_client_address() {
+    return current_client_address_;
+  }
+  const QuicReceivedPacket& current_packet() { return *current_packet_; }
 
- const QuicConfig& config() const { return config_; }
+  const QuicConfig& config() const { return config_; }
 
- const QuicCryptoServerConfig* crypto_config() const { return crypto_config_; }
+  const QuicCryptoServerConfig* crypto_config() const { return crypto_config_; }
 
- QuicCompressedCertsCache* compressed_certs_cache() {
-   return &compressed_certs_cache_;
- }
+  QuicCompressedCertsCache* compressed_certs_cache() {
+    return &compressed_certs_cache_;
+  }
 
- QuicFramer* framer() { return &framer_; }
+  QuicFramer* framer() { return &framer_; }
 
 
   QuicCryptoServerStream::Helper* session_helper() {
@@ -271,18 +276,20 @@ protected:
       QuicBufferedPacketStore::EnqueuePacketResult result,
       QuicConnectionId connection_id);
 
+  // Removes the session from the session map and write blocked list, and adds
+  // the ConnectionId to the time-wait list.  If |session_closed_statelessly| is
+  // true, any future packets for the ConnectionId will be black-holed.
+  virtual void CleanUpSession(SessionMap::iterator it,
+                              QuicConnection* connection,
+                              bool session_closed_statelessly);
+
+  void StopAcceptingNewConnections();
+
  private:
   friend class test::QuicDispatcherPeer;
   friend class StatelessRejectorProcessDoneCallback;
 
   typedef std::unordered_set<QuicConnectionId> QuicConnectionIdSet;
-
-  // Removes the session from the session map and write blocked list, and adds
-  // the ConnectionId to the time-wait list.  If |session_closed_statelessly| is
-  // true, any future packets for the ConnectionId will be black-holed.
-  void CleanUpSession(SessionMap::iterator it,
-                      QuicConnection* connection,
-                      bool session_closed_statelessly);
 
   bool HandlePacketForTimeWait(const QuicPacketPublicHeader& header);
 
@@ -385,6 +392,10 @@ protected:
   // A backward counter of how many new sessions can be create within current
   // event loop. When reaches 0, it means can't create sessions for now.
   int16_t new_sessions_allowed_per_event_loop_;
+
+  // True if this dispatcher is not draining.
+  bool accept_new_connections_;
+
   void *ngx_connection_; //Not owned.
   DISALLOW_COPY_AND_ASSIGN(QuicDispatcher);
 };

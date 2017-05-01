@@ -27,6 +27,9 @@ class QuicSimpleDispatcher : public QuicDispatcher {
 
   ~QuicSimpleDispatcher() override;
 
+  int GetRstErrorCount(QuicRstStreamErrorCode rst_error_code) const;
+
+  void OnRstStreamReceived(const QuicRstStreamFrame& frame) override;
 
  protected:
   QuicServerSessionBase* CreateQuicSession(
@@ -38,6 +41,8 @@ class QuicSimpleDispatcher : public QuicDispatcher {
  private:
   QuicHttpResponseCache* response_cache_;  // Unowned.
   void *ngx_connection_;
+  // The map of the reset error code with its counter.
+  std::map<QuicRstStreamErrorCode, int> rst_error_map_;
 };
 
 }  // namespace net

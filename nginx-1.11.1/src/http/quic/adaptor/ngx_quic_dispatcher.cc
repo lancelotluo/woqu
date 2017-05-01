@@ -9,9 +9,10 @@
 
 #include "base/macros.h"
 #include "net/quic/core/crypto/quic_random.h"
-#include "net/quic/core/quic_flags.h"
 #include "net/quic/core/quic_utils.h"
 #include "net/quic/platform/api/quic_bug_tracker.h"
+#include "net/quic/platform/api/quic_flag_utils.h"
+#include "net/quic/platform/api/quic_flags.h"
 #include "net/quic/platform/api/quic_logging.h"
 #include "net/quic/platform/api/quic_ptr_util.h"
 #include "net/quic/platform/api/quic_stack_trace.h"
@@ -210,19 +211,8 @@ QuicDispatcher::QuicDispatcher(
               /*unused*/ QuicTime::Zero(),
               Perspective::IS_SERVER),
       last_error_(QUIC_NO_ERROR),
-      new_sessions_allowed_per_event_loop_(16) {
-// lance_debug
-    string ret;
-    ret.resize(52);
-    char* data = &ret[0];
-	QuicRandom *rand1 = QuicRandom::GetInstance();
-	rand1->RandBytes(data, 12);
-	QuicRandom *rand2 = helper_->GetRandomGenerator();
-	QUIC_DLOG(INFO) << "helper->GetRandomGenerator(): " << helper_->GetRandomGenerator();
-	rand2->RandBytes(data, 12);
-    QUIC_DLOG(INFO)
-        << "lance_debug  crypto_config: " << crypto_config << "config: " << &config << "QuicConnectionHelperInterface: " << &helper_ << "bmove: "<< &helper;
-//
+      new_sessions_allowed_per_event_loop_(0u),
+      accept_new_connections_(true) {
   framer_.set_visitor(this);
 }
 
@@ -247,7 +237,7 @@ void QuicDispatcher::ProcessPacket(const QuicSocketAddress& server_address,
   // OnUnauthenticatedPublicHeader, or sent to the time wait list manager
   // in OnUnauthenticatedHeader.
 QUIC_DLOG(INFO)
-        << "lance_debug  crypto_config: " << crypto_config_ << "config: " << &config_ << "QuicConnectionHelperInterface: " << &helper_;
+        << "lance_debug  QuicDispatcher ProcessPacket crypto_config: " << crypto_config_ << "config: " << &config_ << "QuicConnectionHelperInterface: " << &helper_;
 //
   framer_.ProcessPacket(packet);
   // TODO(rjshade): Return a status describing if/why a packet was dropped,
@@ -379,7 +369,7 @@ void QuicDispatcher::ProcessUnauthenticatedHeaderFate(
     QuicPacketNumber packet_number) {
   switch (fate) {
     case kFateProcess: {
-      ProcessChlo();
+      ProcessChlo(packet_number);
       break;
     }
     case kFateTimeWait:
@@ -465,6 +455,10 @@ void QuicDispatcher::CleanUpSession(SessionMap::iterator it,
   session_map_.erase(it);
 }
 
+void QuicDispatcher::StopAcceptingNewConnections() {
+  accept_new_connections_ = false;
+}
+
 void QuicDispatcher::DeleteSessions() {
   closed_session_list_.clear();
 }
@@ -539,6 +533,8 @@ void QuicDispatcher::OnWriteBlocked(
   }
   write_blocked_list_.insert(std::make_pair(blocked_writer, true));
 }
+
+void QuicDispatcher::OnRstStreamReceived(const QuicRstStreamFrame& frame) {}
 
 void QuicDispatcher::OnConnectionAddedToTimeWaitList(
     QuicConnectionId connection_id) {
@@ -711,6 +707,8 @@ void QuicDispatcher::BufferEarlyPacket(QuicConnectionId connection_id) {
   if (FLAGS_quic_reloadable_flag_quic_create_session_after_insertion &&
       is_new_connection &&
       !ShouldCreateOrBufferPacketForConnection(connection_id)) {
+    QUIC_FLAG_COUNT_N(quic_reloadable_flag_quic_create_session_after_insertion,
+                      1, 5);
     return;
   }
   EnqueuePacketResult rs = buffered_packets_.EnqueuePacket(
@@ -724,16 +722,30 @@ void QuicDispatcher::BufferEarlyPacket(QuicConnectionId connection_id) {
   }
 }
 
-void QuicDispatcher::ProcessChlo() {
+void QuicDispatcher::ProcessChlo(QuicPacketNumber packet_number) {
+  if (!accept_new_connections_) {
+    // Don't any create new connection.
+    time_wait_list_manager()->AddConnectionIdToTimeWait(
+        current_connection_id(), framer()->version(),
+        /*connection_rejected_statelessly=*/false,
+        /*termination_packets=*/nullptr);
+    // This will trigger sending Public Reset packet.
+    time_wait_list_manager()->ProcessPacket(
+        current_server_address(), current_client_address(),
+        current_connection_id(), packet_number, current_packet());
+    return;
+  }
   if (FLAGS_quic_reloadable_flag_quic_create_session_after_insertion &&
       !buffered_packets_.HasBufferedPackets(current_connection_id_) &&
       !ShouldCreateOrBufferPacketForConnection(current_connection_id_)) {
+    QUIC_FLAG_COUNT_N(quic_reloadable_flag_quic_create_session_after_insertion,
+                      2, 5);
     return;
   }
   if (FLAGS_quic_allow_chlo_buffering &&
       FLAGS_quic_reloadable_flag_quic_limit_num_new_sessions_per_epoll_loop &&
-      new_sessions_allowed_per_event_loop_ <= 0) {
-    QUIC_DLOG(INFO) << "Can't create new session any more";
+      new_sessions_allowed_per_event_loop_ <= -1) {
+    QUIC_DLOG(INFO) << "Can't create new session any more" << FLAGS_quic_allow_chlo_buffering <<" FLAGS_quic_reloadable_flag_quic_limit_num_new_sessions_per_epoll_loop:" <<FLAGS_quic_reloadable_flag_quic_limit_num_new_sessions_per_epoll_loop << " new_sessions_allowed_per_event_loop_" << new_sessions_allowed_per_event_loop_;
     // Can't create new session any more. Wait till next event loop.
     QUIC_BUG_IF(buffered_packets_.HasChloForConnection(current_connection_id_));
     bool is_new_connection =
@@ -875,6 +887,8 @@ void QuicDispatcher::MaybeRejectStatelessly(QuicConnectionId connection_id,
 
   if (!validator.can_accept()) {
     // This CHLO is prohibited by policy.
+	QUIC_DLOG(INFO)
+        << "lance_debug can't accept";
     StatelessConnectionTerminator terminator(connection_id, &framer_, helper(),
                                              time_wait_list_manager_.get());
     terminator.CloseConnection(QUIC_HANDSHAKE_FAILED,
@@ -975,8 +989,9 @@ void QuicDispatcher::ProcessStatelessRejectorState(
       StatelessConnectionTerminator terminator(rejector->connection_id(),
                                                &framer_, helper(),
                                                time_wait_list_manager_.get());
-      terminator.RejectConnection(
-          rejector->reply().GetSerialized().AsStringPiece());
+      terminator.RejectConnection(rejector->reply()
+                                      .GetSerialized(Perspective::IS_SERVER)
+                                      .AsStringPiece());
       OnConnectionRejectedStatelessly();
       fate = kFateTimeWait;
       break;

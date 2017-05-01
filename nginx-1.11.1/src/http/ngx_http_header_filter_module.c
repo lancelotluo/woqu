@@ -621,7 +621,7 @@ ngx_http_header_filter(ngx_http_request_t *r)
     out.next = NULL;
 	
 	if (r->quic_stream) {
-		return ngx_http_quic_write_filter(r, &out);
+		return ngx_http_quic_header_filter(r, &out);
 	}
 
     return ngx_http_write_filter(r, &out);

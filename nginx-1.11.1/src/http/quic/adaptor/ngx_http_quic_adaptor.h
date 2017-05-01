@@ -8,7 +8,7 @@
 
 #include "net/quic/core/quic_connection.h"
 #include "net/base/ip_endpoint.h"
-#include "net/spdy/spdy_header_block.h"
+#include "net/spdy/core/spdy_header_block.h"
 #include <string>
 
 using net::QuicSimpleDispatcher;
@@ -40,6 +40,7 @@ void ngx_http_quic_send_quic_to_nginx(void * x, char *host, int64_t host_len, ch
 void ngx_http_quic_send_to_nginx_test(void *stream);
 void ngx_http_quic_send_to_nginx(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
 void ngx_http_quic_response_availble(void *stream);
+int ngx_http_quic_response_header_available(void *stream, const char *buf, const int buf_len);
 #ifdef __cplusplus
 }
 #endif

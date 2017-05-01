@@ -58,7 +58,7 @@ static ngx_http_output_header_filter_pt  ngx_http_next_header_filter;
 
 
 static ngx_int_t
-ngx_http_quic_header_filter(ngx_http_request_t *r)
+ngx_http_quic_headers_filter(ngx_http_request_t *r)
 {
     u_char                     status, *pos, *start, *p, *tmp;
     size_t                     len, tmp_len;
@@ -81,6 +81,8 @@ ngx_http_quic_header_filter(ngx_http_request_t *r)
     static const u_char accept_encoding[12] =
         "\x8b\x84\x84\x2d\x69\x5b\x05\x44\x3c\x86\xaa\x6f";
 #endif
+// lance_debug
+    return ngx_http_next_header_filter(r);
 
     if (!r->quic_stream) {
         return ngx_http_next_header_filter(r);
@@ -112,7 +114,7 @@ ngx_http_quic_header_filter(ngx_http_request_t *r)
 static ngx_inline ngx_int_t
 ngx_http_quic_filter_send(ngx_connection_t *fc, ngx_http_quic_stream_t *stream)
 {
-	ngx_http_quic_response_availble(stream->quic_stream);
+	ngx_http_quic_response_available(stream->quic_stream);
 /*
     stream->blocked = 1;
 
@@ -145,8 +147,14 @@ static ngx_int_t
 ngx_http_quic_filter_init(ngx_conf_t *cf)
 {
     ngx_http_next_header_filter = ngx_http_top_header_filter;
-    ngx_http_top_header_filter = ngx_http_quic_header_filter;
+    ngx_http_top_header_filter = ngx_http_quic_headers_filter;
 
     return NGX_OK;
 }
 
+ngx_int_t
+ngx_http_quic_header_filter(ngx_http_request_t *r, ngx_chain_t *in)
+{
+	ngx_http_quic_response_header_available(r->quic_stream->quic_stream, in->buf->start, in->buf->pos - in->buf->start);
+	return NGX_OK;
+}
