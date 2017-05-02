@@ -155,6 +155,8 @@ ngx_http_quic_filter_init(ngx_conf_t *cf)
 ngx_int_t
 ngx_http_quic_header_filter(ngx_http_request_t *r, ngx_chain_t *in)
 {
-	ngx_http_quic_response_header_available(r->quic_stream->quic_stream, in->buf->start, in->buf->pos - in->buf->start);
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "ngx_http_quic_response_header_available");
+	ngx_http_quic_response_header_available(r->quic_stream->quic_stream, in->buf->start, in->buf->last - in->buf->start);
 	return NGX_OK;
 }

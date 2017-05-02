@@ -27,6 +27,7 @@ namespace net {
 const char* const QuicSimpleServerStream::kErrorResponseBody = "bad";
 const char* const QuicSimpleServerStream::kNotFoundResponseBody = "lance found";
 
+static void HeadersToRaw(std::string* headers);
 static void AddSpdyHeader(const std::string& name,
                    const std::string& value,
                    SpdyHeaderBlock* headers);
@@ -291,6 +292,7 @@ void QuicSimpleServerStream::OnNginxDataAvailable() {
 
 void QuicSimpleServerStream::OnNginxHeaderAvailable(const string &header)
 {
+	HeadersToRaw(const_cast<string *> (&header));
 	const HttpResponseHeaders *http_headers = new HttpResponseHeaders(header);	
 	SpdyHeaderBlock spdy_headers;
 	CreateSpdyHeadersFromHttpResponse(*http_headers, &spdy_headers);
@@ -333,6 +335,17 @@ void CreateSpdyHeadersFromHttpResponse(
   QUIC_DVLOG(1) << "AddSpdyHeader name:";
 
   size_t iter = 0;
+  std::string date_header;
+  while (response_headers.EnumerateHeader(&iter, "Date", &date_header)) {
+  	QUIC_DVLOG(1) << "AddSpdyHeader Got date header: " <<  date_header;
+  }
+
+  iter = 0;
+  while (response_headers.EnumerateHeader(&iter, "Server", &date_header)) {
+  	QUIC_DVLOG(1) << "AddSpdyHeader Got server header: " <<  date_header;
+  }
+
+  iter = 0;
   std::string raw_name, value;
   while (response_headers.EnumerateHeaderLines(&iter, &raw_name, &value)) {
     std::string name = base::ToLowerASCII(raw_name);
@@ -353,5 +366,13 @@ void AddSpdyHeader(const std::string& name,
     (*headers)[name] = joint_value;
   }
 }
+
+void HeadersToRaw(std::string* headers) {
+  std::replace(headers->begin(), headers->end(), '\n', '\0');
+  if (!headers->empty()) {
+    *headers += '\0';
+  }
+}
+
 
 }  // namespace net

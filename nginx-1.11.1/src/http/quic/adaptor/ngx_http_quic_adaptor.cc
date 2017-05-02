@@ -174,6 +174,7 @@ void ngx_http_quic_response_available(void *stream)
 
 int ngx_http_quic_response_header_available(void *stream, const char *buf, const int buf_len)
 {
+	QUIC_DVLOG(1) << "lance_debug begin to OnNginxHeaderAvailable";	
 	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
 	string ngx_header = string(buf, buf_len);
 	quic_stream->OnNginxHeaderAvailable(ngx_header);
