@@ -211,7 +211,7 @@ QuicDispatcher::QuicDispatcher(
               /*unused*/ QuicTime::Zero(),
               Perspective::IS_SERVER),
       last_error_(QUIC_NO_ERROR),
-      new_sessions_allowed_per_event_loop_(0u),
+      new_sessions_allowed_per_event_loop_(16),
       accept_new_connections_(true) {
   framer_.set_visitor(this);
 }

@@ -262,34 +262,6 @@ void ngx_http_quic_init_http_request(void *quic_stream, void *connection, const 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "init quic http connection, c:%p", c);
 
     c->log->action = "processing QUIC packet";
-/*U
-    qmcf = ngx_http_get_module_main_conf(hc->conf_ctx, ngx_http_quic_module);
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "get ngx_http_quic_module main conf");
-
-    if (qmcf->recv_buffer == NULL) {
-        qmcf->recv_buffer = ngx_palloc(ngx_cycle->pool,
-                                        qmcf->recv_buffer_size);
-        if (qmcf->recv_buffer == NULL) {
-            ngx_http_close_connection(c);
-            return;
-        }
-    }
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "after get ngx_http_quic_module main conf");
-    qc = ngx_pcalloc(c->pool, sizeof(ngx_http_quic_connection_t));
-    if (qc == NULL) {
-        ngx_http_close_connection(c);
-        return;
-    }
-
-
-    c->data = qc;
-    
-	qc->pool = ngx_create_pool(16*1024, qc->connection->log);
-    if (qc->pool == NULL) {
-        ngx_http_close_connection(c);
-        return;
-    }
-*/
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "http response for quic");
 	ngx_quic_stream = ngx_http_quic_create_stream(qc, quic_stream);
