@@ -7,6 +7,8 @@
 #include "net/http/http_response_headers.h"
 #include "ngx_http_quic_adaptor.h"
 
+#include "net/http/http_request_headers.h"
+
 #include <list>
 #include <utility>
 
@@ -20,13 +22,12 @@
 #include "net/spdy/core/spdy_protocol.h"
 #include "net/tools/quic/quic_http_response_cache.h"
 
-
-using std::string;
-
 namespace net {
 const char* const QuicSimpleServerStream::kErrorResponseBody = "bad";
 const char* const QuicSimpleServerStream::kNotFoundResponseBody = "lance found";
 
+static bool ConvertSpdyHeaderToHttpRequest(const SpdyHeaderBlock& spdy_headers,
+                                    HttpRequestHeaders* request_headers);
 static void HeadersToRaw(std::string* headers);
 static void AddSpdyHeader(const std::string& name,
                    const std::string& value,
@@ -179,7 +180,7 @@ void QuicSimpleServerStream::SendResponse() {
   // response status, send error response. Notice that
   // QuicHttpResponseCache push urls are strictly authority + path only,
   // scheme is not included (see |QuicHttpResponseCache::GetKey()|).
-  string request_url = request_headers_[":authority"].as_string() +
+  std::string request_url = request_headers_[":authority"].as_string() +
                        request_headers_[":path"].as_string();
   int response_code;
   const SpdyHeaderBlock& response_headers = response->headers();
@@ -290,24 +291,42 @@ void QuicSimpleServerStream::OnNginxDataAvailable() {
   SendResponse();
 }
 
-void QuicSimpleServerStream::OnNginxHeaderAvailable(const string &header)
+void QuicSimpleServerStream::OnNginxHeaderAvailable(const std::string &header)
 {
-	HeadersToRaw(const_cast<string *> (&header));
-	const HttpResponseHeaders *http_headers = new HttpResponseHeaders(header);	
+	HeadersToRaw(const_cast<std::string *> (&header));
+	const HttpResponseHeaders *request_headers_ = new HttpResponseHeaders(header);	
 	SpdyHeaderBlock spdy_headers;
-	CreateSpdyHeadersFromHttpResponse(*http_headers, &spdy_headers);
+	CreateSpdyHeadersFromHttpResponse(*request_headers_, &spdy_headers);
 	SendHeadersAndBody(std::move(spdy_headers), kNotFoundResponseBody);
 }
 
 void QuicSimpleServerStream::SendToNginx() {
-	string request_url = request_headers_[":authority"].as_string() + 
+	std::string request_url = request_headers_[":method"].as_string() + "http://" + request_headers_[":authority"].as_string() + 
 				request_headers_[":path"].as_string();
 
-    QUIC_DLOG(INFO) << "begin to SendToNginx";
+	QUIC_DLOG(INFO) << "quic to http request uri:" << request_url;
 	//ngx_http_quic_send_to_nginx_test(this);
-	string host = request_headers_[":authority"].as_string();
-	string path = request_headers_[":path"].as_string();
+	std::string host = request_headers_[":authority"].as_string();
+	std::string path = request_headers_[":path"].as_string();
 
+	// copy test
+	//SpdyHeaderBlock request_headers_ = request_headers_;
+	HttpRequestHeaders http_request_headers;
+	bool rt = ConvertSpdyHeaderToHttpRequest(request_headers_ ,&http_request_headers);
+	if (!rt) {
+		QUIC_DLOG(INFO) << "fail to convert spdy header to http request header";
+		return;
+	}
+
+	http_request_headers.SetHeader("host", request_headers_[":authority"].as_string());
+	http_request_headers.RemoveHeader(":authority");
+	http_request_headers.RemoveHeader(":method");
+	http_request_headers.RemoveHeader(":path");
+	http_request_headers.RemoveHeader(":scheme");
+
+	std::string request_headers = http_request_headers.ToString();
+	QUIC_DLOG(INFO) << "quic headers as http string:" << request_headers;
+	
 	ngx_http_quic_send_to_nginx(this , host.c_str(), host.size(), path.c_str(), path.size(), body_.c_str(), body_.size());
 }
 
@@ -372,6 +391,41 @@ void HeadersToRaw(std::string* headers) {
   if (!headers->empty()) {
     *headers += '\0';
   }
+}
+
+bool ConvertSpdyHeaderToHttpRequest(const SpdyHeaderBlock& spdy_headers,
+                                    HttpRequestHeaders* request_headers) {
+  CHECK(request_headers);
+  request_headers->Clear();
+
+  SpdyHeaderBlock::const_iterator it = spdy_headers.begin();
+  while (it != spdy_headers.end()) {
+    bool valid_header = true;
+    /*
+	 * for (size_t i = 0; i < arraysize(kForbiddenHttpHeaderFields); ++i) {
+      if (it->first == kForbiddenHttpHeaderFields[i]) {
+        valid_header = false;
+        break;
+      }   
+    }   
+	*/
+    if (!valid_header) {
+      ++it;
+      continue;
+    }   
+
+    base::StringPiece key(it->first);
+    base::StringPiece value(it->second);
+
+    if (key.size() && key[0] == ':') {
+      key = key.substr(1);
+    }   
+
+    request_headers->SetHeader(key, value);
+    ++it;
+  }
+
+  return true;
 }
 
 
