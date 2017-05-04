@@ -37,8 +37,8 @@ void ngx_http_quic_dispatcher_process_packet(void *ngx_http_connection, QuicSimp
 			struct sockaddr *local_sockaddr, int fd);
 void ngx_http_quic_send_quic_to_nginx(void * x, char *host, int64_t host_len, char *path, int64_t path_len, char *body, int64_t body_len);
 
-void ngx_http_quic_send_to_nginx_test(void *stream);
-void ngx_http_quic_send_to_nginx(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
+void ngx_http_quic_send_to_nginx(void *stream, const char *request, int request_len, const char *body, int body_len);
+void ngx_http_quic_send_to_nginx_test(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
 void ngx_http_quic_response_availble(void *stream);
 int ngx_http_quic_response_header_available(void *stream, const char *buf, const int buf_len);
 #ifdef __cplusplus

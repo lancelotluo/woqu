@@ -1,7 +1,7 @@
 
 /*
- * Copyright (C) Nginx, Inc.
- * Copyright (C) Valentin V. Bartenev
+ * Copyright (C) Tencent, Inc.
+ * 
  */
 
 
@@ -16,8 +16,10 @@
  * This returns precise number of octets for values in range 0..253
  * and estimate number for the rest, but not smaller than required.
  */
-
-
+/*
+static ngx_chain_t *
+ngx_http_quic_send_chain(ngx_connection_t *fc, ngx_chain_t *in, off_t limit);
+*/
 static ngx_int_t ngx_http_quic_filter_init(ngx_conf_t *cf);
 
 static ngx_inline ngx_int_t ngx_http_quic_filter_send(
@@ -160,3 +162,194 @@ ngx_http_quic_header_filter(ngx_http_request_t *r, ngx_chain_t *in)
 	ngx_http_quic_response_header_available(r->quic_stream->quic_stream, in->buf->start, in->buf->last - in->buf->start);
 	return NGX_OK;
 }
+/*
+static ngx_chain_t *
+ngx_http_quic_send_chain(ngx_connection_t *fc, ngx_chain_t *in, off_t limit)
+{
+    off_t                      size, offset;
+    size_t                     rest, frame_size;
+    ngx_chain_t               *cl, *out, **ln;
+    ngx_http_request_t        *r;
+    ngx_http_v2_stream_t      *stream;
+    ngx_http_v2_loc_conf_t    *h2lcf;
+    ngx_http_v2_out_frame_t   *frame;
+    ngx_http_v2_connection_t  *h2c;
+
+    r = fc->data;
+    stream = r->stream;
+
+#if (NGX_SUPPRESS_WARN)
+    size = 0;
+#endif
+
+    while (in) {
+        size = ngx_buf_size(in->buf);
+
+        if (size || in->buf->last_buf) {
+            break;
+        }
+
+        in = in->next;
+    }
+
+    if (in == NULL) {
+
+        if (stream->queued) {
+            fc->write->active = 1;
+            fc->write->ready = 0;
+
+        } else {
+            fc->buffered &= ~NGX_HTTP_V2_BUFFERED;
+        }
+
+        return NULL;
+    }
+
+    h2c = stream->connection;
+
+    if (size && ngx_http_v2_flow_control(h2c, stream) == NGX_DECLINED) {
+        fc->write->active = 1;
+        fc->write->ready = 0;
+        return in;
+    }
+
+    if (in->buf->tag == (ngx_buf_tag_t) &ngx_http_v2_filter_get_shadow) {
+        cl = ngx_alloc_chain_link(r->pool);
+        if (cl == NULL) {
+            return NGX_CHAIN_ERROR;
+        }
+
+        cl->buf = in->buf;
+        in->buf = cl->buf->shadow;
+
+        offset = ngx_buf_in_memory(in->buf)
+                 ? (cl->buf->pos - in->buf->pos)
+                 : (cl->buf->file_pos - in->buf->file_pos);
+
+        cl->next = stream->free_bufs;
+        stream->free_bufs = cl;
+
+    } else {
+        offset = 0;
+    }
+
+    if (limit == 0 || limit > (off_t) h2c->send_window) {
+        limit = h2c->send_window;
+    }
+
+    if (limit > stream->send_window) {
+        limit = (stream->send_window > 0) ? stream->send_window : 0;
+    }
+
+    h2lcf = ngx_http_get_module_loc_conf(r, ngx_http_v2_module);
+
+    frame_size = (h2lcf->chunk_size < h2c->frame_size)
+                 ? h2lcf->chunk_size : h2c->frame_size;
+
+#if (NGX_SUPPRESS_WARN)
+    cl = NULL;
+#endif
+
+    for ( ;; ) {
+        if ((off_t) frame_size > limit) {
+            frame_size = (size_t) limit;
+        }
+
+        ln = &out;
+        rest = frame_size;
+
+        while ((off_t) rest >= size) {
+
+            if (offset) {
+                cl = ngx_http_v2_filter_get_shadow(stream, in->buf,
+                                                   offset, size);
+                if (cl == NULL) {
+                    return NGX_CHAIN_ERROR;
+                }
+
+                offset = 0;
+
+            } else {
+                cl = ngx_alloc_chain_link(r->pool);
+                if (cl == NULL) {
+                    return NGX_CHAIN_ERROR;
+                }
+
+                cl->buf = in->buf;
+            }
+
+            *ln = cl;
+            ln = &cl->next;
+
+            rest -= (size_t) size;
+            in = in->next;
+
+            if (in == NULL) {
+                frame_size -= rest;
+                rest = 0;
+                break;
+            }
+
+            size = ngx_buf_size(in->buf);
+        }
+
+        if (rest) {
+            cl = ngx_http_v2_filter_get_shadow(stream, in->buf, offset, rest);
+            if (cl == NULL) {
+                return NGX_CHAIN_ERROR;
+            }
+
+            cl->buf->flush = 0;
+            cl->buf->last_buf = 0;
+
+            *ln = cl;
+
+            offset += rest;
+            size -= rest;
+        }
+
+        frame = ngx_http_v2_filter_get_data_frame(stream, frame_size, out, cl);
+        if (frame == NULL) {
+            return NGX_CHAIN_ERROR;
+        }
+
+        ngx_http_v2_queue_frame(h2c, frame);
+
+        h2c->send_window -= frame_size;
+
+        stream->send_window -= frame_size;
+        stream->queued++;
+
+        if (in == NULL) {
+            break;
+        }
+
+        limit -= frame_size;
+
+        if (limit == 0) {
+            break;
+        }
+    }
+
+    if (offset) {
+        cl = ngx_http_v2_filter_get_shadow(stream, in->buf, offset, size);
+        if (cl == NULL) {
+            return NGX_CHAIN_ERROR;
+        }
+
+        in->buf = cl->buf;
+        ngx_free_chain(r->pool, cl);
+    }
+
+    if (ngx_http_v2_filter_send(fc, stream) == NGX_ERROR) {
+        return NGX_CHAIN_ERROR;
+    }
+
+    if (in && ngx_http_v2_flow_control(h2c, stream) == NGX_DECLINED) {
+        fc->write->active = 1;
+        fc->write->ready = 0;
+    }
+
+    return in;
+}
+*/

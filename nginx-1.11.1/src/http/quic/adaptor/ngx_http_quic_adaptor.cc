@@ -144,7 +144,22 @@ void ngx_http_quic_dispatcher_process_packet(void *ngx_connection, QuicSimpleDis
 	dispatcher->ProcessPacket(server_address, client_address, packet);
 }
 
-void ngx_http_quic_send_to_nginx(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len)
+void ngx_http_quic_send_to_nginx(void *stream, const char *request, int request_len, const char *body, int body_len)
+{
+	QUIC_DVLOG(1) << "lance_debug quic request:" << request << " len: "<< request_len;
+
+	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
+	void *ngx_connection = quic_stream->GetQuicNgxConnection();
+	if (ngx_connection == nullptr) {
+		QUIC_DVLOG(1) << "lance_debug ngx_connection is nullptr";	
+		return;
+	}
+
+	ngx_http_quic_init_http_request(stream, ngx_connection, request, request_len, body, body_len);
+	//ngx_http_quic_init_http_request_test(stream, ngx_connection, request, request_len, body, body_len);
+	//quic_stream->OnNginxDataAvailable();
+}
+void ngx_http_quic_send_to_nginx_test(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len)
 {
 	QUIC_DVLOG(1) << "lance_debug quic host:" << host << " len: "<< host_len << " quic path:" << path << " path_len: " << path_len;	
 
@@ -156,7 +171,7 @@ void ngx_http_quic_send_to_nginx(void *stream, const char *host, int64_t host_le
 		return;
 	}
 
-	ngx_http_quic_init_http_request(stream, ngx_connection, host, host_len, path, path_len, body, body_len);
+	//ngx_http_quic_init_http_request(stream, ngx_connection, host, host_len, path, path_len, body, body_len);
 	//quic_stream->OnNginxDataAvailable();
 }
 void ngx_http_quic_send_to_nginx_test(void *stream)

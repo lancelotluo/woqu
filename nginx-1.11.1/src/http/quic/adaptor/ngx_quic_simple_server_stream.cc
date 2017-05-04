@@ -301,11 +301,9 @@ void QuicSimpleServerStream::OnNginxHeaderAvailable(const std::string &header)
 }
 
 void QuicSimpleServerStream::SendToNginx() {
-	std::string request_url = request_headers_[":method"].as_string() + "http://" + request_headers_[":authority"].as_string() + 
-				request_headers_[":path"].as_string();
+	std::string request_line = request_headers_[":method"].as_string() + " " + request_headers_[":path"].as_string() + " HTTP/1.1";
 
-	QUIC_DLOG(INFO) << "quic to http request uri:" << request_url;
-	//ngx_http_quic_send_to_nginx_test(this);
+	QUIC_DLOG(INFO) << "quic to http request line:" << request_line;
 	std::string host = request_headers_[":authority"].as_string();
 	std::string path = request_headers_[":path"].as_string();
 
@@ -319,15 +317,18 @@ void QuicSimpleServerStream::SendToNginx() {
 	}
 
 	http_request_headers.SetHeader("host", request_headers_[":authority"].as_string());
-	http_request_headers.RemoveHeader(":authority");
-	http_request_headers.RemoveHeader(":method");
-	http_request_headers.RemoveHeader(":path");
-	http_request_headers.RemoveHeader(":scheme");
+	http_request_headers.RemoveHeader("authority");
+	http_request_headers.RemoveHeader("method");
+	http_request_headers.RemoveHeader("path");
+	http_request_headers.RemoveHeader("scheme");
 
 	std::string request_headers = http_request_headers.ToString();
 	QUIC_DLOG(INFO) << "quic headers as http string:" << request_headers;
-	
-	ngx_http_quic_send_to_nginx(this , host.c_str(), host.size(), path.c_str(), path.size(), body_.c_str(), body_.size());
+
+	std::string http_request = request_line + "\r\n" + request_headers;
+	ngx_http_quic_send_to_nginx(this , http_request.c_str(), http_request.size(), body_.c_str(), body_.size());
+	//lance_debug for test
+	//ngx_http_quic_send_to_nginx_test(this , host.c_str(), host.size(), path.c_str(), path.size(), body_.c_str(), body_.size());
 }
 
 
