@@ -107,8 +107,12 @@ ngx_http_quic_init(ngx_event_t *rev)
     rev->handler = ngx_http_quic_read_handler;
     c->write->handler = ngx_http_quic_write_handler;
 	if (qscf->quic_dispatcher->proto_quic_dispatcher == NULL) {
+		ngx_http_quic_conf_t nqcf;
+		nqcf.certificate		= qscf->certificate.data;
+		nqcf.certificate_key	= qscf->certificate_key.data; 
+
 		ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "first to create dispatcher, only once");
-		qscf->quic_dispatcher->proto_quic_dispatcher = ngx_http_quic_create_dispatcher(c->fd);
+		qscf->quic_dispatcher->proto_quic_dispatcher = ngx_http_quic_create_dispatcher(c->fd, &nqcf);
 		if (qscf->quic_dispatcher->proto_quic_dispatcher == NULL) {
 			ngx_log_error(NGX_LOG_EMERG, c->log, 0,
                           "fail to create proto-quic dispatcher");

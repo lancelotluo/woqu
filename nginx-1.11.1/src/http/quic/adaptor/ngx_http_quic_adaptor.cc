@@ -34,7 +34,7 @@ std::unique_ptr<net::ProofSource> CreateProofSource(
   	return std::move(proof_source);
 }
 
-QuicSimpleDispatcher* ngx_http_quic_create_dispatcher(int fd)
+QuicSimpleDispatcher* ngx_http_quic_create_dispatcher(int fd, ngx_http_quic_conf_t *conf)
 {
 	const char kSourceAddressTokenSecret[] = "secret";
 
@@ -49,23 +49,23 @@ QuicSimpleDispatcher* ngx_http_quic_create_dispatcher(int fd)
 
 	QuicConfig* config = new QuicConfig();
 
-  // Deleted by ~GoQuicDispatcher()
-	QuicChromiumClock* clock = new QuicChromiumClock();  // Deleted by scoped ptr of GoQuicConnectionHelper
+	QuicChromiumClock* clock = new QuicChromiumClock();  // Deleted by scoped ptr of    QuicConnectionHelper
 	QuicRandom* random_generator = QuicRandom::GetInstance();
 	if (random_generator == nullptr) {
 		QUIC_DVLOG(1) << "lance_debug get null random";	
+		return nullptr;
 	}
 
-	QUIC_DVLOG(1) << "lance_debug create quic dispatcher";	
+	QUIC_DVLOG(1) << "lance_debug create quic dispatcher, cert:"<<conf->certificate << "key:" << conf->certificate_key;	
   
-	//std::unique_ptr<QuicConnectionHelperInterface> helper(new NgxQuicConnectionHelper(clock, random_generator));
 	std::unique_ptr<QuicConnectionHelperInterface> helper(new QuicChromiumConnectionHelper(clock, QuicRandom::GetInstance()));
 	std::unique_ptr<QuicAlarmFactory> alarm_factory(new QuicEpollAlarmFactory());
   // XXX: quic_server uses QuicSimpleCryptoServerStreamHelper, 
   // while quic_simple_server uses QuicSimpleServerSessionHelper.
   // Pick one and remove the other later
 
-	std::unique_ptr<ProofSource> proof_source = CreateProofSource(base::FilePath("./cert/quic.cert"), base::FilePath("./cert/quic.key.pkcs8"));
+	//std::unique_ptr<ProofSource> proof_source = CreateProofSource(base::FilePath("./cert/quic.cert"), base::FilePath("./cert/quic.key.pkcs8"));
+	std::unique_ptr<ProofSource> proof_source = CreateProofSource(base::FilePath(conf->certificate), base::FilePath(conf->certificate_key));
 	QuicCryptoServerConfig *crypto_config = new QuicCryptoServerConfig(kSourceAddressTokenSecret, random_generator,
 			  std::move(proof_source));
 	//net::EphemeralKeySource* keySource = new GoEphemeralKeySource();

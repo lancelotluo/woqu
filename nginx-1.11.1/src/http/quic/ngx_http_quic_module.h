@@ -33,9 +33,10 @@ typedef struct {
     size_t                          max_field_size;
     size_t                          max_header_size;
     size_t                          preread_size;
-    ngx_uint_t                      streams_index_mask;
     ngx_msec_t                      recv_timeout;
     ngx_msec_t                      idle_timeout;
+    ngx_str_t						certificate;
+    ngx_str_t						certificate_key;
 	ngx_http_quic_dispatcher_t     *quic_dispatcher;
 } ngx_http_quic_srv_conf_t;
 

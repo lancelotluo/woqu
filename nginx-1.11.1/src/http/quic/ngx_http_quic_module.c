@@ -10,12 +10,6 @@
 #include <ngx_http.h>
 #include <ngx_http_quic_module.h>
 
-
-static ngx_int_t ngx_http_quic_add_variables(ngx_conf_t *cf);
-
-static ngx_int_t ngx_http_quic_variable(ngx_http_request_t *r,
-    ngx_http_variable_value_t *v, uintptr_t data);
-
 static ngx_int_t ngx_http_quic_module_init(ngx_cycle_t *cycle);
 static ngx_int_t ngx_http_quic_proto_init(ngx_cycle_t *cycle);
 
@@ -95,13 +89,6 @@ static ngx_command_t  ngx_http_quic_commands[] = {
       offsetof(ngx_http_quic_srv_conf_t, preread_size),
       &ngx_http_quic_preread_size_post },
 
-    { ngx_string("quic_streams_index_size"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_TAKE1,
-      ngx_conf_set_num_slot,
-      NGX_HTTP_SRV_CONF_OFFSET,
-      offsetof(ngx_http_quic_srv_conf_t, streams_index_mask),
-      &ngx_http_quic_streams_index_mask_post },
-
     { ngx_string("quic_recv_timeout"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_msec_slot,
@@ -123,13 +110,27 @@ static ngx_command_t  ngx_http_quic_commands[] = {
       offsetof(ngx_http_quic_loc_conf_t, chunk_size),
       &ngx_http_quic_chunk_size_post },
 
+    { ngx_string("quic_ssl_certificate"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_str_slot,
+      NGX_HTTP_SRV_CONF_OFFSET,
+      offsetof(ngx_http_quic_srv_conf_t, certificate),
+      NULL },
+
+    { ngx_string("quic_ssl_certificate_key"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_str_slot,
+      NGX_HTTP_SRV_CONF_OFFSET,
+      offsetof(ngx_http_quic_srv_conf_t, certificate_key),
+      NULL },
+
       ngx_null_command
 };
 
 
 static ngx_http_module_t  ngx_http_quic_module_ctx = {
-    ngx_http_quic_add_variables,             /* preconfiguration */
-    NULL,                                  /* postconfiguration */
+    NULL,						             /* preconfiguration */
+    NULL,                                    /* postconfiguration */
 
     ngx_http_quic_create_main_conf,          /* create main configuration */
     ngx_http_quic_init_main_conf,            /* init main configuration */
@@ -159,66 +160,8 @@ ngx_module_t  ngx_http_quic_module = {
 
 
 static ngx_http_variable_t  ngx_http_quic_vars[] = {
-
-    { ngx_string("quic"), NULL,
-      ngx_http_quic_variable, 0, 0, 0 },
-
     { ngx_null_string, NULL, NULL, 0, 0, 0 }
 };
-
-
-static ngx_int_t
-ngx_http_quic_add_variables(ngx_conf_t *cf)
-{
-    ngx_http_variable_t  *var, *v;
-
-    for (v = ngx_http_quic_vars; v->name.len; v++) {
-        var = ngx_http_add_variable(cf, &v->name, v->flags);
-        if (var == NULL) {
-            return NGX_ERROR;
-        }
-
-        var->get_handler = v->get_handler;
-        var->data = v->data;
-    }
-
-    return NGX_OK;
-}
-
-
-static ngx_int_t
-ngx_http_quic_variable(ngx_http_request_t *r,
-    ngx_http_variable_value_t *v, uintptr_t data)
-{
-
-    if (r->stream) {
-#if (NGX_HTTP_SSL)
-
-        if (r->connection->ssl) {
-            v->len = sizeof("h2") - 1;
-            v->valid = 1;
-            v->no_cacheable = 0;
-            v->not_found = 0;
-            v->data = (u_char *) "h2";
-
-            return NGX_OK;
-        }
-
-#endif
-        v->len = sizeof("h2c") - 1;
-        v->valid = 1;
-        v->no_cacheable = 0;
-        v->not_found = 0;
-        v->data = (u_char *) "h2c";
-
-        return NGX_OK;
-    }
-
-    *v = ngx_http_variable_null_value;
-
-    return NGX_OK;
-}
-
 
 static ngx_int_t
 ngx_http_quic_module_init(ngx_cycle_t *cycle)
@@ -275,13 +218,13 @@ ngx_http_quic_create_srv_conf(ngx_conf_t *cf)
 
     hqscf->preread_size = NGX_CONF_UNSET_SIZE;
 
-    hqscf->streams_index_mask = NGX_CONF_UNSET_UINT;
-
     hqscf->recv_timeout = NGX_CONF_UNSET_MSEC;
     hqscf->idle_timeout = NGX_CONF_UNSET_MSEC;
 
 	hqscf->quic_dispatcher = ngx_pcalloc(cf->pool, sizeof(ngx_http_quic_dispatcher_t));
 	if (hqscf->quic_dispatcher == NULL) {
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                           "fail to alloc quic_dispatcher");
 		return NULL;
 	}
 
@@ -306,9 +249,10 @@ ngx_http_quic_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
                               16384);
 
     ngx_conf_merge_size_value(conf->preread_size, prev->preread_size, 65536);
+    
+	ngx_conf_merge_str_value(conf->certificate_key, prev->certificate_key, "");
 
-    ngx_conf_merge_uint_value(conf->streams_index_mask,
-                              prev->streams_index_mask, 32 - 1);
+    ngx_conf_merge_str_value(conf->certificate, prev->certificate, "");
 
     ngx_conf_merge_msec_value(conf->recv_timeout,
                               prev->recv_timeout, 30000);

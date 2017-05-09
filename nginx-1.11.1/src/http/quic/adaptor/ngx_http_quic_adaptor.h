@@ -27,8 +27,14 @@ typedef void QuicSimpleDispatcher;
 */
 #endif
 
+struct ngx_http_quic_conf_s {
+	const char *certificate;
+	const char *certificate_key;
+};
 
-QuicSimpleDispatcher *ngx_http_quic_create_dispatcher(int fd);
+typedef struct ngx_http_quic_conf_s ngx_http_quic_conf_t;
+
+QuicSimpleDispatcher *ngx_http_quic_create_dispatcher(int fd, ngx_http_quic_conf_t *conf);
 
 void ngx_http_quic_set_log_level(int level);
 
