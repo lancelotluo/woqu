@@ -60,6 +60,7 @@ class QuicSimpleServerStream : public QuicSpdyServerStreamBase {
 
   virtual void OnNginxDataAvailable();
   virtual void OnNginxHeaderAvailable(const string &header);
+  virtual void OnNginxBodyAvailable(const std::string &body);
   virtual void SetQuicNgxConnection(void *ngx_connection);
   virtual void* GetQuicNgxConnection();
 

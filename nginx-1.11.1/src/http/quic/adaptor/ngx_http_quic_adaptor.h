@@ -41,6 +41,7 @@ void ngx_http_quic_send_to_nginx(void *stream, const char *request, int request_
 void ngx_http_quic_send_to_nginx_test(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
 void ngx_http_quic_response_availble(void *stream);
 int ngx_http_quic_response_header_available(void *stream, const char *buf, const int buf_len);
+int ngx_http_quic_response_body_available(void *stream, const char *buf, const int buf_len);
 #ifdef __cplusplus
 }
 #endif
