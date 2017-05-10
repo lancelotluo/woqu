@@ -291,20 +291,20 @@ void QuicSimpleServerStream::OnNginxDataAvailable() {
   SendResponse();
 }
 
-void QuicSimpleServerStream::OnNginxHeaderAvailable(const std::string &header)
+void QuicSimpleServerStream::OnNginxHeaderAvailable(const std::string &header, bool fin)
 {
 	HeadersToRaw(const_cast<std::string *> (&header));
 	const HttpResponseHeaders *request_headers_ = new HttpResponseHeaders(header);	
 	SpdyHeaderBlock spdy_headers;
 	CreateSpdyHeadersFromHttpResponse(*request_headers_, &spdy_headers);
-	WriteHeaders(std::move(spdy_headers), false, nullptr);
+	WriteHeaders(std::move(spdy_headers), fin, nullptr);
 	//SendHeadersAndBody(std::move(spdy_headers), kNotFoundResponseBody);
 }
 
-void QuicSimpleServerStream::OnNginxBodyAvailable(const std::string &body)
+void QuicSimpleServerStream::OnNginxBodyAvailable(const std::string &body, bool fin)
 {
 	HeadersToRaw(const_cast<std::string *> (&body));
-	WriteOrBufferData(body, false, nullptr);
+	WriteOrBufferData(body, fin, nullptr);
 }
 
 void QuicSimpleServerStream::SendToNginx() {

@@ -147,21 +147,13 @@ ngx_http_quic_filter_send_header(ngx_http_request_t *r, ngx_buf_t *out)
 	return NGX_OK;
 }
 
-static ngx_int_t
-ngx_http_quic_filter_init(ngx_conf_t *cf)
-{
-    ngx_http_next_header_filter = ngx_http_top_header_filter;
-    ngx_http_top_header_filter = ngx_http_quic_headers_filter;
-
-    return NGX_OK;
-}
 
 ngx_int_t
 ngx_http_quic_header_filter(ngx_http_request_t *r, ngx_chain_t *in)
 {
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "ngx_http_quic_response_header_available");
-	ngx_http_quic_response_header_available(r->quic_stream->quic_stream, in->buf->start, in->buf->last - in->buf->start);
+	ngx_http_quic_response_header_available(r->quic_stream->quic_stream, in->buf->start, in->buf->last - in->buf->start, in->buf->last_buf);
 	return NGX_OK;
 }
 
@@ -170,6 +162,7 @@ ngx_http_quic_send_chain(ngx_connection_t *fc, ngx_chain_t *in, off_t limit)
 {
     off_t                      size, offset;
     size_t                     rest, frame_size;
+	int						   last, buf_len;
     ngx_chain_t               *cl, *out, **ln;
     ngx_http_request_t        *r;
     ngx_http_quic_stream_t      *stream;
@@ -181,11 +174,36 @@ ngx_http_quic_send_chain(ngx_connection_t *fc, ngx_chain_t *in, off_t limit)
 
 	ngx_log_debug0(NGX_LOG_DEBUG_HTTP, fc->log, 0,
 				"quic send chain");
+	out = in;	
 
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "ngx_http_quic_response_body_available");
+	while (out) {
+		last = 0;
+		if (out->buf->last_buf || out->buf->last_in_chain) {
+		//if (out->buf->last_buf || (out->buf->flush && !out->next)) {
+			last = 1;
+		} 
+	
+		buf_len = ngx_buf_size(out->buf);
+		ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "ngx_http_quic_response_body_available, last:%d", last);
 
-	ngx_http_quic_response_body_available(r->quic_stream->quic_stream, in->buf->pos, in->buf->last - in->buf->pos);
+		if (buf_len) {
+			ngx_http_quic_response_body_available(r->quic_stream->quic_stream, out->buf->pos, buf_len, last);
+			ngx_chain_update_sent(in, buf_len);
+		}
 
+		out = out->next;
+	}
+
+	
     return in;
+}
+
+static ngx_int_t
+ngx_http_quic_filter_init(ngx_conf_t *cf)
+{
+    ngx_http_next_header_filter = ngx_http_top_header_filter;
+    ngx_http_top_header_filter = ngx_http_quic_headers_filter;
+
+    return NGX_OK;
 }

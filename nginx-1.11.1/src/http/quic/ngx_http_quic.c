@@ -1,8 +1,7 @@
 
 /*
- * Copyright (C) Nginx, Inc.
+ * Copyright (C) Tencent, Inc.
  */
-
 
 #include <ngx_config.h>
 #include <ngx_core.h>
@@ -42,7 +41,6 @@ ngx_http_quic_process_request_headers(ngx_http_request_t *r);
 
 static ngx_int_t
 ngx_http_quic_validate_host(ngx_str_t *host, ngx_pool_t *pool, ngx_uint_t alloc);
-
 
 void
 ngx_http_quic_init(ngx_event_t *rev)

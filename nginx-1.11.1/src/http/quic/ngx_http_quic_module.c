@@ -10,7 +10,6 @@
 #include <ngx_http.h>
 #include <ngx_http_quic_module.h>
 
-static ngx_int_t ngx_http_quic_module_init(ngx_cycle_t *cycle);
 static ngx_int_t ngx_http_quic_proto_init(ngx_cycle_t *cycle);
 
 static void *ngx_http_quic_create_main_conf(ngx_conf_t *cf);
@@ -26,11 +25,7 @@ static char *ngx_http_quic_recv_buffer_size(ngx_conf_t *cf, void *post,
     void *data);
 static char *ngx_http_quic_pool_size(ngx_conf_t *cf, void *post, void *data);
 static char *ngx_http_quic_preread_size(ngx_conf_t *cf, void *post, void *data);
-static char *ngx_http_quic_streams_index_mask(ngx_conf_t *cf, void *post,
-    void *data);
 static char *ngx_http_quic_chunk_size(ngx_conf_t *cf, void *post, void *data);
-static char *ngx_http_quic_spdy_deprecated(ngx_conf_t *cf, ngx_command_t *cmd,
-    void *conf);
 
 
 static ngx_conf_post_t  ngx_http_quic_recv_buffer_size_post =
@@ -39,8 +34,6 @@ static ngx_conf_post_t  ngx_http_quic_pool_size_post =
     { ngx_http_quic_pool_size };
 static ngx_conf_post_t  ngx_http_quic_preread_size_post =
     { ngx_http_quic_preread_size };
-static ngx_conf_post_t  ngx_http_quic_streams_index_mask_post =
-    { ngx_http_quic_streams_index_mask };
 static ngx_conf_post_t  ngx_http_quic_chunk_size_post =
     { ngx_http_quic_chunk_size };
 
@@ -145,11 +138,11 @@ static ngx_http_module_t  ngx_http_quic_module_ctx = {
 
 ngx_module_t  ngx_http_quic_module = {
     NGX_MODULE_V1,
-    &ngx_http_quic_module_ctx,               /* module context */
-    ngx_http_quic_commands,                  /* module directives */
+    &ngx_http_quic_module_ctx,             /* module context */
+    ngx_http_quic_commands,                /* module directives */
     NGX_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
-    ngx_http_quic_module_init,             /* init module */
+    NULL,						           /* init module */
     ngx_http_quic_proto_init,              /* init process */
     NULL,                                  /* init thread */
     NULL,                                  /* exit thread */
@@ -162,12 +155,6 @@ ngx_module_t  ngx_http_quic_module = {
 static ngx_http_variable_t  ngx_http_quic_vars[] = {
     { ngx_null_string, NULL, NULL, 0, 0, 0 }
 };
-
-static ngx_int_t
-ngx_http_quic_module_init(ngx_cycle_t *cycle)
-{
-    return NGX_OK;
-}
 
 
 static void *
@@ -345,26 +332,6 @@ ngx_http_quic_preread_size(ngx_conf_t *cf, void *post, void *data)
     return NGX_CONF_OK;
 }
 
-
-static char *
-ngx_http_quic_streams_index_mask(ngx_conf_t *cf, void *post, void *data)
-{
-    ngx_uint_t *np = data;
-
-    ngx_uint_t  mask;
-
-    mask = *np - 1;
-
-    if (*np == 0 || (*np & mask)) {
-        return "must be a power of two";
-    }
-
-    *np = mask;
-
-    return NGX_CONF_OK;
-}
-
-
 static char *
 ngx_http_quic_chunk_size(ngx_conf_t *cf, void *post, void *data)
 {
@@ -387,11 +354,14 @@ ngx_http_quic_chunk_size(ngx_conf_t *cf, void *post, void *data)
 static ngx_int_t ngx_http_quic_proto_init(ngx_cycle_t *cycle) 
 {
 	ngx_http_quic_main_conf_t *qmcf;
-	
+
+//todo
+//maybe we should initialize quid_dispatcher here
+//
 	qmcf = ngx_http_cycle_get_module_main_conf(cycle, ngx_http_quic_module);
 /*
-	if (qmcf) {
-		ngx_log_error(cycle->log, );
+	if (!qmcf) {
+		return NGX_ERROR;
 	}
 */
 	return NGX_OK;

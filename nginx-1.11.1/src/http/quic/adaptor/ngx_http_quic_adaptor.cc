@@ -181,12 +181,13 @@ void ngx_http_quic_send_to_nginx_test(void *stream)
 	quic_stream->OnNginxDataAvailable();
 }
 
-int ngx_http_quic_response_body_available(void *stream, const char *buf, const int buf_len)
+int ngx_http_quic_response_body_available(void *stream, const char *buf, const int buf_len, int last_buf)
 {
 	QUIC_DVLOG(1) << "lance_debug begin to OnNginxHeaderAvailable";	
 	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
 	string ngx_body = string(buf, buf_len);
-	quic_stream->OnNginxBodyAvailable(ngx_body);
+	bool fin = last_buf ? true : false;
+	quic_stream->OnNginxBodyAvailable(ngx_body, fin);
 	return 0;
 }
 
@@ -196,11 +197,12 @@ void ngx_http_quic_response_available(void *stream)
 	quic_stream->OnNginxDataAvailable();
 }
 
-int ngx_http_quic_response_header_available(void *stream, const char *buf, const int buf_len)
+int ngx_http_quic_response_header_available(void *stream, const char *buf, const int buf_len, int last_buf)
 {
 	QUIC_DVLOG(1) << "lance_debug begin to OnNginxHeaderAvailable";	
 	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
 	string ngx_header = string(buf, buf_len);
-	quic_stream->OnNginxHeaderAvailable(ngx_header);
+	bool fin = last_buf ? true : false;
+	quic_stream->OnNginxHeaderAvailable(ngx_header, fin);
 	return 0;
 }

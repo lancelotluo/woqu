@@ -620,7 +620,7 @@ ngx_http_header_filter(ngx_http_request_t *r)
     out.buf = b;
     out.next = NULL;
 	
-	// quic filter here , need not repeat to make the http format
+	// quic filter here , need not to form the buf as http format
 	// just send the buf
 	if (r->quic_stream) {
 		return ngx_http_quic_header_filter(r, &out);

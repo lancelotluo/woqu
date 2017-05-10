@@ -14,7 +14,7 @@
 #include "net/spdy/core/spdy_framer.h"
 #include "net/tools/quic/quic_http_response_cache.h"
 #include "net/tools/quic/quic_spdy_server_stream_base.h"
-using std::string;
+
 namespace net {
 
 namespace test {
@@ -59,8 +59,8 @@ class QuicSimpleServerStream : public QuicSpdyServerStreamBase {
   void SendToNginx();
 
   virtual void OnNginxDataAvailable();
-  virtual void OnNginxHeaderAvailable(const string &header);
-  virtual void OnNginxBodyAvailable(const std::string &body);
+  virtual void OnNginxHeaderAvailable(const std::string &header, bool fin);
+  virtual void OnNginxBodyAvailable(const std::string &body, bool fin);
   virtual void SetQuicNgxConnection(void *ngx_connection);
   virtual void* GetQuicNgxConnection();
 

@@ -2276,7 +2276,7 @@ ngx_http_finalize_request(ngx_http_request_t *r, ngx_int_t rc)
     ngx_http_request_t        *pr;
     ngx_http_core_loc_conf_t  *clcf;
 	//lance_debug 
-	return;
+	//return;
 	//
 	c = r->connection;
 
@@ -2526,6 +2526,12 @@ ngx_http_finalize_connection(ngx_http_request_t *r)
 
 #if (NGX_HTTP_V2)
     if (r->stream) {
+        ngx_http_close_request(r, 0);
+        return;
+    }
+#endif
+#if (NGX_HTTP_QUIC)
+    if (r->quic_stream) {
         ngx_http_close_request(r, 0);
         return;
     }
@@ -3419,6 +3425,13 @@ ngx_http_close_request(ngx_http_request_t *r, ngx_int_t rc)
 #if (NGX_HTTP_V2)
     if (r->stream) {
         ngx_http_v2_close_stream(r->stream, rc);
+        return;
+    }
+#endif
+
+#if (NGX_HTTP_QUIC)
+    if (r->stream) {
+        //ngx_http_quic_close_stream(r->quic_stream, rc);
         return;
     }
 #endif
