@@ -28,8 +28,8 @@ typedef void QuicSimpleDispatcher;
 #endif
 
 struct ngx_http_quic_conf_s {
-	const char *certificate;
-	const char *certificate_key;
+	unsigned char *certificate;
+	unsigned char *certificate_key;
 };
 
 typedef struct ngx_http_quic_conf_s ngx_http_quic_conf_t;
@@ -39,15 +39,15 @@ QuicSimpleDispatcher *ngx_http_quic_create_dispatcher(int fd, ngx_http_quic_conf
 void ngx_http_quic_set_log_level(int level);
 
 void ngx_http_quic_dispatcher_process_packet(void *ngx_http_connection, QuicSimpleDispatcher *dispatcher,
-			char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
+			const char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
 			struct sockaddr *local_sockaddr, int fd);
 void ngx_http_quic_send_quic_to_nginx(void * x, char *host, int64_t host_len, char *path, int64_t path_len, char *body, int64_t body_len);
 
 void ngx_http_quic_send_to_nginx(void *stream, const char *request, int request_len, const char *body, int body_len);
 void ngx_http_quic_send_to_nginx_test(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
 void ngx_http_quic_response_availble(void *stream);
-int ngx_http_quic_response_header_available(void *stream, const char *buf, const int buf_len, int last_buf);
-int ngx_http_quic_response_body_available(void *stream, const char *buf, const int buf_len, int last_buf);
+int ngx_http_quic_response_header_available(void *stream, unsigned char *buf, const int buf_len, int last_buf);
+int ngx_http_quic_response_body_available(void *stream, unsigned char *buf, const int buf_len, int last_buf);
 #ifdef __cplusplus
 }
 #endif

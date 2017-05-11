@@ -65,7 +65,7 @@ QuicSimpleDispatcher* ngx_http_quic_create_dispatcher(int fd, ngx_http_quic_conf
   // Pick one and remove the other later
 
 	//std::unique_ptr<ProofSource> proof_source = CreateProofSource(base::FilePath("./cert/quic.cert"), base::FilePath("./cert/quic.key.pkcs8"));
-	std::unique_ptr<ProofSource> proof_source = CreateProofSource(base::FilePath(conf->certificate), base::FilePath(conf->certificate_key));
+	std::unique_ptr<ProofSource> proof_source = CreateProofSource(base::FilePath(reinterpret_cast<char*>(conf->certificate)), base::FilePath(reinterpret_cast<char*>(conf->certificate_key)));
 	QuicCryptoServerConfig *crypto_config = new QuicCryptoServerConfig(kSourceAddressTokenSecret, random_generator,
 			  std::move(proof_source));
 	//net::EphemeralKeySource* keySource = new GoEphemeralKeySource();
@@ -123,24 +123,21 @@ void ngx_http_quic_set_log_level(int level)
 }
 
 void ngx_http_quic_dispatcher_process_packet(void *ngx_connection, QuicSimpleDispatcher* dispatcher,
-			char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
+			const char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
 			struct sockaddr *local_sockaddr, int fd) {
 
-	QUIC_DVLOG(1) << "lance_debug quic dispatcher process packet" << dispatcher;	
+	QUIC_DVLOG(1) << "lance_debug quic dispatcher process packet" << dispatcher << "packet_len:" << length << "ngx_connection:" << ngx_connection;	
 	
 	struct sockaddr_storage *generic_localsock = (struct sockaddr_storage*) local_sockaddr;
 	struct sockaddr_storage *generic_peersock = (struct sockaddr_storage*) peer_sockaddr;
 	QuicSocketAddress server_address(*generic_localsock);
 	QuicSocketAddress client_address(*generic_peersock);
 
-	QUIC_DVLOG(1) << "bufferlen:" << length;	
-
 	QuicReceivedPacket packet(
       buffer, length, dispatcher->helper()->GetClock()->Now(),
       false /* Do not own the buffer, so will not free buffer in the destructor */);
 
 	dispatcher->SetQuicNgxConnection(ngx_connection);
-	QUIC_DVLOG(1) << "lance_debug ngx_connection: " << ngx_connection;	
 	dispatcher->ProcessPacket(server_address, client_address, packet);
 }
 
@@ -181,11 +178,11 @@ void ngx_http_quic_send_to_nginx_test(void *stream)
 	quic_stream->OnNginxDataAvailable();
 }
 
-int ngx_http_quic_response_body_available(void *stream, const char *buf, const int buf_len, int last_buf)
+int ngx_http_quic_response_body_available(void *stream, unsigned char *buf, const int buf_len, int last_buf)
 {
 	QUIC_DVLOG(1) << "lance_debug begin to OnNginxHeaderAvailable";	
 	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
-	string ngx_body = string(buf, buf_len);
+	string ngx_body = string(reinterpret_cast<char*>(buf), buf_len);
 	bool fin = last_buf ? true : false;
 	quic_stream->OnNginxBodyAvailable(ngx_body, fin);
 	return 0;
@@ -197,11 +194,11 @@ void ngx_http_quic_response_available(void *stream)
 	quic_stream->OnNginxDataAvailable();
 }
 
-int ngx_http_quic_response_header_available(void *stream, const char *buf, const int buf_len, int last_buf)
+int ngx_http_quic_response_header_available(void *stream, unsigned char *buf, const int buf_len, int last_buf)
 {
 	QUIC_DVLOG(1) << "lance_debug begin to OnNginxHeaderAvailable";	
 	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
-	string ngx_header = string(buf, buf_len);
+	string ngx_header = string(reinterpret_cast<char*>(buf), buf_len);
 	bool fin = last_buf ? true : false;
 	quic_stream->OnNginxHeaderAvailable(ngx_header, fin);
 	return 0;

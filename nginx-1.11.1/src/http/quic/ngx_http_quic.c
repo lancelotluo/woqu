@@ -104,6 +104,7 @@ ngx_http_quic_init(ngx_event_t *rev)
 
     rev->handler = ngx_http_quic_read_handler;
     c->write->handler = ngx_http_quic_write_handler;
+
 	if (qscf->quic_dispatcher->proto_quic_dispatcher == NULL) {
 		ngx_http_quic_conf_t nqcf;
 		nqcf.certificate		= qscf->certificate.data;
@@ -118,9 +119,10 @@ ngx_http_quic_init(ngx_event_t *rev)
 		}
 	}
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic process packet c:%p", c);
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic begin to process packet c:%p", c);
 
-    ngx_http_quic_dispatcher_process_packet(c, qscf->quic_dispatcher->proto_quic_dispatcher, c->buffer->start, c->buffer->last - c->buffer->start, c->sockaddr, c->local_sockaddr, c->fd);
+    ngx_http_quic_dispatcher_process_packet(c, qscf->quic_dispatcher->proto_quic_dispatcher, (const char*)c->buffer->start, c->buffer->last - c->buffer->start, c->sockaddr, c->local_sockaddr, c->fd);
+
 }
 
 
@@ -192,8 +194,6 @@ ngx_http_quic_handle_connection(ngx_http_quic_connection_t *qc)
     }
 
     ngx_add_timer(c->read, qscf->idle_timeout);
-
-	ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "create quic dispatcher");
 }
 
 void
@@ -236,7 +236,7 @@ ngx_http_quic_construct_request_line(ngx_http_request_t *r)
 
     p = ngx_pnalloc(r->pool, r->request_line.len + 1);
     if (p == NULL) {
-        ngx_http_quic_close_stream(r->stream, NGX_HTTP_INTERNAL_SERVER_ERROR);
+        ngx_http_quic_close_stream(r->quic_stream, NGX_HTTP_INTERNAL_SERVER_ERROR);
         return NGX_ERROR;
     }
 
@@ -283,10 +283,10 @@ void ngx_http_quic_init_http_request(void *quic_stream, void *connection, const 
 	ngx_http_request_t *r = ngx_quic_stream->request;
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "http request from proto_quic:%s", request);
 
-	r->header_in->start = request;
-	r->header_in->pos   = request;
-	r->header_in->last  = request + request_len;
-	r->header_in->end   = request + request_len;
+	r->header_in->start = (unsigned char*)request;
+	r->header_in->pos   = (unsigned char*)request;
+	r->header_in->last  = (unsigned char*)request + request_len;
+	r->header_in->end   = (unsigned char*)request + request_len;
 
 	ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0,
 			   "request header_in: %s", r->header_in->start);
@@ -495,7 +495,7 @@ ngx_http_quic_construct_cookie_header(ngx_http_request_t *r)
 
     buf = ngx_pnalloc(r->pool, len + 1);
     if (buf == NULL) {
-        ngx_http_quic_close_stream(r->stream, NGX_HTTP_INTERNAL_SERVER_ERROR);
+        ngx_http_quic_close_stream(r->quic_stream, NGX_HTTP_INTERNAL_SERVER_ERROR);
         return NGX_ERROR;
     }
 
@@ -536,7 +536,7 @@ ngx_http_quic_construct_cookie_header(ngx_http_request_t *r)
                        h->lowcase_key, h->key.len);
 
     if (hh == NULL) {
-        ngx_http_quic_close_stream(r->stream, NGX_HTTP_INTERNAL_SERVER_ERROR);
+        ngx_http_quic_close_stream(r->quic_stream, NGX_HTTP_INTERNAL_SERVER_ERROR);
         return NGX_ERROR;
     }
 
@@ -571,7 +571,7 @@ ngx_http_quic_construct_host(ngx_http_request_t *r, const char *quic_host, int64
     h->key.data = host.data;
 
     h->value.len = host_len;
-    h->value.data = quic_host;
+    h->value.data = (unsigned char *)quic_host;
 
     h->lowcase_key = host.data;
 
