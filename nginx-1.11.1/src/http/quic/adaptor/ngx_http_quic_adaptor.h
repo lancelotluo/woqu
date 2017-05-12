@@ -38,7 +38,7 @@ QuicSimpleDispatcher *ngx_http_quic_create_dispatcher(int fd, ngx_http_quic_conf
 
 void ngx_http_quic_set_log_level(int level);
 
-void ngx_http_quic_dispatcher_process_packet(void *ngx_http_connection, QuicSimpleDispatcher *dispatcher,
+int ngx_http_quic_dispatcher_process_packet(void *ngx_http_connection, QuicSimpleDispatcher *dispatcher,
 			const char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
 			struct sockaddr *local_sockaddr, int fd);
 void ngx_http_quic_send_quic_to_nginx(void * x, char *host, int64_t host_len, char *path, int64_t path_len, char *body, int64_t body_len);

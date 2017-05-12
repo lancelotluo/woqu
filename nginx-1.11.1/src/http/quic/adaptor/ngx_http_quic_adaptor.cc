@@ -122,7 +122,7 @@ void ngx_http_quic_set_log_level(int level)
 //								DISABLE_DCHECK_FOR_NON_OFFICIAL_RELEASE_BUILDS);
 }
 
-void ngx_http_quic_dispatcher_process_packet(void *ngx_connection, QuicSimpleDispatcher* dispatcher,
+int ngx_http_quic_dispatcher_process_packet(void *ngx_connection, QuicSimpleDispatcher* dispatcher,
 			const char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
 			struct sockaddr *local_sockaddr, int fd) {
 
@@ -138,7 +138,7 @@ void ngx_http_quic_dispatcher_process_packet(void *ngx_connection, QuicSimpleDis
       false /* Do not own the buffer, so will not free buffer in the destructor */);
 
 	dispatcher->SetQuicNgxConnection(ngx_connection);
-	dispatcher->ProcessPacket(server_address, client_address, packet);
+	return dispatcher->ProcessPacket(server_address, client_address, packet);
 }
 
 void ngx_http_quic_send_to_nginx(void *stream, const char *request, int request_len, const char *body, int body_len)

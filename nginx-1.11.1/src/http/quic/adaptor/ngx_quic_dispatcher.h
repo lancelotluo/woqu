@@ -60,7 +60,7 @@ class QuicDispatcher : public QuicTimeWaitListManager::Visitor,
 
   // Process the incoming packet by creating a new session, passing it to
   // an existing session, or passing it to the time wait list.
-  void ProcessPacket(const QuicSocketAddress& server_address,
+  bool ProcessPacket(const QuicSocketAddress& server_address,
                      const QuicSocketAddress& client_address,
                      const QuicReceivedPacket& packet) override;
 

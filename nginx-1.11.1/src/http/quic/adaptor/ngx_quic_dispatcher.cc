@@ -227,7 +227,7 @@ void QuicDispatcher::InitializeWithWriter(QuicPacketWriter* writer) {
   time_wait_list_manager_.reset(CreateQuicTimeWaitListManager());
 }
 
-void QuicDispatcher::ProcessPacket(const QuicSocketAddress& server_address,
+bool QuicDispatcher::ProcessPacket(const QuicSocketAddress& server_address,
                                    const QuicSocketAddress& client_address,
                                    const QuicReceivedPacket& packet) {
   current_server_address_ = server_address;
@@ -239,7 +239,7 @@ void QuicDispatcher::ProcessPacket(const QuicSocketAddress& server_address,
 QUIC_DLOG(INFO)
         << "lance_debug  QuicDispatcher ProcessPacket crypto_config: " << crypto_config_ << "config: " << &config_ << "QuicConnectionHelperInterface: " << &helper_;
 //
-  framer_.ProcessPacket(packet);
+  return framer_.ProcessPacket(packet);
   // TODO(rjshade): Return a status describing if/why a packet was dropped,
   //                and log somehow.  Maybe expose as a varz.
 }
@@ -744,7 +744,7 @@ void QuicDispatcher::ProcessChlo(QuicPacketNumber packet_number) {
   }
   if (FLAGS_quic_allow_chlo_buffering &&
       FLAGS_quic_reloadable_flag_quic_limit_num_new_sessions_per_epoll_loop &&
-      new_sessions_allowed_per_event_loop_ <= -1) {
+      new_sessions_allowed_per_event_loop_ < -1) {
     QUIC_DLOG(INFO) << "Can't create new session any more" << FLAGS_quic_allow_chlo_buffering <<" FLAGS_quic_reloadable_flag_quic_limit_num_new_sessions_per_epoll_loop:" <<FLAGS_quic_reloadable_flag_quic_limit_num_new_sessions_per_epoll_loop << " new_sessions_allowed_per_event_loop_" << new_sessions_allowed_per_event_loop_;
     // Can't create new session any more. Wait till next event loop.
     QUIC_BUG_IF(buffered_packets_.HasChloForConnection(current_connection_id_));
@@ -783,7 +783,7 @@ void QuicDispatcher::ProcessChlo(QuicPacketNumber packet_number) {
   // buffered in the store before flag is turned off.
   DeliverPacketsToSession(packets, session);
   if (FLAGS_quic_reloadable_flag_quic_limit_num_new_sessions_per_epoll_loop) {
-    --new_sessions_allowed_per_event_loop_;
+    //--new_sessions_allowed_per_event_loop_;
   }
 }
 

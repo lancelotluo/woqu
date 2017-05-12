@@ -121,8 +121,10 @@ ngx_http_quic_init(ngx_event_t *rev)
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic begin to process packet c:%p", c);
 
-    ngx_http_quic_dispatcher_process_packet(c, qscf->quic_dispatcher->proto_quic_dispatcher, (const char*)c->buffer->start, c->buffer->last - c->buffer->start, c->sockaddr, c->local_sockaddr, c->fd);
-
+    if (!ngx_http_quic_dispatcher_process_packet(c, qscf->quic_dispatcher->proto_quic_dispatcher, (const char*)c->buffer->start, c->buffer->last - c->buffer->start, c->sockaddr, c->local_sockaddr, c->fd)) {
+		ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic dispatcher return false. c:%p", c);
+        ngx_http_close_connection(c);
+	}
 }
 
 

@@ -178,7 +178,7 @@ ngx_http_quic_send_chain(ngx_connection_t *fc, ngx_chain_t *in, off_t limit)
 
 	while (out) {
 		last = 0;
-		if (out->buf->last_buf || out->buf->last_in_chain) {
+		if (out->buf->last_buf) {
 		//if (out->buf->last_buf || (out->buf->flush && !out->next)) {
 			last = 1;
 		} 
