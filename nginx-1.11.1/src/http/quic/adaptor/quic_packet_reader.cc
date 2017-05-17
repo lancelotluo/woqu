@@ -16,7 +16,7 @@
 #include "net/quic/platform/api/quic_logging.h"
 #include "net/quic/platform/api/quic_socket_address.h"
 #include "net/tools/quic/platform/impl/quic_socket_utils.h"
-#include "net/tools/quic/quic_dispatcher.h"
+#include "ngx_quic_dispatcher.h"
 #include "net/tools/quic/quic_process_packet_interface.h"
 
 #ifndef SO_RXQ_OVFL

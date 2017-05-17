@@ -26,7 +26,7 @@ struct ngx_http_quic_header_s {
 
 struct ngx_http_quic_stream_s {
     ngx_http_request_t              *request;
-    ngx_http_quic_connection_t        *connection;
+    ngx_http_quic_connection_t      *connection;
 	void							*quic_stream;// point to stream in proto-quic
     ngx_uint_t                       queued;
 
@@ -77,6 +77,7 @@ struct ngx_http_quic_connection_s {
     unsigned                         closed_nodes:8;
     unsigned                         settings_ack:1;
     unsigned                         blocked:1;
+    unsigned                         has_stream:1;
 };
 
 

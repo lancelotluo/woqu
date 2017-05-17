@@ -639,6 +639,7 @@ bool QuicDispatcher::OnBlockedFrame(const QuicBlockedFrame& frame) {
 }
 
 void QuicDispatcher::OnPacketComplete() {
+  QUIC_DLOG(INFO) << "QuicDispatcher OnPacketComplete, cid:" ;
   DCHECK(false);
 }
 

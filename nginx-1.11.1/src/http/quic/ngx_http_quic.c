@@ -57,6 +57,12 @@ ngx_http_quic_init(ngx_event_t *rev)
     hc = c->data;
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "init quic connection");
+	
+	if (rev->timedout) {
+		ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic connection timeout");
+        ngx_http_close_connection(c);
+		return;
+	}
 
     c->log->action = "processing QUIC packet";
 
@@ -79,6 +85,7 @@ ngx_http_quic_init(ngx_event_t *rev)
 
     qc->connection = c;
     qc->http_connection = hc;
+    qc->has_stream = 0;
 
     qscf = ngx_http_get_module_srv_conf(hc->conf_ctx, ngx_http_quic_module);
 	if (qscf == NULL) {
@@ -94,11 +101,13 @@ ngx_http_quic_init(ngx_event_t *rev)
         return;
     }
 
+	/*
     cln = ngx_pool_cleanup_add(c->pool, 0);
     if (cln == NULL) {
         ngx_http_close_connection(c);
         return;
     }
+	*/
 
     c->data = qc;
 
@@ -115,15 +124,23 @@ ngx_http_quic_init(ngx_event_t *rev)
 		if (qscf->quic_dispatcher->proto_quic_dispatcher == NULL) {
 			ngx_log_error(NGX_LOG_EMERG, c->log, 0,
                           "fail to create proto-quic dispatcher");
+			ngx_http_close_connection(c);
 			return;
 		}
 	}
+
+    //ngx_add_timer(rev, 3000);
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic begin to process packet c:%p", c);
 
     if (!ngx_http_quic_dispatcher_process_packet(c, qscf->quic_dispatcher->proto_quic_dispatcher, (const char*)c->buffer->start, c->buffer->last - c->buffer->start, c->sockaddr, c->local_sockaddr, c->fd)) {
 		ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic dispatcher return false. c:%p", c);
-        ngx_http_close_connection(c);
+   //     ngx_http_close_connection(c);
+	}
+
+	if (!qc->has_stream) {
+		ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "close nonstream connection c:%p", c);
+		ngx_http_close_connection(c);
 	}
 }
 
@@ -141,7 +158,7 @@ ngx_http_quic_read_handler(ngx_event_t *rev)
 	qc = c->data;
 
     if (rev->timedout) {
-        ngx_log_error(NGX_LOG_INFO, c->log, NGX_ETIMEDOUT, "client timed out");
+        ngx_log_error(NGX_LOG_INFO, c->log, NGX_ETIMEDOUT, "quic client timed out");
         return;
     }
 
@@ -195,7 +212,7 @@ ngx_http_quic_handle_connection(ngx_http_quic_connection_t *qc)
         ngx_del_timer(c->write);
     }
 
-    ngx_add_timer(c->read, qscf->idle_timeout);
+    //ngx_add_timer(c->read, qscf->idle_timeout);
 }
 
 void
@@ -263,7 +280,6 @@ void ngx_http_quic_init_http_request(void *quic_stream, void *connection, const 
 {
     ngx_connection_t          *c;
     ngx_pool_cleanup_t        *cln;
-    ngx_http_connection_t     *hc;
     ngx_http_quic_stream_t    *ngx_quic_stream;
     ngx_http_quic_srv_conf_t    *qscf;
     ngx_http_quic_main_conf_t   *qmcf;
@@ -272,16 +288,21 @@ void ngx_http_quic_init_http_request(void *quic_stream, void *connection, const 
 
     c = connection;
     qc = c->data;
-	hc = qc->http_connection;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "init quic http connection, c:%p", c);
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "init quic http connection, c:%p, set has_stream", c);
+
+	qc->has_stream = 1;
 
     c->log->action = "processing QUIC packet";
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "http response for quic");
-	ngx_quic_stream = ngx_http_quic_create_stream(qc, quic_stream);
 
-	// lance_debug simple code
+	ngx_quic_stream = ngx_http_quic_create_stream(qc, quic_stream);
+	if (ngx_quic_stream == NULL) {
+		ngx_log_error(NGX_LOG_EMERG, c->log, 0, "fail to create nginx quic stream");
+		return;
+	}
+
 	ngx_http_request_t *r = ngx_quic_stream->request;
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "http request from proto_quic:%s", request);
 
@@ -295,33 +316,6 @@ void ngx_http_quic_init_http_request(void *quic_stream, void *connection, const 
 
 	ngx_http_quic_process_request_line(r);
 
-	/*
-	rc = ngx_http_quic_construct_host(ngx_quic_stream->request, host, host_len);
-	if (rc != NGX_OK) {
-        ngx_log_error(NGX_LOG_INFO, c->log, 0, "fail to construct host");
-	}
-	ngx_http_quic_header_t *method_header = ngx_palloc(r->pool, sizeof(ngx_http_quic_header_t));
-	method_header->value.len = 3;
-	method_header->value.data = ngx_palloc(r->pool, method_header->value.len);
-	ngx_memcpy(method_header->value.data, "GET", method_header->value.len);
-
-	rc = ngx_http_quic_parse_method(r, method_header);
-	if (rc == NGX_ERROR) {
-        ngx_log_error(NGX_LOG_INFO, c->log, 0, "fail to parse method");
-	}
-
-	ngx_http_quic_header_t *path_header = ngx_palloc(r->pool, sizeof(ngx_http_quic_header_t));
-	path_header->value.len = sizeof("/index.html") - 1;
-	path_header->value.data = ngx_palloc(r->pool, path_header->value.len);
-	ngx_memcpy(path_header->value.data, "/index.html", path_header->value.len);
-	rc = ngx_http_quic_parse_path(r, path_header);
-	if (rc == NGX_ERROR) {
-        ngx_log_error(NGX_LOG_INFO, c->log, 0, "fail to parse path");
-	}
-	*/
-
-	//ngx_http_quic_run_request(r);
-	//ngx_http_quic_response_availble(stream);
 }
 
 static ngx_http_quic_stream_t *
@@ -461,6 +455,13 @@ static void ngx_http_quic_close_stream_handler(ngx_event_t *ev)
 void
 ngx_http_quic_close_stream(ngx_http_quic_stream_t *stream, ngx_int_t rc)
 {
+	/*
+	 * ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
+				   "close quic stream");
+
+    ngx_http_free_request(stream->connection, rc);
+    ngx_http_close_connection(c);
+	*/
 	return;
 }
 
@@ -806,6 +807,8 @@ ngx_http_quic_process_request_line(ngx_http_request_t *r)
 			return rc;
 		}
 /*
+ * link error
+ *
 		if (ngx_http_set_virtual_server(r, &host) == NGX_ERROR) {
 			return NGX_ERROR;
 		}
