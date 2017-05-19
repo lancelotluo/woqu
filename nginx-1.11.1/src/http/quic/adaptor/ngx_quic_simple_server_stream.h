@@ -32,7 +32,8 @@ class QuicSimpleServerStream : public QuicSpdyServerStreamBase {
   QuicSimpleServerStream(QuicStreamId id,
                          QuicSpdySession* session,
                          QuicHttpResponseCache* response_cache,
-						 void *ngx_connection);
+						 void *ngx_connection, 
+						 void *ngx_addr_conf);
   ~QuicSimpleServerStream() override;
 
   // QuicSpdyStream
@@ -63,6 +64,8 @@ class QuicSimpleServerStream : public QuicSpdyServerStreamBase {
   virtual void OnNginxBodyAvailable(const std::string &body, bool fin);
   virtual void SetQuicNgxConnection(void *ngx_connection);
   virtual void* GetQuicNgxConnection();
+  virtual void SetQuicNgxAddrConf(void *ngx_addr_conf);
+  virtual void* GetQuicNgxAddrConf();
 
  protected:
   // Sends a basic 200 response using SendHeaders for the headers and WriteData
@@ -97,6 +100,7 @@ class QuicSimpleServerStream : public QuicSpdyServerStreamBase {
 
   QuicHttpResponseCache* response_cache_;  // Not owned.
   void *ngx_connection_;
+  void *ngx_addr_conf_;
   DISALLOW_COPY_AND_ASSIGN(QuicSimpleServerStream);
 };
 

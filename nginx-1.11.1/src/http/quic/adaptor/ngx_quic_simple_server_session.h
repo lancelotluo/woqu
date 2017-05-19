@@ -59,7 +59,8 @@ class QuicSimpleServerSession : public QuicServerSessionBase {
                           const QuicCryptoServerConfig* crypto_config,
                           QuicCompressedCertsCache* compressed_certs_cache,
                           QuicHttpResponseCache* response_cache,
-						  void *ngx_connection);
+						  void *ngx_connection,
+						  void *ngx_addr_conf);
   QuicSimpleServerSession(const QuicConfig& config,
                           QuicConnection* connection,
                           QuicSession::Visitor* visitor,
@@ -88,6 +89,8 @@ class QuicSimpleServerSession : public QuicServerSessionBase {
       QuicStreamId original_stream_id,
       const SpdyHeaderBlock& original_request_headers);
 
+  void SetQuicNgxAddrConf(void *ngx_addr_conf);
+  void* GetQuicNgxAddrConf();
   void SetQuicNgxConnection(void *ngx_connection);
   void* GetQuicNgxConnection();
  protected:
@@ -158,6 +161,7 @@ class QuicSimpleServerSession : public QuicServerSessionBase {
 
   QuicHttpResponseCache* response_cache_;  // Not owned.
   void* ngx_connection_; // Not owned.
+  void* ngx_addr_conf_; // Not owned.
   DISALLOW_COPY_AND_ASSIGN(QuicSimpleServerSession);
 };
 

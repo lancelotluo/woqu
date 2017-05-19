@@ -25,6 +25,9 @@ class QuicSimpleDispatcher : public QuicDispatcher {
   void *GetQuicNgxConnection();
   void SetQuicNgxConnection(void *ngx_connection);
 
+  void *GetQuicNgxAddrConf();
+  void SetQuicNgxAddrConf(void *addr_conf);
+
   ~QuicSimpleDispatcher() override;
 
   int GetRstErrorCount(QuicRstStreamErrorCode rst_error_code) const;
@@ -41,6 +44,7 @@ class QuicSimpleDispatcher : public QuicDispatcher {
  private:
   QuicHttpResponseCache* response_cache_;  // Unowned.
   void *ngx_connection_;
+  void *ngx_addr_conf_;
   // The map of the reset error code with its counter.
   std::map<QuicRstStreamErrorCode, int> rst_error_map_;
 };

@@ -39,12 +39,13 @@ static void CreateSpdyHeadersFromHttpResponse(
 QuicSimpleServerStream::QuicSimpleServerStream(
     QuicStreamId id,
     QuicSpdySession* session,
-    QuicHttpResponseCache* response_cache, void *ngx_connection)
+    QuicHttpResponseCache* response_cache, void *ngx_connection, void *ngx_addr_conf)
     : QuicSpdyServerStreamBase(id, session),
       content_length_(-1),
       response_cache_(response_cache),
-	  ngx_connection_(ngx_connection){
-		QUIC_DVLOG(1) << "QuicSimpleServerStream::QuicSimpleServerStream ngx_connection: " << ngx_connection_;}
+	  ngx_connection_(ngx_connection),
+	  ngx_addr_conf_(ngx_addr_conf) {
+		QUIC_DVLOG(1) << "QuicSimpleServerStream::QuicSimpleServerStream ngx_connection: " << ngx_connection_ << "ngx_addr_conf:" << ngx_addr_conf_;}
 
 QuicSimpleServerStream::QuicSimpleServerStream(
     QuicStreamId id,
@@ -347,6 +348,16 @@ void QuicSimpleServerStream::SetQuicNgxConnection(void *ngx_connection) {
 void* QuicSimpleServerStream::GetQuicNgxConnection() {
 	QUIC_DLOG(INFO) << "QuicSimpleServerStream::GetQuicNgxConnection " << ngx_connection_;
 	return ngx_connection_;
+}
+
+void QuicSimpleServerStream::SetQuicNgxAddrConf(void *ngx_addr_conf) {
+	QUIC_DLOG(INFO) << "QuicSimpleServerStream::SetQuicNgxAddrConf " << ngx_addr_conf;
+	ngx_addr_conf_ = ngx_addr_conf;
+}
+
+void* QuicSimpleServerStream::GetQuicNgxAddrConf() {
+	QUIC_DLOG(INFO) << "QuicSimpleServerStream::GetQuicNgxAddrConf " << ngx_addr_conf_;
+	return ngx_addr_conf_;
 }
 
 void CreateSpdyHeadersFromHttpResponse(

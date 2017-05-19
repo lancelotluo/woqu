@@ -58,15 +58,23 @@ QuicServerSessionBase* QuicSimpleDispatcher::CreateQuicSession(
   
   QuicServerSessionBase* session = new QuicSimpleServerSession(
       config(), connection, this, session_helper(), crypto_config(),
-      compressed_certs_cache(), response_cache_, ngx_connection_);
+      compressed_certs_cache(), response_cache_, ngx_connection_, ngx_addr_conf_);
   session->Initialize();
   //lance_debug
   //
   return session;
 }
 
+void *QuicSimpleDispatcher::GetQuicNgxAddrConf() {
+	return ngx_addr_conf_;
+}
 void *QuicSimpleDispatcher::GetQuicNgxConnection() {
 	return ngx_connection_;
+}
+
+void QuicSimpleDispatcher::SetQuicNgxAddrConf(void *addr_conf) {
+    QUIC_DLOG(INFO) << "lance_debug QuicSimpleDispatcher::SetQuicNgxAddrConf: " << addr_conf;
+	ngx_addr_conf_ = addr_conf;
 }
 
 void QuicSimpleDispatcher::SetQuicNgxConnection(void *ngx_connection) {

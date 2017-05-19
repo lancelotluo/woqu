@@ -324,14 +324,9 @@ ngx_http_init_connection(ngx_connection_t *c)
 
 #if (NGX_HTTP_QUIC)
 	if (hc->addr_conf->quic) {
-        ngx_log_error(NGX_LOG_ERR, c->log, 0,
+        ngx_log_error(NGX_LOG_DEBUG, c->log, 0,
                           "quic init handler");
 		rev->handler = ngx_http_quic_init;
-        if (!rev->timer_set) {
-            ngx_add_timer(rev, c->listening->post_accept_timeout);
-            ngx_reusable_connection(c, 1);
-        }
-		//ngx_add_timer(rev, c->listening->post_accept_timeout);
 		// for debug
 		rev->handler(rev);
 		return;
@@ -3434,7 +3429,7 @@ ngx_http_close_request(ngx_http_request_t *r, ngx_int_t rc)
 
 #if (NGX_HTTP_QUIC)
     if (r->quic_stream) {
-        //ngx_http_quic_close_stream(r->quic_stream, rc);
+        ngx_http_quic_close_stream(r->quic_stream, rc);
         //return;
     }
 #endif

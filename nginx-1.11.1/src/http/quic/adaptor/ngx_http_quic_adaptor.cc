@@ -121,7 +121,28 @@ void ngx_http_quic_set_log_level(int level)
 //				                DONT_LOCK_LOG_FILE, DELETE_OLD_LOG_FILE,
 //								DISABLE_DCHECK_FOR_NON_OFFICIAL_RELEASE_BUILDS);
 }
+/*
+int ngx_http_quic_dispatcher_process_packet(void *ngx_connection, void *addr_conf, QuicSimpleDispatcher* dispatcher,
+			const char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
+			struct sockaddr *local_sockaddr, int fd) {
 
+	QUIC_DVLOG(1) << "lance_debug quic dispatcher process packet" << dispatcher << "packet_len:" << length << "ngx_connection:" << ngx_connection << "ngx_addr_conf:" << addr_conf;	
+	
+	struct sockaddr_storage *generic_localsock = (struct sockaddr_storage*) local_sockaddr;
+	struct sockaddr_storage *generic_peersock = (struct sockaddr_storage*) peer_sockaddr;
+	QuicSocketAddress server_address(*generic_localsock);
+	QuicSocketAddress client_address(*generic_peersock);
+
+	QuicReceivedPacket packet(
+      buffer, length, dispatcher->helper()->GetClock()->Now(),
+      false );
+	// Do not own the buffer, so will not free buffer in the destructor 
+
+	dispatcher->SetQuicNgxConnection(ngx_connection);
+	dispatcher->SetQuicNgxAddrConf(addr_conf);
+	return dispatcher->ProcessPacket(server_address, client_address, packet);
+}
+*/
 int ngx_http_quic_dispatcher_process_packet(void *ngx_connection, QuicSimpleDispatcher* dispatcher,
 			const char *buffer, size_t length, struct sockaddr *peer_sockaddr, 
 			struct sockaddr *local_sockaddr, int fd) {
@@ -141,18 +162,20 @@ int ngx_http_quic_dispatcher_process_packet(void *ngx_connection, QuicSimpleDisp
 	return dispatcher->ProcessPacket(server_address, client_address, packet);
 }
 
-void ngx_http_quic_send_to_nginx(void *stream, const char *request, int request_len, const char *body, int body_len)
+int ngx_http_quic_send_to_nginx(void *stream, const char *request, int request_len, const char *body, int body_len)
 {
 	QUIC_DVLOG(1) << "lance_debug quic request:" << request << " len: "<< request_len;
 
 	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
+	//void *ngx_addr_conf = quic_stream->GetQuicNgxAddrConf();
 	void *ngx_connection = quic_stream->GetQuicNgxConnection();
 	if (ngx_connection == nullptr) {
 		QUIC_DVLOG(1) << "lance_debug ngx_connection is nullptr";	
-		return;
+		return -1;
 	}
 
-	ngx_http_quic_init_http_request(stream, ngx_connection, request, request_len, body, body_len);
+	//return ngx_http_quic_init_http_request(stream, ngx_connection, ngx_addr_conf, request, request_len, body, body_len);
+	return ngx_http_quic_init_http_request(stream, ngx_connection, request, request_len, body, body_len);
 	//ngx_http_quic_init_http_request_test(stream, ngx_connection, request, request_len, body, body_len);
 	//quic_stream->OnNginxDataAvailable();
 }

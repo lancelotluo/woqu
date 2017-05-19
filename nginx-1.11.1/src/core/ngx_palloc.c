@@ -102,8 +102,7 @@ ngx_reset_pool(ngx_pool_t *pool)
     ngx_pool_t        *p;
     ngx_pool_large_t  *l;
 
-    for (l = pool->large; l; l = l->next) {
-        if (l->alloc) {
+    for (l = pool->large; l; l = l->next) { if (l->alloc) {
             ngx_free(l->alloc);
         }
     }

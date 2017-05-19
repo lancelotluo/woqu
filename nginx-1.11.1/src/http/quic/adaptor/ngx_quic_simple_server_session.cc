@@ -25,7 +25,8 @@ QuicSimpleServerSession::QuicSimpleServerSession(
     const QuicCryptoServerConfig* crypto_config,
     QuicCompressedCertsCache* compressed_certs_cache,
     QuicHttpResponseCache* response_cache,
-	void *ngx_connection)
+	void *ngx_connection,
+	void *ngx_addr_conf) 
     : QuicServerSessionBase(config,
                             connection,
                             visitor,
@@ -34,7 +35,8 @@ QuicSimpleServerSession::QuicSimpleServerSession(
                             compressed_certs_cache),
       highest_promised_stream_id_(0),
       response_cache_(response_cache),
-	  ngx_connection_(ngx_connection) {}
+	  ngx_connection_(ngx_connection),
+	  ngx_addr_conf_(ngx_addr_conf) {}
 
 QuicSimpleServerSession::QuicSimpleServerSession(
     const QuicConfig& config,
@@ -115,7 +117,7 @@ QuicSpdyStream* QuicSimpleServerSession::CreateIncomingDynamicStream(
   }
 
   QuicSpdyStream* stream =
-      new QuicSimpleServerStream(id, this, response_cache_, GetQuicNgxConnection());
+      new QuicSimpleServerStream(id, this, response_cache_, GetQuicNgxConnection(), GetQuicNgxAddrConf());
   ActivateStream(QuicWrapUnique(stream));
   return stream;
 }
@@ -232,6 +234,14 @@ void QuicSimpleServerSession::SetQuicNgxConnection(void *ngx_connection) {
 
 void* QuicSimpleServerSession::GetQuicNgxConnection(){
 	return ngx_connection_;
+}
+
+void QuicSimpleServerSession::SetQuicNgxAddrConf(void *ngx_addr_conf) {
+	ngx_addr_conf_ = ngx_addr_conf;
+}
+
+void* QuicSimpleServerSession::GetQuicNgxAddrConf(){
+	return ngx_addr_conf_;
 }
 
 }  // namespace net

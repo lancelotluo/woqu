@@ -22,6 +22,9 @@ static ngx_http_quic_stream_t *ngx_http_quic_create_stream(
     ngx_http_quic_connection_t *qc, void *stream);
 static void ngx_http_quic_close_stream_handler(ngx_event_t *ev);
 
+static void
+ngx_http_quic_close_stream(ngx_http_quic_stream_t *stream, ngx_int_t rc);
+
 static ngx_int_t
 ngx_http_quic_construct_request_line(ngx_http_request_t *r);
 static ngx_int_t ngx_http_quic_construct_cookie_header(ngx_http_request_t *r);
@@ -312,9 +315,7 @@ ngx_int_t ngx_http_quic_init_http_request(void *quic_stream, void *connection, c
 			   "request header_in: %s", r->header_in->start);
 
 	ngx_http_quic_process_request_line(r);
-
-	//ngx_http_close_connection(c);
-
+	
 	return NGX_OK;
 }
 
@@ -455,16 +456,12 @@ static void ngx_http_quic_close_stream_handler(ngx_event_t *ev)
 void
 ngx_http_quic_close_stream(ngx_http_quic_stream_t *stream, ngx_int_t rc)
 {
-
-	return ;
-	ngx_connection_t *c;
-	c = stream->connection->connection;
-    ngx_http_close_connection(c);
 	/*
 	 * ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
 				   "close quic stream");
 
     ngx_http_free_request(stream->connection, rc);
+    ngx_http_close_connection(c);
 	*/
 	return;
 }
