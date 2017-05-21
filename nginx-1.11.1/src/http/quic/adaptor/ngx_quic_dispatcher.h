@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "adaptor/ngx_quic_process_packet_interface.h"
+
 #include "base/macros.h"
 #include "net/quic/core/crypto/quic_compressed_certs_cache.h"
 #include "net/quic/core/crypto/quic_random.h"
@@ -25,7 +27,6 @@
 #include "net/quic/platform/api/quic_containers.h"
 #include "net/quic/platform/api/quic_socket_address.h"
 
-#include "net/tools/quic/quic_process_packet_interface.h"
 #include "net/tools/quic/quic_time_wait_list_manager.h"
 #include "net/tools/quic/stateless_rejector.h"
 

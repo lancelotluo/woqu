@@ -269,6 +269,8 @@ bool QuicDispatcher::OnUnauthenticatedPublicHeader(
   SessionMap::iterator it = session_map_.find(connection_id);
   if (it != session_map_.end()) {
     DCHECK(!buffered_packets_.HasBufferedPackets(connection_id));
+	//QuicSimpleServerSession *x = dynamic_cast<QuicSimpleServerSession *> (it->second.get());
+    QUIC_DLOG(INFO) << "find quic session for " << connection_id << "ngx_connection: " << ngx_connection_;
     it->second->ProcessUdpPacket(current_server_address_,
                                  current_client_address_, *current_packet_);
     return false;
@@ -766,7 +768,7 @@ void QuicDispatcher::ProcessChlo(QuicPacketNumber packet_number) {
   // Creates a new session and process all buffered packets for this connection.
   QuicSession* session =
       CreateQuicSession(current_connection_id_, current_client_address_);
-  QUIC_DLOG(INFO) << "Created new session for " << current_connection_id_;
+  QUIC_DLOG(INFO) << "Created new session for " << current_connection_id_ << "ngx_connection: " << ngx_connection_;
   session_map_.insert(
       std::make_pair(current_connection_id_, QuicWrapUnique(session)));
   std::list<BufferedPacket> packets =

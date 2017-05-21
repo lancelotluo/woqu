@@ -56,6 +56,7 @@ QuicServerSessionBase* QuicSimpleDispatcher::CreateQuicSession(
       CreatePerConnectionWriter(),
       /* owns_writer= */ true, Perspective::IS_SERVER, GetSupportedVersions());
   
+  QUIC_DLOG(INFO)  << "begin to create QuicSimpleServerSession ngx_connection:" << ngx_connection_;
   QuicServerSessionBase* session = new QuicSimpleServerSession(
       config(), connection, this, session_helper(), crypto_config(),
       compressed_certs_cache(), response_cache_, ngx_connection_, ngx_addr_conf_);

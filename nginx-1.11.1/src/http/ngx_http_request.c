@@ -2411,15 +2411,15 @@ ngx_http_finalize_request(ngx_http_request_t *r, ngx_int_t rc)
 
         return;
     }
+	//lance debug
+	if (r->buffered || c->buffered || r->postponed || r->blocked) {
 
-    if (r->buffered || c->buffered || r->postponed || r->blocked) {
+		if (ngx_http_set_write_handler(r) != NGX_OK) {
+			ngx_http_terminate_request(r, 0);
+		}
 
-        if (ngx_http_set_write_handler(r) != NGX_OK) {
-            ngx_http_terminate_request(r, 0);
-        }
-
-        return;
-    }
+		return;
+	}
 
     if (r != c->data) {
         ngx_log_error(NGX_LOG_ALERT, c->log, 0,
@@ -3430,7 +3430,9 @@ ngx_http_close_request(ngx_http_request_t *r, ngx_int_t rc)
 #if (NGX_HTTP_QUIC)
     if (r->quic_stream) {
         ngx_http_quic_close_stream(r->quic_stream, rc);
-        //return;
+		ngx_http_free_request(r, rc);
+		ngx_http_close_connection(c);
+        return;
     }
 #endif
 

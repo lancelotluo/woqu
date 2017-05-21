@@ -45,7 +45,7 @@ QuicSimpleServerStream::QuicSimpleServerStream(
       response_cache_(response_cache),
 	  ngx_connection_(ngx_connection),
 	  ngx_addr_conf_(ngx_addr_conf) {
-		QUIC_DVLOG(1) << "QuicSimpleServerStream::QuicSimpleServerStream ngx_connection: " << ngx_connection_ << "ngx_addr_conf:" << ngx_addr_conf_;}
+		QUIC_DVLOG(1) << "QuicSimpleServerStream::QuicSimpleServerStream ngx_connection: " << ngx_connection_ << " ngx_addr_conf:" << ngx_addr_conf_;}
 
 QuicSimpleServerStream::QuicSimpleServerStream(
     QuicStreamId id,

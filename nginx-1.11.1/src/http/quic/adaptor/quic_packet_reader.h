@@ -17,7 +17,7 @@
 #include "net/quic/platform/api/quic_clock.h"
 #include "net/quic/platform/api/quic_socket_address.h"
 #include "net/tools/quic/platform/impl/quic_socket_utils.h"
-#include "net/tools/quic/quic_process_packet_interface.h"
+#include "ngx_quic_process_packet_interface.h"
 
 #define MMSG_MORE 0
 

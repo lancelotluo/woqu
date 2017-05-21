@@ -189,7 +189,7 @@ ngx_http_quic_send_chain(ngx_connection_t *fc, ngx_chain_t *in, off_t limit)
 
 		if (buf_len) {
 			ngx_http_quic_response_body_available(r->quic_stream->quic_stream, out->buf->pos, buf_len, last);
-			ngx_chain_update_sent(in, buf_len);
+			in = ngx_chain_update_sent(in, buf_len);
 		}
 
 		out = out->next;

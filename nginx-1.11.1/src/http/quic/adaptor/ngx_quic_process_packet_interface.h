@@ -15,7 +15,7 @@ namespace net {
 class ProcessPacketInterface {
  public:
   virtual ~ProcessPacketInterface() {}
-  virtual void ProcessPacket(const QuicSocketAddress& server_address,
+  virtual bool ProcessPacket(const QuicSocketAddress& server_address,
                              const QuicSocketAddress& client_address,
                              const QuicReceivedPacket& packet) = 0;
 };

@@ -43,7 +43,6 @@ void
 ngx_http_quic_init(ngx_event_t *rev)
 {
     ngx_connection_t          *c;
-    ngx_pool_cleanup_t        *cln;
     ngx_http_connection_t     *hc;
     ngx_http_quic_srv_conf_t    *qscf;
     ngx_http_quic_main_conf_t   *qmcf;
@@ -126,9 +125,8 @@ ngx_http_quic_init(ngx_event_t *rev)
 		}
 	}
 
-    //ngx_add_timer(rev, 3000);
-
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic begin to process packet c:%p", c);
+    ngx_reusable_connection(c, 0);
 
     if (!ngx_http_quic_dispatcher_process_packet(c, qscf->quic_dispatcher->proto_quic_dispatcher, (const char*)c->buffer->start, c->buffer->last - c->buffer->start, c->sockaddr, c->local_sockaddr, c->fd)) {
 		ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic dispatcher return false. c:%p", c);
@@ -276,12 +274,12 @@ ngx_http_quic_construct_request_line(ngx_http_request_t *r)
 ngx_int_t ngx_http_quic_init_http_request(void *quic_stream, void *connection, const char *request, int request_len, const char *body, int body_len)
 {
     ngx_connection_t          *c;
-    ngx_pool_cleanup_t        *cln;
     ngx_http_quic_stream_t    *ngx_quic_stream;
     ngx_http_quic_srv_conf_t    *qscf;
     ngx_http_quic_main_conf_t   *qmcf;
-    ngx_http_quic_connection_t  *qc;
+    ngx_http_quic_connection_t  *qc, *new_qc;
 	ngx_int_t					rc;
+	ngx_pool_t					*pool;
 
     c = connection;
     qc = c->data;
@@ -294,7 +292,43 @@ ngx_int_t ngx_http_quic_init_http_request(void *quic_stream, void *connection, c
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "http response for quic");
 
-	ngx_quic_stream = ngx_http_quic_create_stream(qc, quic_stream);
+// new pool logic
+    pool = ngx_create_pool(4*1024, c->log);
+    if (pool == NULL) {
+        ngx_http_close_connection(c);
+        return NGX_ERROR;
+    }
+
+    new_qc = ngx_pcalloc(pool, sizeof(ngx_http_quic_connection_t));
+    if (qc == NULL) {
+		ngx_destroy_pool(pool);
+        ngx_http_close_connection(c);
+        return NGX_ERROR;
+    }
+
+	new_qc->pool = pool;
+
+	new_qc->http_connection = ngx_pcalloc(new_qc->pool, sizeof(ngx_http_connection_t));
+    if (new_qc->http_connection == NULL) {
+		ngx_destroy_pool(pool);
+        ngx_http_close_connection(c);
+        return NGX_ERROR;
+    }
+
+    new_qc->connection = c;
+	ngx_memcpy(new_qc->http_connection, qc->http_connection, sizeof(ngx_http_connection_t));
+
+    qscf = ngx_http_get_module_srv_conf(new_qc->http_connection->conf_ctx, ngx_http_quic_module);
+	if (qscf == NULL) {
+		ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
+                   "fail to get ngx_http_quic_module conf");
+		ngx_destroy_pool(pool);
+        ngx_http_close_connection(c);
+        return NGX_ERROR;
+	}
+//
+
+	ngx_quic_stream = ngx_http_quic_create_stream(new_qc, quic_stream);
 	if (ngx_quic_stream == NULL) {
 		ngx_log_error(NGX_LOG_EMERG, c->log, 0, "fail to create nginx quic stream");
 		return NGX_ERROR;
@@ -313,7 +347,7 @@ ngx_int_t ngx_http_quic_init_http_request(void *quic_stream, void *connection, c
 
 	ngx_http_quic_process_request_line(r);
 
-	//ngx_http_close_connection(c);
+	ngx_http_close_connection(c);
 
 	return NGX_OK;
 }
@@ -341,7 +375,7 @@ ngx_http_quic_create_stream(ngx_http_quic_connection_t *qc, void *quic_stream)
         ctx = log->data;
 
     } else {
-        fc = ngx_palloc(qc->pool, sizeof(ngx_connection_t));
+        fc = ngx_pcalloc(qc->pool, sizeof(ngx_connection_t));
         if (fc == NULL) {
             return NULL;
         }
@@ -388,6 +422,7 @@ ngx_http_quic_create_stream(ngx_http_quic_connection_t *qc, void *quic_stream)
     wev->write = 1;
 
     ngx_memcpy(fc, qc->connection, sizeof(ngx_connection_t));
+	fc->pool = ngx_create_pool(4*1024, log);
 
     fc->data = qc->http_connection;
     fc->read = rev;
@@ -456,16 +491,32 @@ void
 ngx_http_quic_close_stream(ngx_http_quic_stream_t *stream, ngx_int_t rc)
 {
 
-	return ;
-	ngx_connection_t *c;
-	c = stream->connection->connection;
-    ngx_http_close_connection(c);
-	/*
-	 * ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
+	ngx_log_debug0(NGX_LOG_DEBUG_HTTP, ngx_cycle->log, 0,
 				   "close quic stream");
+    ngx_event_t               *ev;
+    ngx_connection_t          *fc;
 
-    ngx_http_free_request(stream->connection, rc);
-	*/
+    fc = stream->request->connection;
+
+	ev = fc->read;
+	if (ev->timer_set) {
+		ngx_del_timer(ev);
+	}
+
+	if (ev->posted) {
+        ngx_delete_posted_event(ev);
+	}
+
+    ev = fc->write;
+
+    if (ev->timer_set) {
+        ngx_del_timer(ev);
+    }
+
+    if (ev->posted) {
+        ngx_delete_posted_event(ev);
+    }
+    //ngx_http_free_request(stream->connection, rc);
 	return;
 }
 

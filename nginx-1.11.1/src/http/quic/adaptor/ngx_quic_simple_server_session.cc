@@ -36,7 +36,9 @@ QuicSimpleServerSession::QuicSimpleServerSession(
       highest_promised_stream_id_(0),
       response_cache_(response_cache),
 	  ngx_connection_(ngx_connection),
-	  ngx_addr_conf_(ngx_addr_conf) {}
+	  ngx_addr_conf_(ngx_addr_conf) {
+	QUIC_DLOG(INFO) << "QuicSimpleServerSession ngx_connection:" << ngx_connection_;
+	  }
 
 QuicSimpleServerSession::QuicSimpleServerSession(
     const QuicConfig& config,
