@@ -269,8 +269,10 @@ bool QuicDispatcher::OnUnauthenticatedPublicHeader(
   SessionMap::iterator it = session_map_.find(connection_id);
   if (it != session_map_.end()) {
     DCHECK(!buffered_packets_.HasBufferedPackets(connection_id));
-	//QuicSimpleServerSession *x = dynamic_cast<QuicSimpleServerSession *> (it->second.get());
+	//QuicSession *x = it->second.get();
+	//x->SetQuicNgxConnection(ngx_connection_);
     QUIC_DLOG(INFO) << "find quic session for " << connection_id << "ngx_connection: " << ngx_connection_;
+	it->second->SetQuicSessionNgxConnection(ngx_connection_);
     it->second->ProcessUdpPacket(current_server_address_,
                                  current_client_address_, *current_packet_);
     return false;
@@ -1020,6 +1022,12 @@ void QuicDispatcher::DeliverPacketsToSession(
     session->ProcessUdpPacket(packet.server_address, packet.client_address,
                               *(packet.packet));
   }
+}
+
+void QuicDispatcher::SetQuicNgxConnection(void *ngx_connection) {
+  QUIC_DLOG(INFO)
+        << "lance_debug  QuicDispatcher SetQuicNgxConnection: " << ngx_connection;
+  ngx_connection_ = ngx_connection;
 }
 
 }  // namespace net

@@ -69,18 +69,20 @@ QuicServerSessionBase* QuicSimpleDispatcher::CreateQuicSession(
 void *QuicSimpleDispatcher::GetQuicNgxAddrConf() {
 	return ngx_addr_conf_;
 }
-void *QuicSimpleDispatcher::GetQuicNgxConnection() {
+/*void *QuicSimpleDispatcher::GetQuicNgxConnection() {
 	return ngx_connection_;
 }
+*/
 
 void QuicSimpleDispatcher::SetQuicNgxAddrConf(void *addr_conf) {
     QUIC_DLOG(INFO) << "lance_debug QuicSimpleDispatcher::SetQuicNgxAddrConf: " << addr_conf;
 	ngx_addr_conf_ = addr_conf;
 }
 
+/*
 void QuicSimpleDispatcher::SetQuicNgxConnection(void *ngx_connection) {
     QUIC_DLOG(INFO) << "lance_debug QuicSimpleDispatcher::SetQuicNgxConnection: " << ngx_connection;
 	ngx_connection_ = ngx_connection;
 }
-
+*/
 }  // namespace net

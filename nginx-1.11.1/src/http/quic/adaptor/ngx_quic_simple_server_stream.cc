@@ -346,8 +346,9 @@ void QuicSimpleServerStream::SetQuicNgxConnection(void *ngx_connection) {
 }
 
 void* QuicSimpleServerStream::GetQuicNgxConnection() {
-	QUIC_DLOG(INFO) << "QuicSimpleServerStream::GetQuicNgxConnection " << ngx_connection_;
-	return ngx_connection_;
+	QUIC_DLOG(INFO) << "QuicSimpleServerStream::GetQuicNgxConnection " << stream_ngx_connection_;
+	//return ngx_connection_;
+	return stream_ngx_connection_;
 }
 
 void QuicSimpleServerStream::SetQuicNgxAddrConf(void *ngx_addr_conf) {

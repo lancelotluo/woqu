@@ -66,7 +66,7 @@ class QuicDispatcher : public QuicTimeWaitListManager::Visitor,
                      const QuicReceivedPacket& packet) override;
 
   void *GetQuicNgxConnection();
-  void SetQuicNgxConnection(void *ngx_connection);
+  virtual void SetQuicNgxConnection(void *ngx_connection);
   // Called when the socket becomes writable to allow queued writes to happen.
   void OnCanWrite() override;
 
@@ -285,6 +285,8 @@ protected:
                               bool session_closed_statelessly);
 
   void StopAcceptingNewConnections();
+  
+  void *ngx_connection_; //Not owned.
 
  private:
   friend class test::QuicDispatcherPeer;
@@ -397,7 +399,6 @@ protected:
   // True if this dispatcher is not draining.
   bool accept_new_connections_;
 
-  void *ngx_connection_; //Not owned.
   DISALLOW_COPY_AND_ASSIGN(QuicDispatcher);
 };
 
