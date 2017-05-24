@@ -120,6 +120,7 @@ QuicSpdyStream* QuicSimpleServerSession::CreateIncomingDynamicStream(
 
   QuicSpdyStream* stream =
       new QuicSimpleServerStream(id, this, response_cache_, GetQuicNgxConnection(), GetQuicNgxAddrConf());
+  stream->SetQuicStreamNgxConnection(GetQuicNgxConnection());
   ActivateStream(QuicWrapUnique(stream));
   return stream;
 }
@@ -231,11 +232,11 @@ void QuicSimpleServerSession::HandlePromisedPushRequests() {
 }
 
 void QuicSimpleServerSession::SetQuicNgxConnection(void *ngx_connection) {
-	ngx_connection_ = ngx_connection;
+	session_ngx_connection_ = ngx_connection;
 }
 
 void* QuicSimpleServerSession::GetQuicNgxConnection(){
-	return ngx_connection_;
+	return session_ngx_connection_;
 }
 
 void QuicSimpleServerSession::SetQuicNgxAddrConf(void *ngx_addr_conf) {

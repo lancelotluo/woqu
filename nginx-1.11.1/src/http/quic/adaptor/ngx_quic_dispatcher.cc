@@ -770,7 +770,8 @@ void QuicDispatcher::ProcessChlo(QuicPacketNumber packet_number) {
   // Creates a new session and process all buffered packets for this connection.
   QuicSession* session =
       CreateQuicSession(current_connection_id_, current_client_address_);
-  QUIC_DLOG(INFO) << "Created new session for " << current_connection_id_ << "ngx_connection: " << ngx_connection_;
+  session->SetQuicSessionNgxConnection(ngx_connection_);
+  QUIC_DLOG(INFO) << "Created new session for " << current_connection_id_ << "session_ngx_connection: " << ngx_connection_;
   session_map_.insert(
       std::make_pair(current_connection_id_, QuicWrapUnique(session)));
   std::list<BufferedPacket> packets =

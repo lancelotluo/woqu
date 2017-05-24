@@ -3552,8 +3552,8 @@ ngx_http_close_connection(ngx_connection_t *c)
 {
     ngx_pool_t  *pool;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0,
-                   "close http connection: %d", c->fd);
+    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, c->log, 0,
+                   "close http connection: %d, c:%p", c->fd, c);
 
 #if (NGX_HTTP_SSL)
 

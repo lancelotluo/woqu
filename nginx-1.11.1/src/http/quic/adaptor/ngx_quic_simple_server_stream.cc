@@ -45,7 +45,8 @@ QuicSimpleServerStream::QuicSimpleServerStream(
       response_cache_(response_cache),
 	  ngx_connection_(ngx_connection),
 	  ngx_addr_conf_(ngx_addr_conf) {
-		QUIC_DVLOG(1) << "QuicSimpleServerStream::QuicSimpleServerStream ngx_connection: " << ngx_connection_ << " ngx_addr_conf:" << ngx_addr_conf_;}
+	  stream_ngx_connection_ = ngx_connection;
+	  QUIC_DVLOG(1) << "QuicSimpleServerStream::QuicSimpleServerStream stream_ngx_connection: " << stream_ngx_connection_ << " ngx_addr_conf:" << ngx_addr_conf_;}
 
 QuicSimpleServerStream::QuicSimpleServerStream(
     QuicStreamId id,
@@ -332,6 +333,7 @@ void QuicSimpleServerStream::SendToNginx() {
 
 	std::string request_headers = http_request_headers.ToString();
 	QUIC_DLOG(INFO) << "quic headers as http string:" << request_headers;
+	QUIC_DLOG(INFO) << "QuicSimpleServerStream::SendToNginx, stream_ngx_connection: " << stream_ngx_connection_;
 
 	std::string http_request = request_line + "\r\n" + request_headers;
 	ngx_http_quic_send_to_nginx(this , http_request.c_str(), http_request.size(), body_.c_str(), body_.size());
@@ -342,11 +344,11 @@ void QuicSimpleServerStream::SendToNginx() {
 
 void QuicSimpleServerStream::SetQuicNgxConnection(void *ngx_connection) {
 	QUIC_DLOG(INFO) << "QuicSimpleServerStream::SetQuicNgxConnection " << ngx_connection;
-	ngx_connection_ = ngx_connection;
+	stream_ngx_connection_ = ngx_connection;
 }
 
 void* QuicSimpleServerStream::GetQuicNgxConnection() {
-	QUIC_DLOG(INFO) << "QuicSimpleServerStream::GetQuicNgxConnection " << stream_ngx_connection_;
+	QUIC_DLOG(INFO) << "QuicSimpleServerStream::GetQuicNgxConnection, stream_ngx_connection: " << stream_ngx_connection_;
 	//return ngx_connection_;
 	return stream_ngx_connection_;
 }
