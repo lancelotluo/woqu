@@ -125,7 +125,7 @@ class NET_EXPORT HttpServerPropertiesManager : public HttpServerProperties {
   void SetHTTP11Required(const HostPortPair& server) override;
   void MaybeForceHTTP11(const HostPortPair& server,
                         SSLConfig* ssl_config) override;
-  AlternativeServiceVector GetAlternativeServices(
+  AlternativeServiceInfoVector GetAlternativeServiceInfos(
       const url::SchemeHostPort& origin) override;
   bool SetAlternativeService(const url::SchemeHostPort& origin,
                              const AlternativeService& alternative_service,
@@ -150,6 +150,7 @@ class NET_EXPORT HttpServerPropertiesManager : public HttpServerProperties {
   void SetSupportsQuic(bool used_quic, const IPAddress& last_address) override;
   void SetServerNetworkStats(const url::SchemeHostPort& server,
                              ServerNetworkStats stats) override;
+  void ClearServerNetworkStats(const url::SchemeHostPort& server) override;
   const ServerNetworkStats* GetServerNetworkStats(
       const url::SchemeHostPort& server) override;
   const ServerNetworkStatsMap& server_network_stats_map() const override;
@@ -167,6 +168,8 @@ class NET_EXPORT HttpServerPropertiesManager : public HttpServerProperties {
 
  protected:
   // The location where ScheduleUpdatePrefsOnNetworkThread was called.
+  // Must be kept up to date with HttpServerPropertiesUpdatePrefsLocation in
+  // histograms.xml.
   enum Location {
     SUPPORTS_SPDY = 0,
     HTTP_11_REQUIRED = 1,
@@ -182,7 +185,8 @@ class NET_EXPORT HttpServerPropertiesManager : public HttpServerProperties {
     SET_SERVER_NETWORK_STATS = 11,
     DETECTED_CORRUPTED_PREFS = 12,
     SET_QUIC_SERVER_INFO = 13,
-    NUM_LOCATIONS = 14,
+    CLEAR_SERVER_NETWORK_STATS = 14,
+    NUM_LOCATIONS = 15,
   };
 
   // --------------------

@@ -144,6 +144,7 @@ BASE_EXPORT extern NSString* const NSAppearanceNameVibrantLight;
 
 @interface NSView (YosemiteSDK)
 - (BOOL)isAccessibilitySelectorAllowed:(SEL)selector;
+@property(copy) NSString* accessibilityLabel;
 @end
 
 #endif  // MAC_OS_X_VERSION_10_10
@@ -163,6 +164,18 @@ BASE_EXPORT extern NSString* const NSAppearanceNameVibrantLight;
 
 #endif  // MAC_OS_X_VERSION_10_10
 
+// ----------------------------------------------------------------------------
+// Define NSStrings only available in newer versions of the OSX SDK to force
+// them to be statically linked.
+// ----------------------------------------------------------------------------
+
+extern "C" {
+#if !defined(MAC_OS_X_VERSION_10_11) || \
+    MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_11
+BASE_EXPORT extern NSString* const CIDetectorTypeText;
+#endif  // MAC_OS_X_VERSION_10_11
+}  // extern "C"
+
 // Once Chrome no longer supports OSX 10.10, everything within this
 // preprocessor block can be removed.
 #if !defined(MAC_OS_X_VERSION_10_11) || \
@@ -174,6 +187,7 @@ BASE_EXPORT extern NSString* const NSAppearanceNameVibrantLight;
 
 @interface NSObject (ElCapitanSDK)
 - (NSLayoutConstraint*)constraintEqualToConstant:(CGFloat)c;
+- (NSLayoutConstraint*)constraintGreaterThanOrEqualToConstant:(CGFloat)c;
 @end
 
 @interface NSView (ElCapitanSDK)
@@ -186,6 +200,12 @@ BASE_EXPORT extern NSString* const NSAppearanceNameVibrantLight;
 @interface NSWindow (ElCapitanSDK)
 - (void)performWindowDragWithEvent:(NSEvent*)event;
 @end
+
+@interface CIRectangleFeature (ElCapitanSDK)
+@property(readonly) CGRect bounds;
+@end
+
+@class CIRectangleFeature;
 
 #endif  // MAC_OS_X_VERSION_10_11
 
@@ -225,6 +245,11 @@ BASE_EXPORT extern NSString* const NSAppearanceNameVibrantLight;
                               trackingMode:(NSSegmentSwitchTracking)trackingMode
                                     target:(id)target
                                     action:(SEL)action;
+@end
+
+@interface NSTextField (SierraPointOneSDK)
++ (instancetype)labelWithAttributedString:
+    (NSAttributedString*)attributedStringValue;
 @end
 
 #endif  // MAC_OS_X_VERSION_10_12_1

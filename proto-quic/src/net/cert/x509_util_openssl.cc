@@ -339,6 +339,14 @@ bool GetTLSServerEndPointChannelBinding(const X509Certificate& certificate,
 
   const EVP_MD* digest_evp_md = nullptr;
   switch (signature_algorithm->digest()) {
+    case net::DigestAlgorithm::Md2:
+    case net::DigestAlgorithm::Md4:
+      // Shouldn't be reachable.
+      digest_evp_md = nullptr;
+      break;
+
+    // Per RFC 5929 section 4.1, MD5 and SHA1 map to SHA256.
+    case net::DigestAlgorithm::Md5:
     case net::DigestAlgorithm::Sha1:
     case net::DigestAlgorithm::Sha256:
       digest_evp_md = EVP_sha256();
@@ -355,16 +363,15 @@ bool GetTLSServerEndPointChannelBinding(const X509Certificate& certificate,
   if (!digest_evp_md)
     return false;
 
-  std::vector<uint8_t> digest(EVP_MAX_MD_SIZE);
-  unsigned int out_size = digest.size();
+  uint8_t digest[EVP_MAX_MD_SIZE];
+  unsigned int out_size;
   if (!EVP_Digest(der_encoded_certificate.data(),
-                  der_encoded_certificate.size(), digest.data(), &out_size,
+                  der_encoded_certificate.size(), digest, &out_size,
                   digest_evp_md, nullptr))
     return false;
 
-  digest.resize(out_size);
   token->assign(kChannelBindingPrefix);
-  token->append(digest.begin(), digest.end());
+  token->append(digest, digest + out_size);
   return true;
 }
 

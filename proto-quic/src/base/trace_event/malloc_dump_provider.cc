@@ -6,6 +6,8 @@
 
 #include <stddef.h>
 
+#include <unordered_map>
+
 #include "base/allocator/allocator_extension.h"
 #include "base/allocator/allocator_shim.h"
 #include "base/allocator/features.h"
@@ -54,10 +56,10 @@ void* HookZeroInitAlloc(const AllocatorDispatch* self,
   return ptr;
 }
 
-void* HookllocAligned(const AllocatorDispatch* self,
-                      size_t alignment,
-                      size_t size,
-                      void* context) {
+void* HookAllocAligned(const AllocatorDispatch* self,
+                       size_t alignment,
+                       size_t size,
+                       void* context) {
   const AllocatorDispatch* const next = self->next;
   void* ptr = next->alloc_aligned_function(next, alignment, size, context);
   if (ptr)
@@ -129,7 +131,7 @@ void HookFreeDefiniteSize(const AllocatorDispatch* self,
 AllocatorDispatch g_allocator_hooks = {
     &HookAlloc,            /* alloc_function */
     &HookZeroInitAlloc,    /* alloc_zero_initialized_function */
-    &HookllocAligned,      /* alloc_aligned_function */
+    &HookAllocAligned,     /* alloc_aligned_function */
     &HookRealloc,          /* realloc_function */
     &HookFree,             /* free_function */
     &HookGetSizeEstimate,  /* get_size_estimate_function */
@@ -216,12 +218,18 @@ bool MallocDumpProvider::OnMemoryDump(const MemoryDumpArgs& args,
   total_virtual_size = stats.size_allocated;
   allocated_objects_size = stats.size_in_use;
 
-  // The resident size is approximated to the max size in use, which would count
-  // the total size of all regions other than the free bytes at the end of each
-  // region. In each allocation region the allocations are rounded off to a
-  // fixed quantum, so the excess region will not be resident.
-  // See crrev.com/1531463004 for detailed explanation.
-  resident_size = stats.max_size_in_use;
+  // Resident size is approximated pretty well by stats.max_size_in_use.
+  // However, on macOS, freed blocks are both resident and reusable, which is
+  // semantically equivalent to deallocated. The implementation of libmalloc
+  // will also only hold a fixed number of freed regions before actually
+  // starting to deallocate them, so stats.max_size_in_use is also not
+  // representative of the peak size. As a result, stats.max_size_in_use is
+  // typically somewhere between actually resident [non-reusable] pages, and
+  // peak size. This is not very useful, so we just use stats.size_in_use for
+  // resident_size, even though it's an underestimate and fails to account for
+  // fragmentation. See
+  // https://bugs.chromium.org/p/chromium/issues/detail?id=695263#c1.
+  resident_size = stats.size_in_use;
 #elif defined(OS_WIN)
   WinHeapInfo main_heap_info = {};
   WinHeapMemoryDumpImpl(&main_heap_info);
@@ -234,6 +242,8 @@ bool MallocDumpProvider::OnMemoryDump(const MemoryDumpArgs& args,
   resident_size = main_heap_info.committed_size;
   allocated_objects_size = main_heap_info.allocated_size;
   allocated_objects_count = main_heap_info.block_count;
+#elif defined(OS_FUCHSIA)
+// TODO(fuchsia): Port, see https://crbug.com/706592.
 #else
   struct mallinfo info = mallinfo();
   DCHECK_GE(info.arena + info.hblkhd, info.uordblks);
@@ -286,11 +296,13 @@ bool MallocDumpProvider::OnMemoryDump(const MemoryDumpArgs& args,
 
   tid_dumping_heap_ = PlatformThread::CurrentId();
   // At this point the Insert/RemoveAllocation hooks will ignore this thread.
-  // Enclosing all the temporariy data structures in a scope, so that the heap
-  // profiler does not see unabalanced malloc/free calls from these containers.
+  // Enclosing all the temporary data structures in a scope, so that the heap
+  // profiler does not see unbalanced malloc/free calls from these containers.
   {
+    size_t shim_allocated_objects_size = 0;
+    size_t shim_allocated_objects_count = 0;
     TraceEventMemoryOverhead overhead;
-    hash_map<AllocationContext, AllocationMetrics> metrics_by_context;
+    std::unordered_map<AllocationContext, AllocationMetrics> metrics_by_context;
     {
       AutoLock lock(allocation_register_lock_);
       if (allocation_register_) {
@@ -299,10 +311,21 @@ bool MallocDumpProvider::OnMemoryDump(const MemoryDumpArgs& args,
             AllocationMetrics& metrics = metrics_by_context[alloc_size.context];
             metrics.size += alloc_size.size;
             metrics.count++;
+
+            // Aggregate data for objects allocated through the shim.
+            shim_allocated_objects_size += alloc_size.size;
+            shim_allocated_objects_count++;
           }
         }
         allocation_register_->EstimateTraceMemoryOverhead(&overhead);
       }
+
+      inner_dump->AddScalar("shim_allocated_objects_size",
+                             MemoryAllocatorDump::kUnitsBytes,
+                             shim_allocated_objects_size);
+      inner_dump->AddScalar("shim_allocator_object_count",
+                             MemoryAllocatorDump::kUnitsObjects,
+                             shim_allocated_objects_count);
     }  // lock(allocation_register_lock_)
     pmd->DumpHeapUsage(metrics_by_context, overhead, "malloc");
   }

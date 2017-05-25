@@ -191,10 +191,11 @@ void HttpServerPropertiesManager::MaybeForceHTTP11(const HostPortPair& server,
   http_server_properties_impl_->MaybeForceHTTP11(server, ssl_config);
 }
 
-AlternativeServiceVector HttpServerPropertiesManager::GetAlternativeServices(
+AlternativeServiceInfoVector
+HttpServerPropertiesManager::GetAlternativeServiceInfos(
     const url::SchemeHostPort& origin) {
   DCHECK(network_task_runner_->RunsTasksOnCurrentThread());
-  return http_server_properties_impl_->GetAlternativeServices(origin);
+  return http_server_properties_impl_->GetAlternativeServiceInfos(origin);
 }
 
 bool HttpServerPropertiesManager::SetAlternativeService(
@@ -310,6 +311,16 @@ void HttpServerPropertiesManager::SetServerNetworkStats(
       *(http_server_properties_impl_->GetServerNetworkStats(server));
   if (old_stats != new_stats)
     ScheduleUpdatePrefsOnNetworkThread(SET_SERVER_NETWORK_STATS);
+}
+
+void HttpServerPropertiesManager::ClearServerNetworkStats(
+    const url::SchemeHostPort& server) {
+  DCHECK(network_task_runner_->RunsTasksOnCurrentThread());
+  bool need_update =
+      http_server_properties_impl_->GetServerNetworkStats(server) != nullptr;
+  http_server_properties_impl_->ClearServerNetworkStats(server);
+  if (need_update)
+    ScheduleUpdatePrefsOnNetworkThread(CLEAR_SERVER_NETWORK_STATS);
 }
 
 const ServerNetworkStats* HttpServerPropertiesManager::GetServerNetworkStats(
@@ -483,7 +494,7 @@ void HttpServerPropertiesManager::UpdateCacheFromPrefsOnPrefThread() {
   } else {
     for (base::ListValue::const_iterator it = servers_list->begin();
          it != servers_list->end(); ++it) {
-      if (!(*it)->GetAsDictionary(&servers_dict)) {
+      if (!it->GetAsDictionary(&servers_dict)) {
         DVLOG(1) << "Malformed http_server_properties for servers dictionary.";
         detected_corrupted_prefs = true;
         continue;
@@ -641,7 +652,7 @@ bool HttpServerPropertiesManager::AddToAlternativeServiceMap(
   AlternativeServiceInfoVector alternative_service_info_vector;
   for (const auto& alternative_service_list_item : *alternative_service_list) {
     const base::DictionaryValue* alternative_service_dict;
-    if (!alternative_service_list_item->GetAsDictionary(
+    if (!alternative_service_list_item.GetAsDictionary(
             &alternative_service_dict))
       return false;
     AlternativeServiceInfo alternative_service_info;
@@ -1003,7 +1014,7 @@ void HttpServerPropertiesManager::UpdatePrefsOnPrefThread(
 
   // Persist properties to the prefs in the MRU order.
   base::DictionaryValue http_server_properties_dict;
-  base::ListValue* servers_list = new base::ListValue;
+  auto servers_list = base::MakeUnique<base::ListValue>();
   for (ServerPrefMap::const_reverse_iterator map_it = server_pref_map.rbegin();
        map_it != server_pref_map.rend(); ++map_it) {
     const url::SchemeHostPort server = map_it->first;
@@ -1027,7 +1038,7 @@ void HttpServerPropertiesManager::UpdatePrefsOnPrefThread(
   }
 
   http_server_properties_dict.SetWithoutPathExpansion(kServersKey,
-                                                      servers_list);
+                                                      std::move(servers_list));
   SetVersion(&http_server_properties_dict, kVersionNumber);
 
   SaveSupportsQuicToPrefs(last_quic_address, &http_server_properties_dict);
@@ -1078,8 +1089,8 @@ void HttpServerPropertiesManager::SaveAlternativeServiceToServerPrefs(
   }
   if (alternative_service_list->GetSize() == 0)
     return;
-  server_pref_dict->SetWithoutPathExpansion(kAlternativeServiceKey,
-                                            alternative_service_list.release());
+  server_pref_dict->SetWithoutPathExpansion(
+      kAlternativeServiceKey, std::move(alternative_service_list));
 }
 
 void HttpServerPropertiesManager::SaveSupportsQuicToPrefs(
@@ -1088,11 +1099,11 @@ void HttpServerPropertiesManager::SaveSupportsQuicToPrefs(
   if (!last_quic_address || !last_quic_address->IsValid())
     return;
 
-  base::DictionaryValue* supports_quic_dict = new base::DictionaryValue;
+  auto supports_quic_dict = base::MakeUnique<base::DictionaryValue>();
   supports_quic_dict->SetBoolean(kUsedQuicKey, true);
   supports_quic_dict->SetString(kAddressKey, last_quic_address->ToString());
-  http_server_properties_dict->SetWithoutPathExpansion(kSupportsQuicKey,
-                                                       supports_quic_dict);
+  http_server_properties_dict->SetWithoutPathExpansion(
+      kSupportsQuicKey, std::move(supports_quic_dict));
 }
 
 void HttpServerPropertiesManager::SaveNetworkStatsToServerPrefs(
@@ -1101,14 +1112,14 @@ void HttpServerPropertiesManager::SaveNetworkStatsToServerPrefs(
   if (!server_network_stats)
     return;
 
-  base::DictionaryValue* server_network_stats_dict = new base::DictionaryValue;
+  auto server_network_stats_dict = base::MakeUnique<base::DictionaryValue>();
   // Becasue JSON doesn't support int64_t, persist int64_t as a string.
   server_network_stats_dict->SetInteger(
       kSrttKey, static_cast<int>(server_network_stats->srtt.ToInternalValue()));
   // TODO(rtenneti): When QUIC starts using bandwidth_estimate, then persist
   // bandwidth_estimate.
-  server_pref_dict->SetWithoutPathExpansion(kNetworkStatsKey,
-                                            server_network_stats_dict);
+  server_pref_dict->SetWithoutPathExpansion(
+      kNetworkStatsKey, std::move(server_network_stats_dict));
 }
 
 void HttpServerPropertiesManager::SaveQuicServerInfoMapToServerPrefs(
@@ -1117,18 +1128,18 @@ void HttpServerPropertiesManager::SaveQuicServerInfoMapToServerPrefs(
   if (!quic_server_info_map)
     return;
 
-  base::DictionaryValue* quic_servers_dict = new base::DictionaryValue;
+  auto quic_servers_dict = base::MakeUnique<base::DictionaryValue>();
   for (const std::pair<QuicServerId, std::string>& entry :
        *quic_server_info_map) {
     const QuicServerId& server_id = entry.first;
-    base::DictionaryValue* quic_server_pref_dict = new base::DictionaryValue;
+    auto quic_server_pref_dict = base::MakeUnique<base::DictionaryValue>();
     quic_server_pref_dict->SetStringWithoutPathExpansion(kServerInfoKey,
                                                          entry.second);
-    quic_servers_dict->SetWithoutPathExpansion(server_id.ToString(),
-                                               quic_server_pref_dict);
+    quic_servers_dict->SetWithoutPathExpansion(
+        server_id.ToString(), std::move(quic_server_pref_dict));
   }
-  http_server_properties_dict->SetWithoutPathExpansion(kQuicServers,
-                                                       quic_servers_dict);
+  http_server_properties_dict->SetWithoutPathExpansion(
+      kQuicServers, std::move(quic_servers_dict));
 }
 
 void HttpServerPropertiesManager::OnHttpServerPropertiesChanged() {

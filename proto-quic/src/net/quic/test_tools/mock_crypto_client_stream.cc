@@ -42,7 +42,7 @@ void MockCryptoClientStream::OnHandshakeMessage(
                              "Forced mock failure");
 }
 
-void MockCryptoClientStream::CryptoConnect() {
+bool MockCryptoClientStream::CryptoConnect() {
   if (proof_verify_details_) {
     if (!proof_verify_details_->cert_verify_result.verified_cert
              ->VerifyNameMatch(server_id_.host(), false)) {
@@ -51,7 +51,7 @@ void MockCryptoClientStream::CryptoConnect() {
       session()->connection()->CloseConnection(
           QUIC_PROOF_INVALID, "proof invalid",
           ConnectionCloseBehavior::SILENT_CLOSE);
-      return;
+      return false;
     }
   }
 
@@ -100,7 +100,14 @@ void MockCryptoClientStream::CryptoConnect() {
       encryption_established_ = false;
       break;
     }
+
+    case USE_DEFAULT_CRYPTO_STREAM: {
+      NOTREACHED();
+      break;
+    }
   }
+
+  return session()->connection()->connected();
 }
 
 void MockCryptoClientStream::SendOnCryptoHandshakeEvent(

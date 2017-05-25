@@ -33,6 +33,8 @@ const int kBrokenDelayMaxShift = 9;
 HttpServerPropertiesImpl::HttpServerPropertiesImpl()
     : spdy_servers_map_(SpdyServersMap::NO_AUTO_EVICT),
       alternative_service_map_(AlternativeServiceMap::NO_AUTO_EVICT),
+      recently_broken_alternative_services_(
+          RecentlyBrokenAlternativeServices::NO_AUTO_EVICT),
       server_network_stats_map_(ServerNetworkStatsMap::NO_AUTO_EVICT),
       quic_server_info_map_(QuicServerInfoMap::NO_AUTO_EVICT),
       max_server_configs_stored_in_properties_(kMaxQuicServersToPersist),
@@ -220,11 +222,11 @@ bool HttpServerPropertiesImpl::SupportsRequestPriority(
 
   if (GetSupportsSpdy(server))
     return true;
-  const AlternativeServiceVector alternative_service_vector =
-      GetAlternativeServices(server);
-  for (const AlternativeService& alternative_service :
-       alternative_service_vector) {
-    if (alternative_service.protocol == kProtoQUIC) {
+  const AlternativeServiceInfoVector alternative_service_info_vector =
+      GetAlternativeServiceInfos(server);
+  for (const AlternativeServiceInfo& alternative_service_info :
+       alternative_service_info_vector) {
+    if (alternative_service_info.alternative_service.protocol == kProtoQUIC) {
       return true;
     }
   }
@@ -297,10 +299,12 @@ const std::string* HttpServerPropertiesImpl::GetCanonicalSuffix(
   return nullptr;
 }
 
-AlternativeServiceVector HttpServerPropertiesImpl::GetAlternativeServices(
+AlternativeServiceInfoVector
+HttpServerPropertiesImpl::GetAlternativeServiceInfos(
     const url::SchemeHostPort& origin) {
-  // Copy valid alternative services into |valid_alternative_services|.
-  AlternativeServiceVector valid_alternative_services;
+  // Copy valid alternative service infos into
+  // |valid_alternative_service_infos|.
+  AlternativeServiceInfoVector valid_alternative_service_infos;
   const base::Time now = base::Time::Now();
   AlternativeServiceMap::iterator map_it = alternative_service_map_.Get(origin);
   if (map_it != alternative_service_map_.end()) {
@@ -322,22 +326,23 @@ AlternativeServiceVector HttpServerPropertiesImpl::GetAlternativeServices(
         ++it;
         continue;
       }
-      valid_alternative_services.push_back(alternative_service);
+      valid_alternative_service_infos.push_back(
+          AlternativeServiceInfo(alternative_service, it->expiration));
       ++it;
     }
     if (map_it->second.empty()) {
       alternative_service_map_.Erase(map_it);
     }
-    return valid_alternative_services;
+    return valid_alternative_service_infos;
   }
 
   CanonicalHostMap::const_iterator canonical = GetCanonicalHost(origin);
   if (canonical == canonical_host_to_origin_map_.end()) {
-    return AlternativeServiceVector();
+    return AlternativeServiceInfoVector();
   }
   map_it = alternative_service_map_.Get(canonical->second);
   if (map_it == alternative_service_map_.end()) {
-    return AlternativeServiceVector();
+    return AlternativeServiceInfoVector();
   }
   for (AlternativeServiceInfoVector::iterator it = map_it->second.begin();
        it != map_it->second.end();) {
@@ -357,13 +362,14 @@ AlternativeServiceVector HttpServerPropertiesImpl::GetAlternativeServices(
       ++it;
       continue;
     }
-    valid_alternative_services.push_back(alternative_service);
+    valid_alternative_service_infos.push_back(
+        AlternativeServiceInfo(alternative_service, it->expiration));
     ++it;
   }
   if (map_it->second.empty()) {
     alternative_service_map_.Erase(map_it);
   }
-  return valid_alternative_services;
+  return valid_alternative_service_infos;
 }
 
 bool HttpServerPropertiesImpl::SetAlternativeService(
@@ -424,7 +430,7 @@ bool HttpServerPropertiesImpl::SetAlternativeServices(
   alternative_service_map_.Put(origin, alternative_service_info_vector);
 
   if (previously_no_alternative_services &&
-      !GetAlternativeServices(origin).empty()) {
+      !GetAlternativeServiceInfos(origin).empty()) {
     // TODO(rch): Consider the case where multiple requests are started
     // before the first completes. In this case, only one of the jobs
     // would reach this code, whereas all of them should should have.
@@ -454,8 +460,13 @@ void HttpServerPropertiesImpl::MarkAlternativeServiceBroken(
     LOG(DFATAL) << "Trying to mark unknown alternate protocol broken.";
     return;
   }
-  ++recently_broken_alternative_services_[alternative_service];
-  int shift = recently_broken_alternative_services_[alternative_service] - 1;
+  auto it = recently_broken_alternative_services_.Get(alternative_service);
+  int shift = 0;
+  if (it == recently_broken_alternative_services_.end()) {
+    recently_broken_alternative_services_.Put(alternative_service, 1);
+  } else {
+    shift = it->second++;
+  }
   if (shift > kBrokenDelayMaxShift)
     shift = kBrokenDelayMaxShift;
   base::TimeDelta delay =
@@ -477,9 +488,10 @@ void HttpServerPropertiesImpl::MarkAlternativeServiceBroken(
 
 void HttpServerPropertiesImpl::MarkAlternativeServiceRecentlyBroken(
     const AlternativeService& alternative_service) {
-  if (!base::ContainsKey(recently_broken_alternative_services_,
-                         alternative_service))
-    recently_broken_alternative_services_[alternative_service] = 1;
+  if (recently_broken_alternative_services_.Get(alternative_service) ==
+      recently_broken_alternative_services_.end()) {
+    recently_broken_alternative_services_.Put(alternative_service, 1);
+  }
 }
 
 bool HttpServerPropertiesImpl::IsAlternativeServiceBroken(
@@ -493,8 +505,9 @@ bool HttpServerPropertiesImpl::WasAlternativeServiceRecentlyBroken(
     const AlternativeService& alternative_service) {
   if (alternative_service.protocol == kProtoUnknown)
     return false;
-  return base::ContainsKey(recently_broken_alternative_services_,
-                           alternative_service);
+
+  return recently_broken_alternative_services_.Get(alternative_service) !=
+         recently_broken_alternative_services_.end();
 }
 
 void HttpServerPropertiesImpl::ConfirmAlternativeService(
@@ -502,7 +515,10 @@ void HttpServerPropertiesImpl::ConfirmAlternativeService(
   if (alternative_service.protocol == kProtoUnknown)
     return;
   broken_alternative_services_.erase(alternative_service);
-  recently_broken_alternative_services_.erase(alternative_service);
+  auto it = recently_broken_alternative_services_.Get(alternative_service);
+  if (it != recently_broken_alternative_services_.end()) {
+    recently_broken_alternative_services_.Erase(it);
+  }
 }
 
 const AlternativeServiceMap& HttpServerPropertiesImpl::alternative_service_map()
@@ -563,6 +579,14 @@ void HttpServerPropertiesImpl::SetServerNetworkStats(
     const url::SchemeHostPort& server,
     ServerNetworkStats stats) {
   server_network_stats_map_.Put(server, stats);
+}
+
+void HttpServerPropertiesImpl::ClearServerNetworkStats(
+    const url::SchemeHostPort& server) {
+  ServerNetworkStatsMap::iterator it = server_network_stats_map_.Get(server);
+  if (it != server_network_stats_map_.end()) {
+    server_network_stats_map_.Erase(it);
+  }
 }
 
 const ServerNetworkStats* HttpServerPropertiesImpl::GetServerNetworkStats(

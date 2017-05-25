@@ -12,6 +12,7 @@
 #include "net/log/test_net_log.h"
 #include "net/log/test_net_log_entry.h"
 #include "net/test/embedded_test_server/http_response.h"
+#include "net/traffic_annotation/network_traffic_annotation_test_helper.h"
 #include "net/url_request/url_request.h"
 #include "net/url_request/url_request_test_util.h"
 
@@ -73,7 +74,8 @@ void TestNetworkQualityEstimator::RunOneRequest() {
   context.set_network_quality_estimator(this);
   context.Init();
   std::unique_ptr<URLRequest> request(
-      context.CreateRequest(GetEchoURL(), DEFAULT_PRIORITY, &test_delegate));
+      context.CreateRequest(GetEchoURL(), DEFAULT_PRIORITY, &test_delegate,
+                            TRAFFIC_ANNOTATION_FOR_TESTS));
   request->SetLoadFlags(request->load_flags() | LOAD_MAIN_FRAME_DEPRECATED);
   request->Start();
   base::RunLoop().Run();
@@ -255,6 +257,16 @@ int TestNetworkQualityEstimator::GetNetLogLastIntegerValue(
     }
   }
   return return_value;
+}
+
+void TestNetworkQualityEstimator::
+    NotifyObserversOfRTTOrThroughputEstimatesComputed(
+        const net::nqe::internal::NetworkQuality& network_quality) {
+  for (auto& observer : rtt_and_throughput_estimates_observer_list_) {
+    observer.OnRTTOrThroughputEstimatesComputed(
+        network_quality.http_rtt(), network_quality.transport_rtt(),
+        network_quality.downstream_throughput_kbps());
+  }
 }
 
 nqe::internal::NetworkID TestNetworkQualityEstimator::GetCurrentNetworkID()

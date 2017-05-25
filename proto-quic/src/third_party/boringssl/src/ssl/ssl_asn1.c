@@ -121,9 +121,6 @@
  *                                  -- stapled OCSP response from the server
  *     extendedMasterSecret    [17] BOOLEAN OPTIONAL,
  *     groupID                 [18] INTEGER OPTIONAL,
- *                                  -- For historical reasons, for legacy DHE or
- *                                  -- static RSA ciphers, this field contains
- *                                  -- another value to be discarded.
  *     certChain               [19] SEQUENCE OF Certificate OPTIONAL,
  *     ticketAgeAdd            [21] OCTET STRING OPTIONAL,
  *     isServer                [22] BOOLEAN DEFAULT TRUE,
@@ -210,28 +207,10 @@ static int SSL_SESSION_to_bytes_full(const SSL_SESSION *in, uint8_t **out_data,
       !CBB_add_bytes(&child, in->session_id,
                      for_ticket ? 0 : in->session_id_length) ||
       !CBB_add_asn1(&session, &child, CBS_ASN1_OCTETSTRING) ||
-      !CBB_add_bytes(&child, in->master_key, in->master_key_length)) {
-    OPENSSL_PUT_ERROR(SSL, ERR_R_MALLOC_FAILURE);
-    goto err;
-  }
-
-  if (in->time < 0) {
-    OPENSSL_PUT_ERROR(SSL, SSL_R_INVALID_SSL_SESSION);
-    goto err;
-  }
-
-  if (!CBB_add_asn1(&session, &child, kTimeTag) ||
-      !CBB_add_asn1_uint64(&child, in->time)) {
-    OPENSSL_PUT_ERROR(SSL, ERR_R_MALLOC_FAILURE);
-    goto err;
-  }
-
-  if (in->timeout < 0) {
-    OPENSSL_PUT_ERROR(SSL, SSL_R_INVALID_SSL_SESSION);
-    goto err;
-  }
-
-  if (!CBB_add_asn1(&session, &child, kTimeoutTag) ||
+      !CBB_add_bytes(&child, in->master_key, in->master_key_length) ||
+      !CBB_add_asn1(&session, &child, kTimeTag) ||
+      !CBB_add_asn1_uint64(&child, in->time) ||
+      !CBB_add_asn1(&session, &child, kTimeoutTag) ||
       !CBB_add_asn1_uint64(&child, in->timeout)) {
     OPENSSL_PUT_ERROR(SSL, ERR_R_MALLOC_FAILURE);
     goto err;
@@ -634,19 +613,17 @@ SSL_SESSION *SSL_SESSION_parse(CBS *cbs, const SSL_X509_METHOD *x509_method,
   ret->master_key_length = CBS_len(&master_key);
 
   CBS child;
-  uint64_t time, timeout;
+  uint64_t timeout;
   if (!CBS_get_asn1(&session, &child, kTimeTag) ||
-      !CBS_get_asn1_uint64(&child, &time) ||
-      time > LONG_MAX ||
+      !CBS_get_asn1_uint64(&child, &ret->time) ||
       !CBS_get_asn1(&session, &child, kTimeoutTag) ||
       !CBS_get_asn1_uint64(&child, &timeout) ||
-      timeout > LONG_MAX) {
+      timeout > UINT32_MAX) {
     OPENSSL_PUT_ERROR(SSL, SSL_R_INVALID_SSL_SESSION);
     goto err;
   }
 
-  ret->time = (long)time;
-  ret->timeout = (long)timeout;
+  ret->timeout = (uint32_t)timeout;
 
   CBS peer;
   int has_peer;
@@ -712,23 +689,10 @@ SSL_SESSION *SSL_SESSION_parse(CBS *cbs, const SSL_X509_METHOD *x509_method,
   }
   ret->extended_master_secret = !!extended_master_secret;
 
-  uint32_t value;
-  if (!SSL_SESSION_parse_u32(&session, &value, kGroupIDTag, 0)) {
+  if (!SSL_SESSION_parse_u16(&session, &ret->group_id, kGroupIDTag, 0)) {
     OPENSSL_PUT_ERROR(SSL, SSL_R_INVALID_SSL_SESSION);
     goto err;
   }
-
-  /* Historically, the group_id field was used for key-exchange-specific
-   * information. Discard all but the group ID. */
-  if (ret->cipher->algorithm_mkey & (SSL_kRSA | SSL_kDHE)) {
-    value = 0;
-  }
-
-  if (value > 0xffff) {
-    OPENSSL_PUT_ERROR(SSL, SSL_R_INVALID_SSL_SESSION);
-    goto err;
-  }
-  ret->group_id = (uint16_t)value;
 
   CBS cert_chain;
   CBS_init(&cert_chain, NULL, 0);
@@ -811,8 +775,8 @@ SSL_SESSION *SSL_SESSION_parse(CBS *cbs, const SSL_X509_METHOD *x509_method,
                              kPeerSignatureAlgorithmTag, 0) ||
       !SSL_SESSION_parse_u32(&session, &ret->ticket_max_early_data,
                              kTicketMaxEarlyDataTag, 0) ||
-      !SSL_SESSION_parse_long(&session, &ret->auth_timeout, kAuthTimeoutTag,
-                              ret->timeout) ||
+      !SSL_SESSION_parse_u32(&session, &ret->auth_timeout, kAuthTimeoutTag,
+                             ret->timeout) ||
       !SSL_SESSION_parse_octet_string(&session, &ret->early_alpn,
                                       &ret->early_alpn_len, kEarlyALPNTag) ||
       CBS_len(&session) != 0) {

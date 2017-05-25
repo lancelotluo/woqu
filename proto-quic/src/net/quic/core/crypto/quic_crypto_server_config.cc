@@ -29,12 +29,13 @@
 #include "net/quic/core/crypto/quic_encrypter.h"
 #include "net/quic/core/crypto/quic_random.h"
 #include "net/quic/core/proto/source_address_token.pb.h"
-#include "net/quic/core/quic_flags.h"
 #include "net/quic/core/quic_packets.h"
 #include "net/quic/core/quic_socket_address_coder.h"
 #include "net/quic/core/quic_utils.h"
 #include "net/quic/platform/api/quic_bug_tracker.h"
 #include "net/quic/platform/api/quic_clock.h"
+#include "net/quic/platform/api/quic_endian.h"
+#include "net/quic/platform/api/quic_flags.h"
 #include "net/quic/platform/api/quic_hostname_utils.h"
 #include "net/quic/platform/api/quic_logging.h"
 #include "net/quic/platform/api/quic_reference_counted.h"
@@ -261,7 +262,7 @@ QuicCryptoServerConfig::GenerateConfig(QuicRandom* rand,
     // We need to ensure that the SCID changes whenever the server config does
     // thus we make it a hash of the rest of the server config.
     std::unique_ptr<QuicData> serialized(
-        CryptoFramer::ConstructHandshakeMessage(msg));
+        CryptoFramer::ConstructHandshakeMessage(msg, Perspective::IS_SERVER));
 
     uint8_t scid_bytes[SHA256_DIGEST_LENGTH];
     SHA256(reinterpret_cast<const uint8_t*>(serialized->data()),
@@ -278,7 +279,7 @@ QuicCryptoServerConfig::GenerateConfig(QuicRandom* rand,
   // preceding if block.
 
   std::unique_ptr<QuicData> serialized(
-      CryptoFramer::ConstructHandshakeMessage(msg));
+      CryptoFramer::ConstructHandshakeMessage(msg, Perspective::IS_SERVER));
 
   std::unique_ptr<QuicServerConfigProtobuf> config(
       new QuicServerConfigProtobuf);
@@ -300,7 +301,7 @@ CryptoHandshakeMessage* QuicCryptoServerConfig::AddConfig(
     std::unique_ptr<QuicServerConfigProtobuf> protobuf,
     const QuicWallTime now) {
   std::unique_ptr<CryptoHandshakeMessage> msg(
-      CryptoFramer::ParseMessage(protobuf->config()));
+      CryptoFramer::ParseMessage(protobuf->config(), Perspective::IS_SERVER));
 
   if (!msg.get()) {
     QUIC_LOG(WARNING) << "Failed to parse server config message";
@@ -688,7 +689,8 @@ void QuicCryptoServerConfig::ProcessClientHello(
   }
   DCHECK(proof_source_.get());
   string chlo_hash;
-  CryptoUtils::HashHandshakeMessage(client_hello, &chlo_hash);
+  CryptoUtils::HashHandshakeMessage(client_hello, &chlo_hash,
+                                    Perspective::IS_SERVER);
 
   // No need to get a new proof if one was already generated.
   if (!signed_config->chain) {
@@ -744,6 +746,10 @@ void QuicCryptoServerConfig::ProcessClientHelloAfterGetProof(
     const QuicReferenceCountedPointer<Config>& requested_config,
     const QuicReferenceCountedPointer<Config>& primary_config,
     std::unique_ptr<ProcessClientHelloResultCallback> done_cb) const {
+  if (QuicUtils::IsConnectionIdWireFormatBigEndian(Perspective::IS_SERVER)) {
+    connection_id = QuicEndian::HostToNet64(connection_id);
+  }
+
   ProcessClientHelloHelper helper(&done_cb);
 
   if (found_error) {
@@ -848,7 +854,8 @@ void QuicCryptoServerConfig::ProcessClientHelloAfterGetProof(
   }
 
   string hkdf_suffix;
-  const QuicData& client_hello_serialized = client_hello.GetSerialized();
+  const QuicData& client_hello_serialized =
+      client_hello.GetSerialized(Perspective::IS_SERVER);
   hkdf_suffix.reserve(sizeof(connection_id) + client_hello_serialized.length() +
                       requested_config->serialized.size());
   hkdf_suffix.append(reinterpret_cast<char*>(&connection_id),
@@ -871,7 +878,7 @@ void QuicCryptoServerConfig::ProcessClientHelloAfterGetProof(
     client_hello_copy.Erase(kPAD);
 
     const QuicData& client_hello_copy_serialized =
-        client_hello_copy.GetSerialized();
+        client_hello_copy.GetSerialized(Perspective::IS_SERVER);
     string hkdf_input;
     hkdf_input.append(QuicCryptoConfig::kCETVLabel,
                       strlen(QuicCryptoConfig::kCETVLabel) + 1);
@@ -904,7 +911,7 @@ void QuicCryptoServerConfig::ProcessClientHelloAfterGetProof(
       return;
     }
     std::unique_ptr<CryptoHandshakeMessage> cetv(CryptoFramer::ParseMessage(
-        QuicStringPiece(plaintext, plaintext_length)));
+        QuicStringPiece(plaintext, plaintext_length), Perspective::IS_SERVER));
     if (!cetv.get()) {
       helper.Fail(QUIC_INVALID_CRYPTO_MESSAGE_PARAMETER, "CETV parse error");
       return;
@@ -1255,7 +1262,8 @@ void QuicCryptoServerConfig::EvaluateClientHello(
   bool get_proof_failed = false;
   string serialized_config = primary_config->serialized;
   string chlo_hash;
-  CryptoUtils::HashHandshakeMessage(client_hello, &chlo_hash);
+  CryptoUtils::HashHandshakeMessage(client_hello, &chlo_hash,
+                                    Perspective::IS_SERVER);
   bool need_proof = true;
   need_proof = !signed_config->chain;
   const QuicTag* tag_ptr;
@@ -1318,8 +1326,9 @@ void QuicCryptoServerConfig::EvaluateClientHelloAfterGetProof(
   if (info->client_nonce.size() != kNonceSize) {
     info->reject_reasons.push_back(CLIENT_NONCE_INVALID_FAILURE);
     // Invalid client nonce.
-    QUIC_LOG_FIRST_N(ERROR, 2) << "Invalid client nonce: "
-                               << client_hello.DebugString();
+    QUIC_LOG_FIRST_N(ERROR, 2)
+        << "Invalid client nonce: "
+        << client_hello.DebugString(Perspective::IS_SERVER);
     QUIC_DLOG(INFO) << "Invalid client nonce.";
   }
 
@@ -1475,6 +1484,10 @@ void QuicCryptoServerConfig::BuildRejection(
                   << "with server-designated connection ID "
                   << server_designated_connection_id;
     out->set_tag(kSREJ);
+    if (QuicUtils::IsConnectionIdWireFormatBigEndian(Perspective::IS_SERVER)) {
+      server_designated_connection_id =
+          QuicEndian::HostToNet64(server_designated_connection_id);
+    }
     out->SetValue(kRCID, server_designated_connection_id);
   } else {
     out->set_tag(kREJ);
@@ -1584,7 +1597,7 @@ QuicReferenceCountedPointer<QuicCryptoServerConfig::Config>
 QuicCryptoServerConfig::ParseConfigProtobuf(
     const std::unique_ptr<QuicServerConfigProtobuf>& protobuf) {
   std::unique_ptr<CryptoHandshakeMessage> msg(
-      CryptoFramer::ParseMessage(protobuf->config()));
+      CryptoFramer::ParseMessage(protobuf->config(), Perspective::IS_SERVER));
 
   if (msg->tag() != kSCFG) {
     QUIC_LOG(WARNING) << "Server config message has tag " << msg->tag()
@@ -1738,8 +1751,8 @@ QuicCryptoServerConfig::ParseConfigProtobuf(
 }
 
 void QuicCryptoServerConfig::SetEphemeralKeySource(
-    EphemeralKeySource* ephemeral_key_source) {
-  ephemeral_key_source_.reset(ephemeral_key_source);
+    std::unique_ptr<EphemeralKeySource> ephemeral_key_source) {
+  ephemeral_key_source_ = std::move(ephemeral_key_source);
 }
 
 void QuicCryptoServerConfig::set_replay_protection(bool on) {

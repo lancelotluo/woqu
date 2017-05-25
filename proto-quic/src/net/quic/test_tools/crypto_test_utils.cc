@@ -22,6 +22,7 @@
 #include "net/quic/platform/api/quic_clock.h"
 #include "net/quic/platform/api/quic_logging.h"
 #include "net/quic/platform/api/quic_socket_address.h"
+#include "net/quic/platform/api/quic_test.h"
 #include "net/quic/platform/api/quic_text_utils.h"
 #include "net/quic/test_tools/quic_connection_peer.h"
 #include "net/quic/test_tools/quic_framer_peer.h"
@@ -31,7 +32,7 @@
 #include "third_party/boringssl/src/include/openssl/bn.h"
 #include "third_party/boringssl/src/include/openssl/ec.h"
 #include "third_party/boringssl/src/include/openssl/ecdsa.h"
-#include "third_party/boringssl/src/include/openssl/obj_mac.h"
+#include "third_party/boringssl/src/include/openssl/nid.h"
 #include "third_party/boringssl/src/include/openssl/sha.h"
 
 using std::string;
@@ -340,14 +341,15 @@ class FullChloGenerator {
     EXPECT_THAT(rej->tag(),
                 testing::AnyOf(testing::Eq(kSREJ), testing::Eq(kREJ)));
 
-    VLOG(1) << "Extract valid STK and SCID from\n" << rej->DebugString();
+    VLOG(1) << "Extract valid STK and SCID from\n"
+            << rej->DebugString(Perspective::IS_SERVER);
     QuicStringPiece srct;
     ASSERT_TRUE(rej->GetStringPiece(kSourceAddressTokenTag, &srct));
 
     QuicStringPiece scfg;
     ASSERT_TRUE(rej->GetStringPiece(kSCFG, &scfg));
     std::unique_ptr<CryptoHandshakeMessage> server_config(
-        CryptoFramer::ParseMessage(scfg));
+        CryptoFramer::ParseMessage(scfg, Perspective::IS_SERVER));
 
     QuicStringPiece scid;
     ASSERT_TRUE(server_config->GetStringPiece(kSCID, &scid));
@@ -402,8 +404,8 @@ int HandshakeWithFakeServer(QuicConfig* server_quic_config,
   CHECK_NE(0u, client_conn->encrypted_packets_.size());
 
   CommunicateHandshakeMessages(client_conn, client, server_conn,
-                               server_session.GetCryptoStream());
-  CompareClientAndServerKeys(client, server_session.GetCryptoStream());
+                               server_session.GetMutableCryptoStream());
+  CompareClientAndServerKeys(client, server_session.GetMutableCryptoStream());
 
   return client->num_sent_client_hellos();
 }
@@ -437,15 +439,15 @@ int HandshakeWithFakeClient(MockQuicConnectionHelper* helper,
 
   EXPECT_CALL(client_session, OnProofValid(testing::_))
       .Times(testing::AnyNumber());
-  client_session.GetCryptoStream()->CryptoConnect();
+  client_session.GetMutableCryptoStream()->CryptoConnect();
   CHECK_EQ(1u, client_conn->encrypted_packets_.size());
 
   CommunicateHandshakeMessagesAndRunCallbacks(
-      client_conn, client_session.GetCryptoStream(), server_conn, server,
+      client_conn, client_session.GetMutableCryptoStream(), server_conn, server,
       async_channel_id_source);
 
   if (server->handshake_confirmed() && server->encryption_established()) {
-    CompareClientAndServerKeys(client_session.GetCryptoStream(), server);
+    CompareClientAndServerKeys(client_session.GetMutableCryptoStream(), server);
 
     if (options.channel_id_enabled) {
       std::unique_ptr<ChannelIDKey> channel_id_key;
@@ -860,9 +862,10 @@ CryptoHandshakeMessage CreateCHLO(
 
   // The CryptoHandshakeMessage needs to be serialized and parsed to ensure
   // that any padding is included.
-  std::unique_ptr<QuicData> bytes(CryptoFramer::ConstructHandshakeMessage(msg));
-  std::unique_ptr<CryptoHandshakeMessage> parsed(
-      CryptoFramer::ParseMessage(bytes->AsStringPiece()));
+  std::unique_ptr<QuicData> bytes(
+      CryptoFramer::ConstructHandshakeMessage(msg, Perspective::IS_CLIENT));
+  std::unique_ptr<CryptoHandshakeMessage> parsed(CryptoFramer::ParseMessage(
+      bytes->AsStringPiece(), Perspective::IS_CLIENT));
   CHECK(parsed.get());
 
   return *parsed;
@@ -899,8 +902,9 @@ void MovePackets(PacketSavingConnection* source_conn,
     }
 
     for (const auto& stream_frame : framer.stream_frames()) {
-      ASSERT_TRUE(crypto_framer.ProcessInput(QuicStringPiece(
-          stream_frame->data_buffer, stream_frame->data_length)));
+      ASSERT_TRUE(crypto_framer.ProcessInput(
+          QuicStringPiece(stream_frame->data_buffer, stream_frame->data_length),
+          dest_perspective));
       ASSERT_FALSE(crypto_visitor.error());
     }
     QuicConnectionPeer::SetCurrentPacket(

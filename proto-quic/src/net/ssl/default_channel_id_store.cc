@@ -280,6 +280,10 @@ void DefaultChannelIDStore::GetAllChannelIDs(
   RunOrEnqueueTask(std::unique_ptr<Task>(new GetAllChannelIDsTask(callback)));
 }
 
+void DefaultChannelIDStore::Flush() {
+  store_->Flush();
+}
+
 int DefaultChannelIDStore::GetChannelIDCount() {
   DCHECK(CalledOnValidThread());
 
@@ -331,18 +335,6 @@ void DefaultChannelIDStore::OnLoaded(
   channel_ids->clear();
 
   loaded_ = true;
-
-  base::TimeDelta wait_time;
-  if (!waiting_tasks_.empty())
-    wait_time = base::TimeTicks::Now() - waiting_tasks_start_time_;
-  DVLOG(1) << "Task delay " << wait_time.InMilliseconds();
-  UMA_HISTOGRAM_CUSTOM_TIMES("DomainBoundCerts.TaskMaxWaitTime",
-                             wait_time,
-                             base::TimeDelta::FromMilliseconds(1),
-                             base::TimeDelta::FromMinutes(1),
-                             50);
-  UMA_HISTOGRAM_COUNTS_100("DomainBoundCerts.TaskWaitCount",
-                           waiting_tasks_.size());
 
   for (std::unique_ptr<Task>& i : waiting_tasks_)
     i->Run(this);
@@ -401,8 +393,6 @@ void DefaultChannelIDStore::SyncGetAllChannelIDs(
 void DefaultChannelIDStore::EnqueueTask(std::unique_ptr<Task> task) {
   DCHECK(CalledOnValidThread());
   DCHECK(!loaded_);
-  if (waiting_tasks_.empty())
-    waiting_tasks_start_time_ = base::TimeTicks::Now();
   waiting_tasks_.push_back(std::move(task));
 }
 

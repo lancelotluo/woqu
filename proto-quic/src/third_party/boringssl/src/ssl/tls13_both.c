@@ -23,7 +23,6 @@
 #include <openssl/mem.h>
 #include <openssl/stack.h>
 #include <openssl/x509.h>
-#include <openssl/x509v3.h>
 
 #include "../crypto/internal.h"
 #include "internal.h"
@@ -34,7 +33,7 @@
  * without being able to return application data. */
 static const uint8_t kMaxKeyUpdates = 32;
 
-int tls13_handshake(SSL_HANDSHAKE *hs) {
+int tls13_handshake(SSL_HANDSHAKE *hs, int *out_early_return) {
   SSL *const ssl = hs->ssl;
   for (;;) {
     /* Resolve the operation the handshake was waiting on. */
@@ -65,6 +64,16 @@ int tls13_handshake(SSL_HANDSHAKE *hs) {
         break;
       }
 
+      case ssl_hs_read_end_of_early_data: {
+        if (ssl->s3->hs->can_early_read) {
+          /* While we are processing early data, the handshake returns early. */
+          *out_early_return = 1;
+          return 1;
+        }
+        hs->wait = ssl_hs_ok;
+        break;
+      }
+
       case ssl_hs_x509_lookup:
         ssl->rwstate = SSL_X509_LOOKUP;
         hs->wait = ssl_hs_ok;
@@ -77,6 +86,11 @@ int tls13_handshake(SSL_HANDSHAKE *hs) {
 
       case ssl_hs_private_key_operation:
         ssl->rwstate = SSL_PRIVATE_KEY_OPERATION;
+        hs->wait = ssl_hs_ok;
+        return -1;
+
+      case ssl_hs_pending_ticket:
+        ssl->rwstate = SSL_PENDING_TICKET;
         hs->wait = ssl_hs_ok;
         return -1;
 
@@ -330,8 +344,8 @@ int tls13_process_certificate(SSL_HANDSHAKE *hs, int allow_anonymous) {
 
   hs->new_session->peer_sha256_valid = retain_sha256;
 
-  if (!ssl_verify_cert_chain(ssl, &hs->new_session->verify_result,
-                             hs->new_session->x509_chain)) {
+  if (!ssl->ctx->x509_method->session_verify_cert_chain(hs->new_session,
+                                                        ssl)) {
     goto err;
   }
 
@@ -398,12 +412,21 @@ err:
   return ret;
 }
 
-int tls13_process_finished(SSL_HANDSHAKE *hs) {
+int tls13_process_finished(SSL_HANDSHAKE *hs, int use_saved_value) {
   SSL *const ssl = hs->ssl;
-  uint8_t verify_data[EVP_MAX_MD_SIZE];
+  uint8_t verify_data_buf[EVP_MAX_MD_SIZE];
+  const uint8_t *verify_data;
   size_t verify_data_len;
-  if (!tls13_finished_mac(hs, verify_data, &verify_data_len, !ssl->server)) {
-    return 0;
+  if (use_saved_value) {
+    assert(ssl->server);
+    verify_data = hs->expected_client_finished;
+    verify_data_len = hs->hash_len;
+  } else {
+    if (!tls13_finished_mac(hs, verify_data_buf, &verify_data_len,
+                            !ssl->server)) {
+      return 0;
+    }
+    verify_data = verify_data_buf;
   }
 
   int finished_ok =
@@ -526,7 +549,7 @@ enum ssl_private_key_result_t tls13_add_certificate_verify(SSL_HANDSHAKE *hs,
 
   /* Sign the digest. */
   CBB child;
-  const size_t max_sig_len = ssl_private_key_max_signature_len(ssl);
+  const size_t max_sig_len = EVP_PKEY_size(hs->local_pubkey);
   uint8_t *sig;
   size_t sig_len;
   if (!CBB_add_u16_length_prefixed(&body, &child) ||
@@ -602,9 +625,30 @@ static int tls13_receive_key_update(SSL *ssl) {
     return 0;
   }
 
-  /* TODO(svaldez): Send KeyUpdate if |key_update_request| is
-   * |SSL_KEY_UPDATE_REQUESTED|. */
-  return tls13_rotate_traffic_key(ssl, evp_aead_open);
+  if (!tls13_rotate_traffic_key(ssl, evp_aead_open)) {
+    return 0;
+  }
+
+  /* Acknowledge the KeyUpdate */
+  if (key_update_request == SSL_KEY_UPDATE_REQUESTED &&
+      !ssl->s3->key_update_pending) {
+    CBB cbb, body;
+    if (!ssl->method->init_message(ssl, &cbb, &body, SSL3_MT_KEY_UPDATE) ||
+        !CBB_add_u8(&body, SSL_KEY_UPDATE_NOT_REQUESTED) ||
+        !ssl_add_message_cbb(ssl, &cbb) ||
+        !tls13_rotate_traffic_key(ssl, evp_aead_seal)) {
+      CBB_cleanup(&cbb);
+      return 0;
+    }
+
+    /* Suppress KeyUpdate acknowledgments until this change is written to the
+     * wire. This prevents us from accumulating write obligations when read and
+     * write progress at different rates. See draft-ietf-tls-tls13-18, section
+     * 4.5.3. */
+    ssl->s3->key_update_pending = 1;
+  }
+
+  return 1;
 }
 
 int tls13_post_handshake(SSL *ssl) {
@@ -625,8 +669,6 @@ int tls13_post_handshake(SSL *ssl) {
       !ssl->server) {
     return tls13_process_new_session_ticket(ssl);
   }
-
-  // TODO(svaldez): Handle post-handshake authentication.
 
   ssl3_send_alert(ssl, SSL3_AL_FATAL, SSL_AD_UNEXPECTED_MESSAGE);
   OPENSSL_PUT_ERROR(SSL, SSL_R_UNEXPECTED_MESSAGE);

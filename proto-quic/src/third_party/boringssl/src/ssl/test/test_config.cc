@@ -101,10 +101,8 @@ const Flag<bool> kBoolFlags[] = {
   { "-renegotiate-ignore", &TestConfig::renegotiate_ignore },
   { "-p384-only", &TestConfig::p384_only },
   { "-enable-all-curves", &TestConfig::enable_all_curves },
-  { "-use-sparse-dh-prime", &TestConfig::use_sparse_dh_prime },
   { "-use-old-client-cert-callback",
     &TestConfig::use_old_client_cert_callback },
-  { "-use-null-client-ca-list", &TestConfig::use_null_client_ca_list },
   { "-send-alert", &TestConfig::send_alert },
   { "-peek-then-read", &TestConfig::peek_then_read },
   { "-enable-grease", &TestConfig::enable_grease },
@@ -117,7 +115,6 @@ const Flag<bool> kBoolFlags[] = {
     &TestConfig::expect_sha256_client_cert_initial },
   { "-expect-sha256-client-cert-resume",
     &TestConfig::expect_sha256_client_cert_resume },
-  { "-enable-short-header", &TestConfig::enable_short_header },
   { "-read-with-unfinished-write", &TestConfig::read_with_unfinished_write },
   { "-expect-secure-renegotiation",
     &TestConfig::expect_secure_renegotiation },
@@ -125,6 +122,12 @@ const Flag<bool> kBoolFlags[] = {
     &TestConfig::expect_no_secure_renegotiation },
   { "-expect-session-id", &TestConfig::expect_session_id },
   { "-expect-no-session-id", &TestConfig::expect_no_session_id },
+  { "-expect-accept-early-data", &TestConfig::expect_accept_early_data },
+  { "-expect-reject-early-data", &TestConfig::expect_reject_early_data },
+  { "-no-op-extra-handshake", &TestConfig::no_op_extra_handshake },
+  { "-handshake-twice", &TestConfig::handshake_twice },
+  { "-allow-unknown-alpn-protos", &TestConfig::allow_unknown_alpn_protos },
+  { "-enable-ed25519", &TestConfig::enable_ed25519 },
 };
 
 const Flag<std::string> kStringFlags[] = {
@@ -148,6 +151,8 @@ const Flag<std::string> kStringFlags[] = {
   { "-export-label", &TestConfig::export_label },
   { "-export-context", &TestConfig::export_context },
   { "-expect-peer-cert-file", &TestConfig::expect_peer_cert_file },
+  { "-use-client-ca-list", &TestConfig::use_client_ca_list },
+  { "-expect-client-ca-list", &TestConfig::expected_client_ca_list },
 };
 
 const Flag<std::string> kBase64Flags[] = {
@@ -172,7 +177,6 @@ const Flag<int> kIntFlags[] = {
   { "-expect-peer-signature-algorithm",
     &TestConfig::expect_peer_signature_algorithm },
   { "-expect-curve-id", &TestConfig::expect_curve_id },
-  { "-expect-resume-curve-id", &TestConfig::expect_resume_curve_id },
   { "-initial-timeout-duration-ms", &TestConfig::initial_timeout_duration_ms },
   { "-max-cert-list", &TestConfig::max_cert_list },
   { "-expect-cipher-aes", &TestConfig::expect_cipher_aes },
@@ -180,34 +184,62 @@ const Flag<int> kIntFlags[] = {
   { "-resumption-delay", &TestConfig::resumption_delay },
   { "-max-send-fragment", &TestConfig::max_send_fragment },
   { "-read-size", &TestConfig::read_size },
+  { "-expect-ticket-age-skew", &TestConfig::expect_ticket_age_skew },
 };
 
 const Flag<std::vector<int>> kIntVectorFlags[] = {
   { "-signing-prefs", &TestConfig::signing_prefs },
+  { "-verify-prefs", &TestConfig::verify_prefs },
 };
+
+const char kInit[] = "-on-initial";
+const char kResume[] = "-on-resume";
 
 }  // namespace
 
-bool ParseConfig(int argc, char **argv, TestConfig *out_config) {
+bool ParseConfig(int argc, char **argv, bool is_resume,
+                 TestConfig *out_config) {
   for (int i = 0; i < argc; i++) {
-    bool *bool_field = FindField(out_config, kBoolFlags, argv[i]);
+    bool skip = false;
+    char *flag = argv[i];
+    const char *prefix = is_resume ? kResume : kInit;
+    const char *opposite = is_resume ? kInit : kResume;
+    if (strncmp(flag, prefix, strlen(prefix)) == 0) {
+      flag = flag + strlen(prefix);
+      for (int j = 0; j < argc; j++) {
+        if (strcmp(argv[j], flag) == 0) {
+          fprintf(stderr, "Can't use default and prefixed arguments: %s\n",
+                  flag);
+          return false;
+        }
+      }
+    } else if (strncmp(flag, opposite, strlen(opposite)) == 0) {
+      flag = flag + strlen(opposite);
+      skip = true;
+    }
+
+    bool *bool_field = FindField(out_config, kBoolFlags, flag);
     if (bool_field != NULL) {
-      *bool_field = true;
+      if (!skip) {
+        *bool_field = true;
+      }
       continue;
     }
 
-    std::string *string_field = FindField(out_config, kStringFlags, argv[i]);
+    std::string *string_field = FindField(out_config, kStringFlags, flag);
     if (string_field != NULL) {
       i++;
       if (i >= argc) {
         fprintf(stderr, "Missing parameter\n");
         return false;
       }
-      string_field->assign(argv[i]);
+      if (!skip) {
+        string_field->assign(argv[i]);
+      }
       continue;
     }
 
-    std::string *base64_field = FindField(out_config, kBase64Flags, argv[i]);
+    std::string *base64_field = FindField(out_config, kBase64Flags, flag);
     if (base64_field != NULL) {
       i++;
       if (i >= argc) {
@@ -226,23 +258,28 @@ bool ParseConfig(int argc, char **argv, TestConfig *out_config) {
         fprintf(stderr, "Invalid base64: %s\n", argv[i]);
         return false;
       }
-      base64_field->assign(reinterpret_cast<const char *>(decoded.get()), len);
+      if (!skip) {
+        base64_field->assign(reinterpret_cast<const char *>(decoded.get()),
+                             len);
+      }
       continue;
     }
 
-    int *int_field = FindField(out_config, kIntFlags, argv[i]);
+    int *int_field = FindField(out_config, kIntFlags, flag);
     if (int_field) {
       i++;
       if (i >= argc) {
         fprintf(stderr, "Missing parameter\n");
         return false;
       }
-      *int_field = atoi(argv[i]);
+      if (!skip) {
+        *int_field = atoi(argv[i]);
+      }
       continue;
     }
 
     std::vector<int> *int_vector_field =
-        FindField(out_config, kIntVectorFlags, argv[i]);
+        FindField(out_config, kIntVectorFlags, flag);
     if (int_vector_field) {
       i++;
       if (i >= argc) {
@@ -251,11 +288,13 @@ bool ParseConfig(int argc, char **argv, TestConfig *out_config) {
       }
 
       // Each instance of the flag adds to the list.
-      int_vector_field->push_back(atoi(argv[i]));
+      if (!skip) {
+        int_vector_field->push_back(atoi(argv[i]));
+      }
       continue;
     }
 
-    fprintf(stderr, "Unknown argument: %s\n", argv[i]);
+    fprintf(stderr, "Unknown argument: %s\n", flag);
     return false;
   }
 

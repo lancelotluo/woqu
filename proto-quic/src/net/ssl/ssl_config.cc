@@ -27,7 +27,7 @@ SSLConfig::SSLConfig()
       common_name_fallback_local_anchors_enabled(true),
       version_min(kDefaultSSLVersionMin),
       version_max(kDefaultSSLVersionMax),
-      deprecated_cipher_suites_enabled(false),
+      version_interference_probe(false),
       channel_id_enabled(true),
       false_start_enabled(true),
       signed_cert_timestamps_enabled(true),

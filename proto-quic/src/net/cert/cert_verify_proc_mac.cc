@@ -8,11 +8,9 @@
 #include <CoreServices/CoreServices.h>
 #include <Security/Security.h>
 
-#include <set>
 #include <string>
 #include <vector>
 
-#include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "base/mac/mac_logging.h"
 #include "base/mac/mac_util.h"
@@ -32,10 +30,12 @@
 #include "net/cert/ev_root_ca_metadata.h"
 #include "net/cert/internal/certificate_policies.h"
 #include "net/cert/internal/parsed_certificate.h"
+#include "net/cert/known_roots_mac.h"
 #include "net/cert/test_keychain_search_list_mac.h"
 #include "net/cert/test_root_certs.h"
 #include "net/cert/x509_certificate.h"
 #include "net/cert/x509_util.h"
+#include "net/cert/x509_util_ios_and_mac.h"
 #include "net/cert/x509_util_mac.h"
 
 // CSSM functions are deprecated as of OSX 10.7, but have no replacement.
@@ -197,11 +197,50 @@ void CopyCertChainToVerifyResult(CFArrayRef cert_chain,
   }
   if (!verified_cert) {
     NOTREACHED();
+    verify_result->cert_status |= CERT_STATUS_INVALID;
     return;
   }
 
-  verify_result->verified_cert =
-      X509Certificate::CreateFromHandle(verified_cert, verified_chain);
+  scoped_refptr<X509Certificate> verified_cert_with_chain =
+      x509_util::CreateX509CertificateFromSecCertificate(verified_cert,
+                                                         verified_chain);
+  if (verified_cert_with_chain)
+    verify_result->verified_cert = std::move(verified_cert_with_chain);
+  else
+    verify_result->cert_status |= CERT_STATUS_INVALID;
+}
+
+// Returns true if the certificate uses MD2, MD4, MD5, or SHA1, and false
+// otherwise. A return of false also includes the case where the signature
+// algorithm couldn't be conclusively labeled as weak.
+bool CertUsesWeakHash(SecCertificateRef cert_handle) {
+  x509_util::CSSMCachedCertificate cached_cert;
+  OSStatus status = cached_cert.Init(cert_handle);
+  if (status)
+    return false;
+
+  x509_util::CSSMFieldValue signature_field;
+  status =
+      cached_cert.GetField(&CSSMOID_X509V1SignatureAlgorithm, &signature_field);
+  if (status || !signature_field.field())
+    return false;
+
+  const CSSM_X509_ALGORITHM_IDENTIFIER* sig_algorithm =
+      signature_field.GetAs<CSSM_X509_ALGORITHM_IDENTIFIER>();
+  if (!sig_algorithm)
+    return false;
+
+  const CSSM_OID* alg_oid = &sig_algorithm->algorithm;
+
+  return (CSSMOIDEqual(alg_oid, &CSSMOID_MD2WithRSA) ||
+          CSSMOIDEqual(alg_oid, &CSSMOID_MD4WithRSA) ||
+          CSSMOIDEqual(alg_oid, &CSSMOID_MD5WithRSA) ||
+          CSSMOIDEqual(alg_oid, &CSSMOID_SHA1WithRSA) ||
+          CSSMOIDEqual(alg_oid, &CSSMOID_SHA1WithRSA_OIW) ||
+          CSSMOIDEqual(alg_oid, &CSSMOID_SHA1WithDSA) ||
+          CSSMOIDEqual(alg_oid, &CSSMOID_SHA1WithDSA_CMS) ||
+          CSSMOIDEqual(alg_oid, &CSSMOID_SHA1WithDSA_JDK) ||
+          CSSMOIDEqual(alg_oid, &CSSMOID_ECDSA_WithSHA1));
 }
 
 // Returns true if the intermediates (excluding trusted certificates) use a
@@ -228,56 +267,26 @@ bool IsWeakChainBasedOnHashingAlgorithms(
       continue;
     }
 
-    X509Certificate::SignatureHashAlgorithm hash_algorithm =
-        X509Certificate::GetSignatureHashAlgorithm(chain_cert);
-
-    switch (hash_algorithm) {
-      case X509Certificate::kSignatureHashAlgorithmMd2:
-      case X509Certificate::kSignatureHashAlgorithmMd4:
-      case X509Certificate::kSignatureHashAlgorithmMd5:
-      case X509Certificate::kSignatureHashAlgorithmSha1:
-        if (i == 0) {
-          leaf_uses_weak_hash = true;
-        } else {
-          intermediates_contain_weak_hash = true;
-        }
-        break;
-      case X509Certificate::kSignatureHashAlgorithmOther:
-        break;
+    if (CertUsesWeakHash(chain_cert)) {
+      if (i == 0) {
+        leaf_uses_weak_hash = true;
+      } else {
+        intermediates_contain_weak_hash = true;
+      }
     }
   }
 
   return !leaf_uses_weak_hash && intermediates_contain_weak_hash;
 }
 
-using ExtensionsMap = std::map<net::der::Input, net::ParsedExtension>;
-
-// Helper that looks up an extension by OID given a map of extensions.
-bool GetExtensionValue(const ExtensionsMap& extensions,
-                       const net::der::Input& oid,
-                       net::der::Input* value) {
-  auto it = extensions.find(oid);
-  if (it == extensions.end())
-    return false;
-  *value = it->second.value;
-  return true;
-}
-
 // Checks if |*cert| has a Certificate Policies extension containing either
 // of |ev_policy_oid| or anyPolicy.
 bool HasPolicyOrAnyPolicy(const ParsedCertificate* cert,
                           const der::Input& ev_policy_oid) {
-  der::Input extension_value;
-  if (!GetExtensionValue(cert->unparsed_extensions(), CertificatePoliciesOid(),
-                         &extension_value)) {
-    return false;
-  }
-
-  std::vector<der::Input> policies;
-  if (!ParseCertificatePoliciesExtension(extension_value, &policies))
+  if (!cert->has_policy_oids())
     return false;
 
-  for (const der::Input& policy_oid : policies) {
+  for (const der::Input& policy_oid : cert->policy_oids()) {
     if (policy_oid == ev_policy_oid || policy_oid == AnyPolicy())
       return true;
   }
@@ -301,21 +310,18 @@ void GetCandidateEVPolicy(const X509Certificate* cert_input,
   if (!cert)
     return;
 
-  der::Input extension_value;
-  if (!GetExtensionValue(cert->unparsed_extensions(), CertificatePoliciesOid(),
-                         &extension_value)) {
-    return;
-  }
-
-  std::vector<der::Input> policies;
-  if (!ParseCertificatePoliciesExtension(extension_value, &policies))
+  if (!cert->has_policy_oids())
     return;
 
   EVRootCAMetadata* metadata = EVRootCAMetadata::GetInstance();
-  for (const der::Input& policy_oid : policies) {
+  for (const der::Input& policy_oid : cert->policy_oids()) {
     if (metadata->IsEVPolicyOID(policy_oid)) {
       *ev_policy_oid = policy_oid.AsString();
-      return;
+
+      // De-prioritize the CA/Browser forum Extended Validation policy
+      // (2.23.140.1.1). See crbug.com/705285.
+      if (!EVRootCAMetadata::IsCaBrowserForumEvOid(policy_oid))
+        break;
     }
   }
 }
@@ -590,58 +596,16 @@ int BuildAndEvaluateSecTrustRef(CFArrayRef cert_array,
   return OK;
 }
 
-// Helper class for managing the set of OS X Known Roots. This is only safe
-// to initialize while the crypto::GetMacSecurityServicesLock() is held, due
-// to calling into Security.framework functions; however, once initialized,
-// it can be called at any time.
-// In practice, due to lazy initialization, it's best to just always guard
-// accesses with the lock.
-class OSXKnownRootHelper {
- public:
-  // IsIssuedByKnownRoot returns true if the given chain is rooted at a root CA
-  // that we recognise as a standard root.
-  bool IsIssuedByKnownRoot(CFArrayRef chain) {
-    // If there are no known roots, then an API failure occurred. For safety,
-    // assume that all certificates are issued by known roots.
-    if (known_roots_.empty())
-      return true;
-
-    CFIndex n = CFArrayGetCount(chain);
-    if (n < 1)
-      return false;
-    SecCertificateRef root_ref = reinterpret_cast<SecCertificateRef>(
-        const_cast<void*>(CFArrayGetValueAtIndex(chain, n - 1)));
-    SHA256HashValue hash = X509Certificate::CalculateFingerprint256(root_ref);
-    return known_roots_.find(hash) != known_roots_.end();
-  }
-
- private:
-  friend struct base::DefaultLazyInstanceTraits<OSXKnownRootHelper>;
-
-  OSXKnownRootHelper() {
-    CFArrayRef cert_array = NULL;
-    OSStatus rv = SecTrustSettingsCopyCertificates(
-        kSecTrustSettingsDomainSystem, &cert_array);
-    if (rv != noErr) {
-      LOG(ERROR) << "Unable to determine trusted roots; assuming all roots are "
-                 << "trusted! Error " << rv;
-      return;
-    }
-    base::ScopedCFTypeRef<CFArrayRef> scoped_array(cert_array);
-    for (CFIndex i = 0, size = CFArrayGetCount(cert_array); i < size; ++i) {
-      SecCertificateRef cert = reinterpret_cast<SecCertificateRef>(
-          const_cast<void*>(CFArrayGetValueAtIndex(cert_array, i)));
-      known_roots_.insert(X509Certificate::CalculateFingerprint256(cert));
-    }
-  }
-
-  ~OSXKnownRootHelper() {}
-
-  std::set<SHA256HashValue, SHA256HashValueLessThan> known_roots_;
-};
-
-base::LazyInstance<OSXKnownRootHelper>::Leaky g_known_roots =
-    LAZY_INSTANCE_INITIALIZER;
+// IsIssuedByKnownRoot returns true if the given chain is rooted at a root CA
+// that we recognise as a standard root.
+bool IsIssuedByKnownRoot(CFArrayRef chain) {
+  CFIndex n = CFArrayGetCount(chain);
+  if (n < 1)
+    return false;
+  SecCertificateRef root_ref = reinterpret_cast<SecCertificateRef>(
+      const_cast<void*>(CFArrayGetValueAtIndex(chain, n - 1)));
+  return IsKnownRoot(root_ref);
+}
 
 // Runs path building & verification loop for |cert|, given |flags|. This is
 // split into a separate function so verification can be repeated with different
@@ -777,7 +741,11 @@ int VerifyWithGivenFlags(X509Certificate* cert,
     }
 
     ScopedCFTypeRef<CFMutableArrayRef> cert_array(
-        cert->CreateOSCertChainForCert());
+        x509_util::CreateSecCertificateArrayForX509Certificate(cert));
+    if (!cert_array) {
+      verify_result->cert_status |= CERT_STATUS_INVALID;
+      return ERR_CERT_INVALID;
+    }
 
     // Beginning with the certificate chain as supplied by the server, attempt
     // to verify the chain. If a failure is encountered, trim a certificate
@@ -998,8 +966,7 @@ int VerifyWithGivenFlags(X509Certificate* cert,
   verify_result->cert_status &= ~CERT_STATUS_NO_REVOCATION_MECHANISM;
 
   AppendPublicKeyHashes(completed_chain, &verify_result->public_key_hashes);
-  verify_result->is_issued_by_known_root =
-      g_known_roots.Get().IsIssuedByKnownRoot(completed_chain);
+  verify_result->is_issued_by_known_root = IsIssuedByKnownRoot(completed_chain);
 
   if (IsCertStatusError(verify_result->cert_status))
     return MapCertStatusToNetError(verify_result->cert_status);

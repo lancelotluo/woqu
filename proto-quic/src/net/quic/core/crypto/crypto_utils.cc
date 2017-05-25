@@ -137,7 +137,7 @@ bool CryptoUtils::DeriveKeys(QuicStringPiece premaster_secret,
   }
 
   if (subkey_secret != nullptr) {
-    hkdf.subkey_secret().CopyToString(subkey_secret);
+    *subkey_secret = string(hkdf.subkey_secret());
   }
 
   return true;
@@ -168,7 +168,7 @@ bool CryptoUtils::ExportKeyingMaterial(QuicStringPiece subkey_secret,
 
   crypto::HKDF hkdf(subkey_secret, QuicStringPiece() /* no salt */, info,
                     result_len, 0 /* no fixed IV */, 0 /* no subkey secret */);
-  hkdf.client_write_key().CopyToString(result);
+  *result = string(hkdf.client_write_key());
   return true;
 }
 
@@ -292,8 +292,9 @@ const char* CryptoUtils::HandshakeFailureReasonToString(
 
 // static
 void CryptoUtils::HashHandshakeMessage(const CryptoHandshakeMessage& message,
-                                       string* output) {
-  const QuicData& serialized = message.GetSerialized();
+                                       string* output,
+                                       Perspective perspective) {
+  const QuicData& serialized = message.GetSerialized(perspective);
   uint8_t digest[SHA256_DIGEST_LENGTH];
   SHA256(reinterpret_cast<const uint8_t*>(serialized.data()),
          serialized.length(), digest);

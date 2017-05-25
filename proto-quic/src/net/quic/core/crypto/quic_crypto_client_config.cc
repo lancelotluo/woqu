@@ -22,6 +22,7 @@
 #include "net/quic/core/crypto/quic_random.h"
 #include "net/quic/core/quic_utils.h"
 #include "net/quic/platform/api/quic_bug_tracker.h"
+#include "net/quic/platform/api/quic_endian.h"
 #include "net/quic/platform/api/quic_hostname_utils.h"
 #include "net/quic/platform/api/quic_logging.h"
 #include "net/quic/platform/api/quic_map_util.h"
@@ -112,7 +113,7 @@ QuicCryptoClientConfig::CachedState::GetServerConfig() const {
   }
 
   if (!scfg_.get()) {
-    scfg_ = CryptoFramer::ParseMessage(server_config_);
+    scfg_ = CryptoFramer::ParseMessage(server_config_, Perspective::IS_CLIENT);
     DCHECK(scfg_.get());
   }
   return scfg_.get();
@@ -151,7 +152,8 @@ QuicCryptoClientConfig::CachedState::SetServerConfig(
   const CryptoHandshakeMessage* new_scfg;
 
   if (!matches_existing) {
-    new_scfg_storage = CryptoFramer::ParseMessage(server_config);
+    new_scfg_storage =
+        CryptoFramer::ParseMessage(server_config, Perspective::IS_CLIENT);
     new_scfg = new_scfg_storage.get();
   } else {
     new_scfg = GetServerConfig();
@@ -191,6 +193,7 @@ void QuicCryptoClientConfig::CachedState::InvalidateServerConfig() {
   scfg_.reset();
   SetProofInvalid();
   std::queue<QuicConnectionId> empty_queue;
+  using std::swap;
   swap(server_designated_connection_ids_, empty_queue);
 }
 
@@ -235,6 +238,7 @@ void QuicCryptoClientConfig::CachedState::Clear() {
   scfg_.reset();
   ++generation_counter_;
   std::queue<QuicConnectionId> empty_queue;
+  using std::swap;
   swap(server_designated_connection_ids_, empty_queue);
 }
 
@@ -280,9 +284,10 @@ bool QuicCryptoClientConfig::CachedState::Initialize(
     return false;
   }
 
-  chlo_hash.CopyToString(&chlo_hash_);
-  signature.CopyToString(&server_config_sig_);
-  source_address_token.CopyToString(&source_address_token_);
+  chlo_hash_.assign(chlo_hash.data(), chlo_hash.size());
+  server_config_sig_.assign(signature.data(), signature.size());
+  source_address_token_.assign(source_address_token.data(),
+                               source_address_token.size());
   certs_ = certs;
   cert_sct_ = cert_sct;
   return true;
@@ -498,6 +503,9 @@ QuicErrorCode QuicCryptoClientConfig::FillClientHello(
     CryptoHandshakeMessage* out,
     string* error_details) const {
   DCHECK(error_details != nullptr);
+  if (QuicUtils::IsConnectionIdWireFormatBigEndian(Perspective::IS_CLIENT)) {
+    connection_id = QuicEndian::HostToNet64(connection_id);
+  }
 
   FillInchoateClientHello(server_id, preferred_version, cached, rand,
                           /* demand_x509_proof= */ true, out_params, out);
@@ -625,7 +633,8 @@ QuicErrorCode QuicCryptoClientConfig::FillClientHello(
     cetv.set_tag(kCETV);
 
     string hkdf_input;
-    const QuicData& client_hello_serialized = out->GetSerialized();
+    const QuicData& client_hello_serialized =
+        out->GetSerialized(Perspective::IS_CLIENT);
     hkdf_input.append(QuicCryptoConfig::kCETVLabel,
                       strlen(QuicCryptoConfig::kCETVLabel) + 1);
     hkdf_input.append(reinterpret_cast<char*>(&connection_id),
@@ -654,7 +663,7 @@ QuicErrorCode QuicCryptoClientConfig::FillClientHello(
       return QUIC_CRYPTO_SYMMETRIC_KEY_SETUP_FAILED;
     }
 
-    const QuicData& cetv_plaintext = cetv.GetSerialized();
+    const QuicData& cetv_plaintext = cetv.GetSerialized(Perspective::IS_CLIENT);
     const size_t encrypted_len =
         crypters.encrypter->GetCiphertextSize(cetv_plaintext.length());
     std::unique_ptr<char[]> output(new char[encrypted_len]);
@@ -681,7 +690,8 @@ QuicErrorCode QuicCryptoClientConfig::FillClientHello(
   out_params->hkdf_input_suffix.clear();
   out_params->hkdf_input_suffix.append(reinterpret_cast<char*>(&connection_id),
                                        sizeof(connection_id));
-  const QuicData& client_hello_serialized = out->GetSerialized();
+  const QuicData& client_hello_serialized =
+      out->GetSerialized(Perspective::IS_CLIENT);
   out_params->hkdf_input_suffix.append(client_hello_serialized.data(),
                                        client_hello_serialized.length());
   out_params->hkdf_input_suffix.append(cached->server_config());
@@ -815,6 +825,9 @@ QuicErrorCode QuicCryptoClientConfig::ProcessRejection(
     if (rej.GetUint64(kRCID, &connection_id) != QUIC_NO_ERROR) {
       *error_details = "Missing kRCID";
       return QUIC_CRYPTO_MESSAGE_PARAMETER_NOT_FOUND;
+    }
+    if (QuicUtils::IsConnectionIdWireFormatBigEndian(Perspective::IS_CLIENT)) {
+      connection_id = QuicEndian::NetToHost64(connection_id);
     }
     cached->add_server_designated_connection_id(connection_id);
     if (!nonce.empty()) {

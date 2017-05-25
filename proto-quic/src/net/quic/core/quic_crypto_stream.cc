@@ -9,10 +9,10 @@
 #include "net/quic/core/crypto/crypto_handshake.h"
 #include "net/quic/core/crypto/crypto_utils.h"
 #include "net/quic/core/quic_connection.h"
-#include "net/quic/core/quic_flags.h"
 #include "net/quic/core/quic_session.h"
 #include "net/quic/core/quic_utils.h"
 #include "net/quic/platform/api/quic_flag_utils.h"
+#include "net/quic/platform/api/quic_flags.h"
 #include "net/quic/platform/api/quic_logging.h"
 
 using std::string;
@@ -52,7 +52,8 @@ void QuicCryptoStream::OnError(CryptoFramer* framer) {
 
 void QuicCryptoStream::OnHandshakeMessage(
     const CryptoHandshakeMessage& message) {
-  QUIC_DVLOG(1) << ENDPOINT << "Received " << message.DebugString();
+  QUIC_DVLOG(1) << ENDPOINT << "Received "
+                << message.DebugString(session()->perspective());
   session()->OnCryptoHandshakeMessageReceived(message);
 }
 
@@ -64,7 +65,7 @@ void QuicCryptoStream::OnDataAvailable() {
       break;
     }
     QuicStringPiece data(static_cast<char*>(iov.iov_base), iov.iov_len);
-    if (!crypto_framer_.ProcessInput(data)) {
+    if (!crypto_framer_.ProcessInput(data, session()->perspective())) {
       CloseConnectionWithDetails(crypto_framer_.error(),
                                  crypto_framer_.error_detail());
       return;
@@ -83,10 +84,11 @@ void QuicCryptoStream::OnDataAvailable() {
 
 void QuicCryptoStream::SendHandshakeMessage(
     const CryptoHandshakeMessage& message) {
-  QUIC_DVLOG(1) << ENDPOINT << "Sending " << message.DebugString();
+  QUIC_DVLOG(1) << ENDPOINT << "Sending "
+                << message.DebugString(session()->perspective());
   session()->connection()->NeuterUnencryptedPackets();
   session()->OnCryptoHandshakeMessageSent(message);
-  const QuicData& data = message.GetSerialized();
+  const QuicData& data = message.GetSerialized(session()->perspective());
   WriteOrBufferData(QuicStringPiece(data.data(), data.length()), false,
                     nullptr);
 }

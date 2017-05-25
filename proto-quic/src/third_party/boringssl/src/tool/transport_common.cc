@@ -238,6 +238,8 @@ static const char *SignatureAlgorithmToString(uint16_t version, uint16_t sigalg)
       return "rsa_pss_sha384";
     case SSL_SIGN_RSA_PSS_SHA512:
       return "rsa_pss_sha512";
+    case SSL_SIGN_ED25519:
+      return "ed25519";
     default:
       return "(unknown)";
   }
@@ -291,6 +293,9 @@ void PrintConnectionInfo(const SSL *ssl) {
     SSL_get0_signed_cert_timestamp_list(ssl, &sct_list, &sct_list_len);
     fprintf(stderr, "  SCT list: %s\n", sct_list_len > 0 ? "yes" : "no");
   }
+
+  fprintf(stderr, "  Early data: %s\n",
+          SSL_early_data_accepted(ssl) ? "yes" : "no");
 
   // Print the server cert subject and issuer names.
   bssl::UniquePtr<X509> peer(SSL_get_peer_certificate(ssl));

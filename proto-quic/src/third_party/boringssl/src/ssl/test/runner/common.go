@@ -100,7 +100,6 @@ const (
 	extensionNextProtoNeg               uint16 = 13172 // not IANA assigned
 	extensionRenegotiationInfo          uint16 = 0xff01
 	extensionChannelID                  uint16 = 30032 // not IANA assigned
-	extensionShortHeader                uint16 = 27463 // not IANA assigned
 )
 
 // TLS signaling cipher suite values
@@ -185,6 +184,7 @@ var supportedSignatureAlgorithms = []signatureAlgorithm{
 	signatureECDSAWithP256AndSHA256,
 	signatureRSAPKCS1WithSHA1,
 	signatureECDSAWithSHA1,
+	signatureEd25519,
 }
 
 // SRTP protection profiles (See RFC 5764, section 4.1.2)
@@ -223,7 +223,6 @@ type ConnectionState struct {
 	SCTList                    []byte                // signed certificate timestamp list
 	PeerSignatureAlgorithm     signatureAlgorithm    // algorithm used by the peer in the handshake
 	CurveID                    CurveID               // the curve used in ECDHE
-	ShortHeader                bool                  // whether the short header extension was negotiated
 }
 
 // ClientAuthType declares the policy the server will follow for
@@ -251,6 +250,7 @@ type ClientSessionState struct {
 	extendedMasterSecret bool                // Whether an extended master secret was used to generate the session
 	sctList              []byte
 	ocspResponse         []byte
+	earlyALPN            string
 	ticketCreationTime   time.Time
 	ticketExpiration     time.Time
 	ticketAgeAdd         uint32
@@ -533,6 +533,10 @@ type ProtocolBugs struct {
 	// SkipFinished causes the implementation to skip sending the Finished
 	// message.
 	SkipFinished bool
+
+	// SkipEndOfEarlyData causes the implementation to skip the
+	// end_of_early_data alert.
+	SkipEndOfEarlyData bool
 
 	// EarlyChangeCipherSpec causes the client to send an early
 	// ChangeCipherSpec message before the ClientKeyExchange. A value of
@@ -875,10 +879,6 @@ type ProtocolBugs struct {
 	// BadFinished, if true, causes the Finished hash to be broken.
 	BadFinished bool
 
-	// DHGroupPrime, if not nil, is used to define the (finite field)
-	// Diffie-Hellman group. The generator used is always two.
-	DHGroupPrime *big.Int
-
 	// PackHandshakeFragments, if true, causes handshake fragments in DTLS
 	// to be packed into individual handshake records, up to the specified
 	// record size.
@@ -982,6 +982,10 @@ type ProtocolBugs struct {
 	// server receives from the client.
 	ExpectTicketAge time.Duration
 
+	// SendTicketAge, if non-zero, is the ticket age to be sent by the
+	// client.
+	SendTicketAge time.Duration
+
 	// FailIfSessionOffered, if true, causes the server to fail any
 	// connections where the client offers a non-empty session ID or session
 	// ticket.
@@ -996,11 +1000,6 @@ type ProtocolBugs struct {
 	// HelloRequest handshake message to be sent before each handshake
 	// message. This only makes sense for a server.
 	SendHelloRequestBeforeEveryHandshakeMessage bool
-
-	// RequireDHPublicValueLen causes a fatal error if the length (in
-	// bytes) of the server's Diffie-Hellman public value is not equal to
-	// this.
-	RequireDHPublicValueLen int
 
 	// BadChangeCipherSpec, if not nil, is the body to be sent in
 	// ChangeCipherSpec records instead of {1}.
@@ -1130,6 +1129,10 @@ type ProtocolBugs struct {
 	// send after the ClientHello.
 	SendFakeEarlyDataLength int
 
+	// SendStrayEarlyHandshake, if non-zero, causes the client to send a stray
+	// handshake record before sending end of early data.
+	SendStrayEarlyHandshake bool
+
 	// OmitEarlyDataExtension, if true, causes the early data extension to
 	// be omitted in the ClientHello.
 	OmitEarlyDataExtension bool
@@ -1144,9 +1147,25 @@ type ProtocolBugs struct {
 
 	// SendEarlyData causes a TLS 1.3 client to send the provided data
 	// in application data records immediately after the ClientHello,
-	// provided that the client has a PSK that is appropriate for sending
-	// early data and includes that PSK in its ClientHello.
+	// provided that the client offers a TLS 1.3 session. It will do this
+	// whether or not the server advertised early data for the ticket.
 	SendEarlyData [][]byte
+
+	// ExpectEarlyDataAccepted causes a TLS 1.3 client to check that early data
+	// was accepted by the server.
+	ExpectEarlyDataAccepted bool
+
+	// AlwaysAcceptEarlyData causes a TLS 1.3 server to always accept early data
+	// regardless of ALPN mismatch.
+	AlwaysAcceptEarlyData bool
+
+	// AlwaysRejectEarlyData causes a TLS 1.3 server to always reject early data.
+	AlwaysRejectEarlyData bool
+
+	// SendEarlyDataExtension, if true, causes a TLS 1.3 server to send the
+	// early_data extension in EncryptedExtensions, independent of whether
+	// it was accepted.
+	SendEarlyDataExtension bool
 
 	// ExpectEarlyData causes a TLS 1.3 server to read application
 	// data after the ClientHello (assuming the server is able to
@@ -1161,9 +1180,9 @@ type ProtocolBugs struct {
 	// Finished message.
 	SendHalfRTTData [][]byte
 
-	// ExpectHalfRTTData causes a TLS 1.3 client to read application
-	// data after reading the server's Finished message and before
-	// sending any other handshake messages. It checks that the
+	// ExpectHalfRTTData causes a TLS 1.3 client, if 0-RTT was accepted, to
+	// read application data after reading the server's Finished message and
+	// before sending any subsequent handshake messages. It checks that the
 	// application data it reads matches what is provided in
 	// ExpectHalfRTTData and errors if the number of records or their
 	// content do not match.
@@ -1274,18 +1293,6 @@ type ProtocolBugs struct {
 	// request signed certificate timestamps.
 	NoSignedCertificateTimestamps bool
 
-	// EnableShortHeader, if true, causes the TLS 1.3 short header extension
-	// to be enabled.
-	EnableShortHeader bool
-
-	// AlwaysNegotiateShortHeader, if true, causes the server to always
-	// negotiate the short header extension in ServerHello.
-	AlwaysNegotiateShortHeader bool
-
-	// ClearShortHeaderBit, if true, causes the server to send short headers
-	// without the high bit set.
-	ClearShortHeaderBit bool
-
 	// SendSupportedPointFormats, if not nil, is the list of supported point
 	// formats to send in ClientHello or ServerHello. If set to a non-nil
 	// empty slice, no extension will be sent.
@@ -1302,6 +1309,27 @@ type ProtocolBugs struct {
 	// SendServerNameAck, if true, causes the server to acknowledge the SNI
 	// extension.
 	SendServerNameAck bool
+
+	// ExpectCertificateReqNames, if not nil, contains the list of X.509
+	// names that must be sent in a CertificateRequest from the server.
+	ExpectCertificateReqNames [][]byte
+
+	// RenegotiationCertificate, if not nil, is the certificate to use on
+	// renegotiation handshakes.
+	RenegotiationCertificate *Certificate
+
+	// UseLegacySigningAlgorithm, if non-zero, is the signature algorithm
+	// to use when signing in TLS 1.1 and earlier where algorithms are not
+	// negotiated.
+	UseLegacySigningAlgorithm signatureAlgorithm
+
+	// SendServerHelloAsHelloRetryRequest, if true, causes the server to
+	// send ServerHello messages with a HelloRetryRequest type field.
+	SendServerHelloAsHelloRetryRequest bool
+
+	// RejectUnsolicitedKeyUpdate, if true, causes all unsolicited
+	// KeyUpdates from the peer to be rejected.
+	RejectUnsolicitedKeyUpdate bool
 }
 
 func (c *Config) serverInit() {

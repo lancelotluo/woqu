@@ -24,7 +24,6 @@
 #include "net/cert/internal/parsed_certificate.h"
 #include "net/cert/x509_certificate.h"
 #include "net/cert/x509_util.h"
-#include "third_party/boringssl/src/include/openssl/x509v3.h"
 #include "url/gurl.h"
 
 namespace net {
@@ -167,9 +166,6 @@ android::CertVerifyStatusAndroid TryVerifyWithAIAFetching(
     scoped_refptr<CertNetFetcher> cert_net_fetcher,
     CertVerifyResult* verify_result,
     std::vector<std::string>* verified_chain) {
-  if (!base::FeatureList::IsEnabled(CertVerifyProcAndroid::kAIAFetchingFeature))
-    return android::CERT_VERIFY_STATUS_ANDROID_NO_TRUSTED_ROOT;
-
   if (!cert_net_fetcher)
     return android::CERT_VERIFY_STATUS_ANDROID_NO_TRUSTED_ROOT;
 
@@ -300,14 +296,18 @@ bool VerifyFromAndroidTrustManager(
     scoped_refptr<X509Certificate> verified_cert =
         X509Certificate::CreateFromDERCertChain(verified_chain_pieces);
     if (verified_cert.get())
-      verify_result->verified_cert = verified_cert;
+      verify_result->verified_cert = std::move(verified_cert);
+    else
+      verify_result->cert_status |= CERT_STATUS_INVALID;
   }
 
   // Extract the public key hashes.
   for (size_t i = 0; i < verified_chain.size(); i++) {
     base::StringPiece spki_bytes;
-    if (!asn1::ExtractSPKIFromDERCert(verified_chain[i], &spki_bytes))
+    if (!asn1::ExtractSPKIFromDERCert(verified_chain[i], &spki_bytes)) {
+      verify_result->cert_status |= CERT_STATUS_INVALID;
       continue;
+    }
 
     HashValue sha1(HASH_VALUE_SHA1);
     base::SHA1HashBytes(reinterpret_cast<const uint8_t*>(spki_bytes.data()),
@@ -345,10 +345,6 @@ bool GetChainDEREncodedBytes(X509Certificate* cert,
 }
 
 }  // namespace
-
-// static.
-const base::Feature CertVerifyProcAndroid::kAIAFetchingFeature{
-    "AndroidAIAFetching", base::FEATURE_DISABLED_BY_DEFAULT};
 
 CertVerifyProcAndroid::CertVerifyProcAndroid() {}
 

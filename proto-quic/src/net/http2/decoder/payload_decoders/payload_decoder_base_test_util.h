@@ -16,12 +16,12 @@
 #include "net/http2/decoder/decode_buffer.h"
 #include "net/http2/decoder/decode_status.h"
 #include "net/http2/decoder/frame_decoder_state.h"
-#include "net/http2/decoder/frame_parts.h"
 #include "net/http2/decoder/http2_frame_decoder_listener.h"
 #include "net/http2/http2_constants.h"
 #include "net/http2/http2_constants_test_util.h"
 #include "net/http2/http2_structures.h"
 #include "net/http2/platform/api/http2_reconstruct_object.h"
+#include "net/http2/test_tools/frame_parts.h"
 #include "net/http2/tools/http2_frame_builder.h"
 #include "net/http2/tools/random_decoder_test.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -266,13 +266,13 @@ class AbstractPayloadDecoderTest : public PayloadDecoderBaseTest {
     VERIFY_EQ(required_flags,
               required_flags & DecoderPeer::FlagsAffectingPayloadDecoding());
 
-    if (0 != (Http2FrameFlag::FLAG_PADDED &
-              KnownFlagsMaskForFrameType(frame_type))) {
+    if (0 !=
+        (Http2FrameFlag::PADDED & KnownFlagsMaskForFrameType(frame_type))) {
       // Frame type supports padding.
       if (total_pad_length == 0) {
-        required_flags &= ~Http2FrameFlag::FLAG_PADDED;
+        required_flags &= ~Http2FrameFlag::PADDED;
       } else {
-        required_flags |= Http2FrameFlag::FLAG_PADDED;
+        required_flags |= Http2FrameFlag::PADDED;
       }
     } else {
       VERIFY_EQ(0, total_pad_length);
@@ -316,8 +316,8 @@ class AbstractPayloadDecoderTest : public PayloadDecoderBaseTest {
       ApproveSize approve_size) {
     Http2FrameType frame_type = DecoderPeer::FrameType();
     uint8_t known_flags = KnownFlagsMaskForFrameType(frame_type);
-    VERIFY_EQ(0, known_flags & Http2FrameFlag::FLAG_PADDED);
-    VERIFY_EQ(0, required_flags & Http2FrameFlag::FLAG_PADDED);
+    VERIFY_EQ(0, known_flags & Http2FrameFlag::PADDED);
+    VERIFY_EQ(0, required_flags & Http2FrameFlag::PADDED);
     VERIFY_AND_RETURN_SUCCESS(VerifyDetectsMultipleFrameSizeErrors(
         required_flags, unpadded_payload, approve_size, 0));
   }
@@ -380,9 +380,9 @@ class AbstractPaddablePayloadDecoderTest
   uint8_t RandFlags() {
     uint8_t flags = Base::RandFlags();
     if (IsPadded()) {
-      flags |= Http2FrameFlag::FLAG_PADDED;
+      flags |= Http2FrameFlag::PADDED;
     } else {
-      flags &= ~Http2FrameFlag::FLAG_PADDED;
+      flags &= ~Http2FrameFlag::PADDED;
     }
     return flags;
   }
@@ -421,7 +421,7 @@ class AbstractPaddablePayloadDecoderTest
   // Flags will be selected at random, except PADDED will be set and
   // flags_to_avoid will not be set. The stream id is selected at random.
   ::testing::AssertionResult VerifyDetectsPaddingTooLong() {
-    uint8_t flags = RandFlags() | Http2FrameFlag::FLAG_PADDED;
+    uint8_t flags = RandFlags() | Http2FrameFlag::PADDED;
 
     // Create an all padding payload for total_pad_length_.
     int payload_length = 0;

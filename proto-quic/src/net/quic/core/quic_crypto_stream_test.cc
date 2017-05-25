@@ -13,11 +13,10 @@
 #include "net/quic/core/crypto/crypto_handshake.h"
 #include "net/quic/core/crypto/crypto_protocol.h"
 #include "net/quic/platform/api/quic_socket_address.h"
+#include "net/quic/platform/api/quic_test.h"
 #include "net/quic/test_tools/crypto_test_utils.h"
 #include "net/quic/test_tools/quic_stream_peer.h"
 #include "net/quic/test_tools/quic_test_utils.h"
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
 
 using std::string;
 
@@ -42,7 +41,7 @@ class MockQuicCryptoStream : public QuicCryptoStream {
   DISALLOW_COPY_AND_ASSIGN(MockQuicCryptoStream);
 };
 
-class QuicCryptoStreamTest : public ::testing::Test {
+class QuicCryptoStreamTest : public QuicTest {
  public:
   QuicCryptoStreamTest()
       : connection_(new MockQuicConnection(&helper_,
@@ -53,12 +52,13 @@ class QuicCryptoStreamTest : public ::testing::Test {
     message_.set_tag(kSHLO);
     message_.SetStringPiece(1, "abc");
     message_.SetStringPiece(2, "def");
-    ConstructHandshakeMessage();
+    ConstructHandshakeMessage(Perspective::IS_SERVER);
   }
 
-  void ConstructHandshakeMessage() {
+  void ConstructHandshakeMessage(Perspective perspective) {
     CryptoFramer framer;
-    message_data_.reset(framer.ConstructHandshakeMessage(message_));
+    message_data_.reset(
+        framer.ConstructHandshakeMessage(message_, perspective));
   }
 
  protected:

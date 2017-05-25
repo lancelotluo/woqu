@@ -16,10 +16,12 @@
 #include "net/quic/core/crypto/proof_source.h"
 #include "net/quic/core/crypto/quic_crypto_server_config.h"
 #include "net/quic/core/crypto/quic_random.h"
-#include "net/quic/core/quic_flags.h"
 #include "net/quic/core/quic_socket_address_coder.h"
 #include "net/quic/core/quic_utils.h"
+#include "net/quic/platform/api/quic_endian.h"
+#include "net/quic/platform/api/quic_flags.h"
 #include "net/quic/platform/api/quic_string_piece.h"
+#include "net/quic/platform/api/quic_test.h"
 #include "net/quic/platform/api/quic_text_utils.h"
 #include "net/quic/test_tools/crypto_test_utils.h"
 #include "net/quic/test_tools/delayed_verify_strike_register_client.h"
@@ -28,7 +30,6 @@
 #include "net/quic/test_tools/mock_random.h"
 #include "net/quic/test_tools/quic_crypto_server_config_peer.h"
 #include "net/quic/test_tools/quic_test_utils.h"
-#include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/boringssl/src/include/openssl/sha.h"
 
 using std::string;
@@ -100,7 +101,7 @@ std::vector<TestParams> GetTestParams() {
   return params;
 }
 
-class CryptoServerTest : public ::testing::TestWithParam<TestParams> {
+class CryptoServerTest : public QuicTestWithParam<TestParams> {
  public:
   CryptoServerTest()
       : rand_(QuicRandom::GetInstance()),
@@ -173,7 +174,7 @@ class CryptoServerTest : public ::testing::TestWithParam<TestParams> {
 
     QuicStringPiece scfg;
     ASSERT_TRUE(out_.GetStringPiece(kSCFG, &scfg));
-    server_config_ = CryptoFramer::ParseMessage(scfg);
+    server_config_ = CryptoFramer::ParseMessage(scfg, Perspective::IS_CLIENT);
 
     QuicStringPiece scid;
     ASSERT_TRUE(server_config_->GetStringPiece(kSCID, &scid));
@@ -285,10 +286,11 @@ class CryptoServerTest : public ::testing::TestWithParam<TestParams> {
       if (should_succeed_) {
         ASSERT_EQ(error, QUIC_NO_ERROR)
             << "Message failed with error " << error_details << ": "
-            << result_->client_hello.DebugString();
+            << result_->client_hello.DebugString(Perspective::IS_SERVER);
       } else {
         ASSERT_NE(error, QUIC_NO_ERROR)
-            << "Message didn't fail: " << result_->client_hello.DebugString();
+            << "Message didn't fail: "
+            << result_->client_hello.DebugString(Perspective::IS_SERVER);
 
         EXPECT_TRUE(error_details.find(error_substr_) != string::npos)
             << error_substr_ << " not in " << error_details;
@@ -362,6 +364,11 @@ class CryptoServerTest : public ::testing::TestWithParam<TestParams> {
     } else {
       ASSERT_EQ(QUIC_NO_ERROR,
                 out_.GetUint64(kRCID, &server_designated_connection_id));
+      if (QuicUtils::IsConnectionIdWireFormatBigEndian(
+              Perspective::IS_SERVER)) {
+        server_designated_connection_id =
+            QuicEndian::NetToHost64(server_designated_connection_id);
+      }
       EXPECT_EQ(rand_for_id_generation_.RandUint64(),
                 server_designated_connection_id);
     }
@@ -388,7 +395,6 @@ class CryptoServerTest : public ::testing::TestWithParam<TestParams> {
   }
 
  protected:
-  QuicFlagSaver flags_;  // Save/restore all QUIC flag values.
   QuicRandom* const rand_;
   MockRandom rand_for_id_generation_;
   MockClock clock_;
@@ -819,7 +825,7 @@ TEST_P(CryptoServerTest, ProofForSuppliedServerConfig) {
   EXPECT_TRUE(out_.GetStringPiece(kPROF, &proof));
   EXPECT_TRUE(out_.GetStringPiece(kSCFG, &scfg_str));
   std::unique_ptr<CryptoHandshakeMessage> scfg(
-      CryptoFramer::ParseMessage(scfg_str));
+      CryptoFramer::ParseMessage(scfg_str, Perspective::IS_CLIENT));
   QuicStringPiece scid;
   EXPECT_TRUE(scfg->GetStringPiece(kSCID, &scid));
   EXPECT_NE(scid, kOldConfigId);
@@ -842,7 +848,7 @@ TEST_P(CryptoServerTest, ProofForSuppliedServerConfig) {
   std::unique_ptr<ProofVerifierCallback> callback(
       new DummyProofVerifierCallback());
   string chlo_hash;
-  CryptoUtils::HashHandshakeMessage(msg, &chlo_hash);
+  CryptoUtils::HashHandshakeMessage(msg, &chlo_hash, Perspective::IS_SERVER);
   EXPECT_EQ(QUIC_SUCCESS,
             proof_verifier->VerifyProof(
                 "test.example.com", 443, scfg_str.as_string(), client_version_,
@@ -941,7 +947,9 @@ TEST_P(CryptoServerTest, ProofSourceFailure) {
   ShouldFailMentioning("", msg);
 }
 
-TEST(CryptoServerConfigGenerationTest, Determinism) {
+class CryptoServerConfigGenerationTest : public QuicTest {};
+
+TEST_F(CryptoServerConfigGenerationTest, Determinism) {
   // Test that using a deterministic PRNG causes the server-config to be
   // deterministic.
 
@@ -958,10 +966,11 @@ TEST(CryptoServerConfigGenerationTest, Determinism) {
   std::unique_ptr<CryptoHandshakeMessage> scfg_b(
       b.AddDefaultConfig(&rand_b, &clock, options));
 
-  ASSERT_EQ(scfg_a->DebugString(), scfg_b->DebugString());
+  ASSERT_EQ(scfg_a->DebugString(Perspective::IS_SERVER),
+            scfg_b->DebugString(Perspective::IS_SERVER));
 }
 
-TEST(CryptoServerConfigGenerationTest, SCIDVaries) {
+TEST_F(CryptoServerConfigGenerationTest, SCIDVaries) {
   // This test ensures that the server config ID varies for different server
   // configs.
 
@@ -986,7 +995,7 @@ TEST(CryptoServerConfigGenerationTest, SCIDVaries) {
   EXPECT_NE(scid_a, scid_b);
 }
 
-TEST(CryptoServerConfigGenerationTest, SCIDIsHashOfServerConfig) {
+TEST_F(CryptoServerConfigGenerationTest, SCIDIsHashOfServerConfig) {
   MockRandom rand_a;
   const QuicCryptoServerConfig::ConfigOptions options;
   MockClock clock;
@@ -1003,7 +1012,7 @@ TEST(CryptoServerConfigGenerationTest, SCIDIsHashOfServerConfig) {
 
   scfg->Erase(kSCID);
   scfg->MarkDirty();
-  const QuicData& serialized(scfg->GetSerialized());
+  const QuicData& serialized(scfg->GetSerialized(Perspective::IS_SERVER));
 
   uint8_t digest[SHA256_DIGEST_LENGTH];
   SHA256(reinterpret_cast<const uint8_t*>(serialized.data()),

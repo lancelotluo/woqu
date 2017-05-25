@@ -19,6 +19,7 @@
 #include "net/http/http_response_headers.h"
 #include "net/log/net_log_event_type.h"
 #include "net/log/net_log_with_source.h"
+#include "net/traffic_annotation/network_traffic_annotation.h"
 #include "net/url_request/redirect_info.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_status.h"
@@ -167,12 +168,10 @@ void SdchDictionaryFetcher::OnResponseStarted(URLRequest* request,
   // HTTP, it is presumed to be fresh.
   HttpResponseHeaders* response_headers = request->response_headers();
   if (net_error == OK && response_headers) {
-    ValidationType validation_type = response_headers->RequiresValidation(
+    bool requires_validation = response_headers->RequiresValidation(
         request->response_info().request_time,
         request->response_info().response_time, base::Time::Now());
-    // TODO(rdsmith): Maybe handle VALIDATION_ASYNCHRONOUS by queueing
-    // a non-reload request for the dictionary.
-    if (validation_type != VALIDATION_NONE)
+    if (requires_validation)
       net_error = ERR_FAILED;
   }
 
@@ -280,7 +279,38 @@ int SdchDictionaryFetcher::DoSendRequest(int rv) {
   FetchInfo info;
   bool success = fetch_queue_->Pop(&info);
   DCHECK(success);
-  current_request_ = context_->CreateRequest(info.url, IDLE, this);
+  net::NetworkTrafficAnnotationTag traffic_annotation =
+      net::DefineNetworkTrafficAnnotation("sdch_dictionary_fetch", R"(
+        semantics {
+          sender: "SDCH"
+          description:
+            "The Chrome Network Stack can use less bandwidth and reduces "
+            "request latency if a dictionary shared between client and server "
+            "is used to compress content on the server before sending, and "
+            "decompress content on the client after reception. This request is "
+            "fetching such a dictionary; it is dispatched when the response to "
+            "a previous URL request indicated that there was a dictionary that "
+            "the client did not currently have in memory, and could be used "
+            "for compression."
+          trigger:
+            "A response to a previous URL request indicated that this URL "
+            "contained a dictionary that could be used to compress other URL "
+            "responses."
+          data:
+            "The URL of the dictionary, as specified in a previous response "
+            "from a server."
+          destination: WEBSITE
+        }
+        policy {
+          cookies_allowed: false
+          setting:
+            "This feature is disabled in Chrome and can only be enabled in non-"
+            "Chromium embedders."
+          policy_exception_justification:
+            "Not implemented, not part of Chrome."
+        })");
+  current_request_ =
+      context_->CreateRequest(info.url, IDLE, this, traffic_annotation);
   int load_flags = LOAD_DO_NOT_SEND_COOKIES | LOAD_DO_NOT_SAVE_COOKIES;
   if (info.cache_only)
     load_flags |= LOAD_ONLY_FROM_CACHE | LOAD_SKIP_CACHE_VALIDATION;

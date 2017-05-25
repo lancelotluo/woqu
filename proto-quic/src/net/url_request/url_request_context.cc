@@ -5,10 +5,12 @@
 #include "net/url_request/url_request_context.h"
 
 #include <inttypes.h>
+#include <utility>
 
 #include "base/compiler_specific.h"
 #include "base/debug/alias.h"
 #include "base/memory/ptr_util.h"
+#include "base/metrics/histogram_macros.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
 #include "base/threading/thread_task_runner_handle.h"
@@ -47,9 +49,12 @@ URLRequestContext::URLRequestContext()
       backoff_manager_(nullptr),
       sdch_manager_(nullptr),
       network_quality_estimator_(nullptr),
-      url_requests_(new std::set<const URLRequest*>),
+      reporting_service_(nullptr),
       enable_brotli_(false),
-      check_cleartext_permitted_(false) {
+      check_cleartext_permitted_(false),
+      name_(nullptr),
+      largest_outstanding_requests_count_seen_(0),
+      has_reported_too_many_outstanding_requests_(false) {
   base::trace_event::MemoryDumpManager::GetInstance()->RegisterDumpProvider(
       this, "URLRequestContext", base::ThreadTaskRunnerHandle::Get());
 }
@@ -82,6 +87,7 @@ void URLRequestContext::CopyFrom(const URLRequestContext* other) {
   set_sdch_manager(other->sdch_manager_);
   set_http_user_agent_settings(other->http_user_agent_settings_);
   set_network_quality_estimator(other->network_quality_estimator_);
+  set_reporting_service(other->reporting_service_);
   set_enable_brotli(other->enable_brotli_);
   set_check_cleartext_permitted(other->check_cleartext_permitted_);
 }
@@ -119,13 +125,44 @@ void URLRequestContext::set_cookie_store(CookieStore* cookie_store) {
   cookie_store_ = cookie_store;
 }
 
+bool URLRequestContext::AddToAddressMap(const void* const address) {
+  int count = ++address_map_[address];
+  if (!has_reported_too_many_outstanding_requests_ && count > 1000) {
+    has_reported_too_many_outstanding_requests_ = true;
+    return false;
+  }
+  return true;
+}
+
+void URLRequestContext::RemoveFromAddressMap(const void* const address) const {
+  auto iter = address_map_.find(address);
+  DCHECK(address_map_.end() != iter);
+  iter->second -= 1;
+  if (iter->second == 0)
+    address_map_.erase(iter);
+}
+
+void URLRequestContext::InsertURLRequest(const URLRequest* request) const {
+  url_requests_.insert(request);
+  if (url_requests_.size() > largest_outstanding_requests_count_seen_) {
+    largest_outstanding_requests_count_seen_ = url_requests_.size();
+    UMA_HISTOGRAM_COUNTS_1M("Net.URLRequestContext.OutstandingRequests",
+                            largest_outstanding_requests_count_seen_);
+  }
+}
+
+void URLRequestContext::RemoveURLRequest(const URLRequest* request) const {
+  DCHECK_EQ(1u, url_requests_.count(request));
+  url_requests_.erase(request);
+}
+
 void URLRequestContext::AssertNoURLRequests() const {
-  int num_requests = url_requests_->size();
+  int num_requests = url_requests_.size();
   if (num_requests != 0) {
     // We're leaking URLRequests :( Dump the URL of the first one and record how
     // many we leaked so we have an idea of how bad it is.
     char url_buf[128];
-    const URLRequest* request = *url_requests_->begin();
+    const URLRequest* request = *url_requests_.begin();
     base::strlcpy(url_buf, request->url().spec().c_str(), arraysize(url_buf));
     int load_flags = request->load_flags();
     base::debug::Alias(url_buf);
@@ -134,28 +171,25 @@ void URLRequestContext::AssertNoURLRequests() const {
     CHECK(false) << "Leaked " << num_requests << " URLRequest(s). First URL: "
                  << request->url().spec().c_str() << ".";
   }
+  DCHECK(address_map_.empty());
 }
 
 bool URLRequestContext::OnMemoryDump(
     const base::trace_event::MemoryDumpArgs& args,
     base::trace_event::ProcessMemoryDump* pmd) {
-  if (name_.empty())
+  if (!name_)
     name_ = "unknown";
 
   SSLClientSocketImpl::DumpSSLClientSessionMemoryStats(pmd);
 
-  std::string dump_name = base::StringPrintf(
-      "net/url_request_context_0x%" PRIxPTR, reinterpret_cast<uintptr_t>(this));
+  std::string dump_name =
+      base::StringPrintf("net/url_request_context/%s/0x%" PRIxPTR, name_,
+                         reinterpret_cast<uintptr_t>(this));
   base::trace_event::MemoryAllocatorDump* dump =
       pmd->CreateAllocatorDump(dump_name);
   dump->AddScalar(base::trace_event::MemoryAllocatorDump::kNameObjectCount,
                   base::trace_event::MemoryAllocatorDump::kUnitsObjects,
-                  url_requests_->size());
-  if (args.level_of_detail !=
-      base::trace_event::MemoryDumpLevelOfDetail::BACKGROUND) {
-    dump->AddString("origin",
-                    base::trace_event::MemoryAllocatorDump::kTypeString, name_);
-  }
+                  url_requests_.size());
   HttpTransactionFactory* transaction_factory = http_transaction_factory();
   if (transaction_factory) {
     HttpNetworkSession* network_session = transaction_factory->GetSession();

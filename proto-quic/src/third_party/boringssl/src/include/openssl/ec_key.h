@@ -159,6 +159,10 @@ OPENSSL_EXPORT void EC_KEY_set_conv_form(EC_KEY *key,
  * about the problem can be found on the error stack. */
 OPENSSL_EXPORT int EC_KEY_check_key(const EC_KEY *key);
 
+/* EC_KEY_check_fips performs a signing pairwise consistency test (FIPS 140-2
+ * 4.9.2). It returns one if it passes and zero otherwise. */
+OPENSSL_EXPORT int EC_KEY_check_fips(const EC_KEY *key);
+
 /* EC_KEY_set_public_key_affine_coordinates sets the public key in |key| to
  * (|x|, |y|). It returns one on success and zero otherwise. */
 OPENSSL_EXPORT int EC_KEY_set_public_key_affine_coordinates(EC_KEY *key,
@@ -172,6 +176,10 @@ OPENSSL_EXPORT int EC_KEY_set_public_key_affine_coordinates(EC_KEY *key,
  * corresponding public key and stores both in |key|. It returns one on success
  * or zero otherwise. */
 OPENSSL_EXPORT int EC_KEY_generate_key(EC_KEY *key);
+
+/* EC_KEY_generate_key_fips behaves like |EC_KEY_generate_key| but performs
+ * additional checks for FIPS compliance. */
+OPENSSL_EXPORT int EC_KEY_generate_key_fips(EC_KEY *key);
 
 
 /* Serialisation. */

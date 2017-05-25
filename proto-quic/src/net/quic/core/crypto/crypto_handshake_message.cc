@@ -11,6 +11,7 @@
 #include "net/quic/core/crypto/crypto_utils.h"
 #include "net/quic/core/quic_socket_address_coder.h"
 #include "net/quic/core/quic_utils.h"
+#include "net/quic/platform/api/quic_endian.h"
 #include "net/quic/platform/api/quic_map_util.h"
 #include "net/quic/platform/api/quic_str_cat.h"
 #include "net/quic/platform/api/quic_text_utils.h"
@@ -56,9 +57,11 @@ void CryptoHandshakeMessage::Clear() {
   serialized_.reset();
 }
 
-const QuicData& CryptoHandshakeMessage::GetSerialized() const {
+const QuicData& CryptoHandshakeMessage::GetSerialized(
+    Perspective perspective) const {
   if (!serialized_.get()) {
-    serialized_.reset(CryptoFramer::ConstructHandshakeMessage(*this));
+    serialized_.reset(
+        CryptoFramer::ConstructHandshakeMessage(*this, perspective));
   }
   return *serialized_;
 }
@@ -185,8 +188,8 @@ size_t CryptoHandshakeMessage::minimum_size() const {
   return minimum_size_;
 }
 
-string CryptoHandshakeMessage::DebugString() const {
-  return DebugStringInternal(0);
+string CryptoHandshakeMessage::DebugString(Perspective perspective) const {
+  return DebugStringInternal(0, perspective);
 }
 
 QuicErrorCode CryptoHandshakeMessage::GetPOD(QuicTag tag,
@@ -210,7 +213,9 @@ QuicErrorCode CryptoHandshakeMessage::GetPOD(QuicTag tag,
   return ret;
 }
 
-string CryptoHandshakeMessage::DebugStringInternal(size_t indent) const {
+string CryptoHandshakeMessage::DebugStringInternal(
+    size_t indent,
+    Perspective perspective) const {
   string ret = string(2 * indent, ' ') + QuicTagToString(tag_) + "<\n";
   ++indent;
   for (QuicTagValueMap::const_iterator it = tag_value_map_.begin();
@@ -242,6 +247,9 @@ string CryptoHandshakeMessage::DebugStringInternal(size_t indent) const {
         if (it->second.size() == 8) {
           uint64_t value;
           memcpy(&value, it->second.data(), sizeof(value));
+          if (QuicUtils::IsConnectionIdWireFormatBigEndian(perspective)) {
+            value = QuicEndian::NetToHost64(value);
+          }
           ret += QuicTextUtils::Uint64ToString(value);
           done = true;
         }
@@ -294,10 +302,10 @@ string CryptoHandshakeMessage::DebugStringInternal(size_t indent) const {
         // nested messages.
         if (!it->second.empty()) {
           std::unique_ptr<CryptoHandshakeMessage> msg(
-              CryptoFramer::ParseMessage(it->second));
+              CryptoFramer::ParseMessage(it->second, perspective));
           if (msg.get()) {
             ret += "\n";
-            ret += msg->DebugStringInternal(indent + 1);
+            ret += msg->DebugStringInternal(indent + 1, perspective);
 
             done = true;
           }

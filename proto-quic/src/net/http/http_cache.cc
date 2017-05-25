@@ -25,7 +25,6 @@
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
 #include "base/threading/thread_task_runner_handle.h"
-#include "base/threading/worker_pool.h"
 #include "base/time/default_clock.h"
 #include "base/time/time.h"
 #include "base/trace_event/memory_allocator_dump.h"
@@ -37,7 +36,7 @@
 #include "net/base/net_errors.h"
 #include "net/base/upload_data_stream.h"
 #include "net/disk_cache/disk_cache.h"
-#include "net/http/disk_cache_based_quic_server_info.h"
+#include "net/http/http_cache_lookup_manager.h"
 #include "net/http/http_cache_transaction.h"
 #include "net/http/http_network_layer.h"
 #include "net/http/http_network_session.h"
@@ -130,9 +129,9 @@ struct HttpCache::PendingOp {
 
   // Returns the estimate of dynamically allocated memory in bytes.
   size_t EstimateMemoryUsage() const {
-    // |disk_entry| is tracked in |backend|.
-    return base::trace_event::EstimateMemoryUsage(backend) +
-           base::trace_event::EstimateMemoryUsage(writer) +
+    // Note that backend isn't counted because it doesn't provide an EMU
+    // function.
+    return base::trace_event::EstimateMemoryUsage(writer) +
            base::trace_event::EstimateMemoryUsage(pending_queue);
   }
 
@@ -302,24 +301,6 @@ void HttpCache::MetadataWriter::OnIOComplete(int result) {
 }
 
 //-----------------------------------------------------------------------------
-
-class HttpCache::QuicServerInfoFactoryAdaptor : public QuicServerInfoFactory {
- public:
-  explicit QuicServerInfoFactoryAdaptor(HttpCache* http_cache)
-      : http_cache_(http_cache) {
-  }
-
-  std::unique_ptr<QuicServerInfo> GetForServer(
-      const QuicServerId& server_id) override {
-    return base::MakeUnique<DiskCacheBasedQuicServerInfo>(server_id,
-                                                          http_cache_);
-  }
-
- private:
-  HttpCache* const http_cache_;
-};
-
-//-----------------------------------------------------------------------------
 HttpCache::HttpCache(HttpNetworkSession* session,
                      std::unique_ptr<BackendFactory> backend_factory,
                      bool is_main_cache)
@@ -343,15 +324,15 @@ HttpCache::HttpCache(std::unique_ptr<HttpTransactionFactory> network_layer,
   // Session may be NULL in unittests.
   // TODO(mmenke): Seems like tests could be changed to provide a session,
   // rather than having logic only used in unit tests here.
-  if (session) {
-    net_log_ = session->net_log();
-    if (is_main_cache &&
-        !session->quic_stream_factory()->has_quic_server_info_factory()) {
-      // QuicStreamFactory takes ownership of QuicServerInfoFactoryAdaptor.
-      session->quic_stream_factory()->set_quic_server_info_factory(
-          new QuicServerInfoFactoryAdaptor(this));
-    }
-  }
+  if (!session)
+    return;
+
+  net_log_ = session->net_log();
+  if (!is_main_cache)
+    return;
+
+  session->SetServerPushDelegate(
+      base::MakeUnique<HttpCacheLookupManager>(this));
 }
 
 HttpCache::~HttpCache() {
@@ -512,16 +493,17 @@ void HttpCache::DumpMemoryStats(base::trace_event::ProcessMemoryDump* pmd,
                                 const std::string& parent_absolute_name) const {
   // Skip tracking members like |clock_| and |backend_factory_| because they
   // don't allocate.
-  base::trace_event::MemoryAllocatorDump* dump =
-      pmd->CreateAllocatorDump(parent_absolute_name + "/http_cache");
-  dump->AddScalar(
-      base::trace_event::MemoryAllocatorDump::kNameSize,
-      base::trace_event::MemoryAllocatorDump::kUnitsBytes,
-      base::trace_event::EstimateMemoryUsage(disk_cache_) +
-          base::trace_event::EstimateMemoryUsage(active_entries_) +
-          base::trace_event::EstimateMemoryUsage(doomed_entries_) +
-          base::trace_event::EstimateMemoryUsage(playback_cache_map_) +
-          base::trace_event::EstimateMemoryUsage(pending_ops_));
+  std::string name = parent_absolute_name + "/http_cache";
+  base::trace_event::MemoryAllocatorDump* dump = pmd->CreateAllocatorDump(name);
+  size_t size = base::trace_event::EstimateMemoryUsage(active_entries_) +
+                base::trace_event::EstimateMemoryUsage(doomed_entries_) +
+                base::trace_event::EstimateMemoryUsage(playback_cache_map_) +
+                base::trace_event::EstimateMemoryUsage(pending_ops_);
+  if (disk_cache_)
+    size += disk_cache_->DumpMemoryStats(pmd, name);
+
+  dump->AddScalar(base::trace_event::MemoryAllocatorDump::kNameSize,
+                  base::trace_event::MemoryAllocatorDump::kUnitsBytes, size);
 }
 
 //-----------------------------------------------------------------------------

@@ -193,33 +193,11 @@ static const SSL_CIPHER kCiphers[] = {
      SSL_HANDSHAKE_MAC_DEFAULT,
     },
 
-    /* Cipher 33 */
-    {
-     TLS1_TXT_DHE_RSA_WITH_AES_128_SHA,
-     TLS1_CK_DHE_RSA_WITH_AES_128_SHA,
-     SSL_kDHE,
-     SSL_aRSA,
-     SSL_AES128,
-     SSL_SHA1,
-     SSL_HANDSHAKE_MAC_DEFAULT,
-    },
-
     /* Cipher 35 */
     {
      TLS1_TXT_RSA_WITH_AES_256_SHA,
      TLS1_CK_RSA_WITH_AES_256_SHA,
      SSL_kRSA,
-     SSL_aRSA,
-     SSL_AES256,
-     SSL_SHA1,
-     SSL_HANDSHAKE_MAC_DEFAULT,
-    },
-
-    /* Cipher 39 */
-    {
-     TLS1_TXT_DHE_RSA_WITH_AES_256_SHA,
-     TLS1_CK_DHE_RSA_WITH_AES_256_SHA,
-     SSL_kDHE,
      SSL_aRSA,
      SSL_AES256,
      SSL_SHA1,
@@ -245,28 +223,6 @@ static const SSL_CIPHER kCiphers[] = {
      TLS1_TXT_RSA_WITH_AES_256_SHA256,
      TLS1_CK_RSA_WITH_AES_256_SHA256,
      SSL_kRSA,
-     SSL_aRSA,
-     SSL_AES256,
-     SSL_SHA256,
-     SSL_HANDSHAKE_MAC_SHA256,
-    },
-
-    /* Cipher 67 */
-    {
-     TLS1_TXT_DHE_RSA_WITH_AES_128_SHA256,
-     TLS1_CK_DHE_RSA_WITH_AES_128_SHA256,
-     SSL_kDHE,
-     SSL_aRSA,
-     SSL_AES128,
-     SSL_SHA256,
-     SSL_HANDSHAKE_MAC_SHA256,
-    },
-
-    /* Cipher 6B */
-    {
-     TLS1_TXT_DHE_RSA_WITH_AES_256_SHA256,
-     TLS1_CK_DHE_RSA_WITH_AES_256_SHA256,
-     SSL_kDHE,
      SSL_aRSA,
      SSL_AES256,
      SSL_SHA256,
@@ -315,28 +271,6 @@ static const SSL_CIPHER kCiphers[] = {
      TLS1_TXT_RSA_WITH_AES_256_GCM_SHA384,
      TLS1_CK_RSA_WITH_AES_256_GCM_SHA384,
      SSL_kRSA,
-     SSL_aRSA,
-     SSL_AES256GCM,
-     SSL_AEAD,
-     SSL_HANDSHAKE_MAC_SHA384,
-    },
-
-    /* Cipher 9E */
-    {
-     TLS1_TXT_DHE_RSA_WITH_AES_128_GCM_SHA256,
-     TLS1_CK_DHE_RSA_WITH_AES_128_GCM_SHA256,
-     SSL_kDHE,
-     SSL_aRSA,
-     SSL_AES128GCM,
-     SSL_AEAD,
-     SSL_HANDSHAKE_MAC_SHA256,
-    },
-
-    /* Cipher 9F */
-    {
-     TLS1_TXT_DHE_RSA_WITH_AES_256_GCM_SHA384,
-     TLS1_CK_DHE_RSA_WITH_AES_256_GCM_SHA384,
-     SSL_kDHE,
      SSL_aRSA,
      SSL_AES256GCM,
      SSL_AEAD,
@@ -618,13 +552,8 @@ static const CIPHER_ALIAS kCipherAliases[] = {
 
     /* key exchange aliases
      * (some of those using only a single bit here combine
-     * multiple key exchange algs according to the RFCs,
-     * e.g. kEDH combines DHE_DSS and DHE_RSA) */
+     * multiple key exchange algs according to the RFCs. */
     {"kRSA", SSL_kRSA, ~0u, ~0u, ~0u, 0},
-
-    {"kDHE", SSL_kDHE, ~0u, ~0u, ~0u, 0},
-    {"kEDH", SSL_kDHE, ~0u, ~0u, ~0u, 0},
-    {"DH", SSL_kDHE, ~0u, ~0u, ~0u, 0},
 
     {"kECDHE", SSL_kECDHE, ~0u, ~0u, ~0u, 0},
     {"kEECDH", SSL_kECDHE, ~0u, ~0u, ~0u, 0},
@@ -639,8 +568,6 @@ static const CIPHER_ALIAS kCipherAliases[] = {
     {"aPSK", ~0u, SSL_aPSK, ~0u, ~0u, 0},
 
     /* aliases combining key exchange and server authentication */
-    {"DHE", SSL_kDHE, ~0u, ~0u, ~0u, 0},
-    {"EDH", SSL_kDHE, ~0u, ~0u, ~0u, 0},
     {"ECDHE", SSL_kECDHE, ~0u, ~0u, ~0u, 0},
     {"EECDH", SSL_kECDHE, ~0u, ~0u, ~0u, 0},
     {"RSA", SSL_kRSA, SSL_aRSA, ~SSL_eNULL, ~0u, 0},
@@ -1254,10 +1181,10 @@ static int ssl_cipher_process_rulestr(const SSL_PROTOCOL_METHOD *ssl_method,
   return 1;
 }
 
-STACK_OF(SSL_CIPHER) *
-ssl_create_cipher_list(const SSL_PROTOCOL_METHOD *ssl_method,
-                       struct ssl_cipher_preference_list_st **out_cipher_list,
-                       const char *rule_str, int strict) {
+int ssl_create_cipher_list(
+    const SSL_PROTOCOL_METHOD *ssl_method,
+    struct ssl_cipher_preference_list_st **out_cipher_list,
+    const char *rule_str, int strict) {
   STACK_OF(SSL_CIPHER) *cipherstack = NULL;
   CIPHER_ORDER *co_list = NULL, *head = NULL, *tail = NULL, *curr;
   uint8_t *in_group_flags = NULL;
@@ -1266,7 +1193,7 @@ ssl_create_cipher_list(const SSL_PROTOCOL_METHOD *ssl_method,
 
   /* Return with error if nothing to do. */
   if (rule_str == NULL || out_cipher_list == NULL) {
-    return NULL;
+    return 0;
   }
 
   /* Now we have to collect the available ciphers from the compiled in ciphers.
@@ -1275,7 +1202,7 @@ ssl_create_cipher_list(const SSL_PROTOCOL_METHOD *ssl_method,
   co_list = OPENSSL_malloc(sizeof(CIPHER_ORDER) * kCiphersLen);
   if (co_list == NULL) {
     OPENSSL_PUT_ERROR(SSL, ERR_R_MALLOC_FAILURE);
-    return NULL;
+    return 0;
   }
 
   ssl_cipher_collect_ciphers(ssl_method, co_list, &head, &tail);
@@ -1395,7 +1322,14 @@ ssl_create_cipher_list(const SSL_PROTOCOL_METHOD *ssl_method,
   *out_cipher_list = pref_list;
   pref_list = NULL;
 
-  return cipherstack;
+  /* Configuring an empty cipher list is an error but still updates the
+   * output. */
+  if (sk_SSL_CIPHER_num((*out_cipher_list)->ciphers) == 0) {
+    OPENSSL_PUT_ERROR(SSL, SSL_R_NO_CIPHER_MATCH);
+    return 0;
+  }
+
+  return 1;
 
 err:
   OPENSSL_free(co_list);
@@ -1405,7 +1339,7 @@ err:
     OPENSSL_free(pref_list->in_group_flags);
   }
   OPENSSL_free(pref_list);
-  return NULL;
+  return 0;
 }
 
 uint32_t SSL_CIPHER_get_id(const SSL_CIPHER *cipher) { return cipher->id; }
@@ -1427,6 +1361,10 @@ int SSL_CIPHER_has_SHA1_HMAC(const SSL_CIPHER *cipher) {
 
 int SSL_CIPHER_has_SHA256_HMAC(const SSL_CIPHER *cipher) {
   return (cipher->algorithm_mac & SSL_SHA256) != 0;
+}
+
+int SSL_CIPHER_has_SHA384_HMAC(const SSL_CIPHER *cipher) {
+  return (cipher->algorithm_mac & SSL_SHA384) != 0;
 }
 
 int SSL_CIPHER_is_AEAD(const SSL_CIPHER *cipher) {
@@ -1464,10 +1402,6 @@ int SSL_CIPHER_is_block_cipher(const SSL_CIPHER *cipher) {
 
 int SSL_CIPHER_is_ECDSA(const SSL_CIPHER *cipher) {
   return (cipher->algorithm_auth & SSL_aECDSA) != 0;
-}
-
-int SSL_CIPHER_is_DHE(const SSL_CIPHER *cipher) {
-  return (cipher->algorithm_mkey & SSL_kDHE) != 0;
 }
 
 int SSL_CIPHER_is_ECDHE(const SSL_CIPHER *cipher) {
@@ -1517,15 +1451,6 @@ const char *SSL_CIPHER_get_kx_name(const SSL_CIPHER *cipher) {
   switch (cipher->algorithm_mkey) {
     case SSL_kRSA:
       return "RSA";
-
-    case SSL_kDHE:
-      switch (cipher->algorithm_auth) {
-        case SSL_aRSA:
-          return "DHE_RSA";
-        default:
-          assert(0);
-          return "UNKNOWN";
-      }
 
     case SSL_kECDHE:
       switch (cipher->algorithm_auth) {
@@ -1686,10 +1611,6 @@ const char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf,
       kx = "RSA";
       break;
 
-    case SSL_kDHE:
-      kx = "DH";
-      break;
-
     case SSL_kECDHE:
       kx = "ECDH";
       break;
@@ -1811,16 +1732,17 @@ const char *SSL_COMP_get_name(const COMP_METHOD *comp) { return NULL; }
 
 void SSL_COMP_free_compression_methods(void) {}
 
-int ssl_cipher_get_key_type(const SSL_CIPHER *cipher) {
-  uint32_t alg_a = cipher->algorithm_auth;
-
-  if (alg_a & SSL_aECDSA) {
-    return EVP_PKEY_EC;
-  } else if (alg_a & SSL_aRSA) {
-    return EVP_PKEY_RSA;
+uint32_t ssl_cipher_auth_mask_for_key(const EVP_PKEY *key) {
+  switch (EVP_PKEY_id(key)) {
+    case EVP_PKEY_RSA:
+      return SSL_aRSA;
+    case EVP_PKEY_EC:
+    case EVP_PKEY_ED25519:
+      /* Ed25519 keys in TLS 1.2 repurpose the ECDSA ciphers. */
+      return SSL_aECDSA;
+    default:
+      return 0;
   }
-
-  return EVP_PKEY_NONE;
 }
 
 int ssl_cipher_uses_certificate_auth(const SSL_CIPHER *cipher) {
@@ -1829,8 +1751,7 @@ int ssl_cipher_uses_certificate_auth(const SSL_CIPHER *cipher) {
 
 int ssl_cipher_requires_server_key_exchange(const SSL_CIPHER *cipher) {
   /* Ephemeral Diffie-Hellman key exchanges require a ServerKeyExchange. */
-  if (cipher->algorithm_mkey & SSL_kDHE ||
-      cipher->algorithm_mkey & SSL_kECDHE) {
+  if (cipher->algorithm_mkey & SSL_kECDHE) {
     return 1;
   }
 

@@ -223,6 +223,7 @@ enum CongestionControlType {
   kReno,
   kRenoBytes,
   kBBR,
+  kPCC
 };
 
 enum LossDetectionType {
@@ -259,6 +260,16 @@ enum PeerAddressChangeType {
   IPV6_TO_IPV4_CHANGE,
   // IP address change from an IPv6 to an IPv6 address (port may have changed.)
   IPV6_TO_IPV6_CHANGE,
+};
+
+enum StreamSendingState {
+  // Sender has more data to send on this stream.
+  NO_FIN,
+  // Sender is done sending on this stream.
+  FIN,
+  // Sender is done sending on this stream and random padding needs to be
+  // appended after all stream frames.
+  FIN_AND_PADDING,
 };
 
 }  // namespace net

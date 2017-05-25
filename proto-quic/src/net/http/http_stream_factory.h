@@ -6,6 +6,7 @@
 #define NET_HTTP_HTTP_STREAM_FACTORY_H_
 
 #include <list>
+#include <memory>
 #include <string>
 
 #include "base/macros.h"
@@ -154,7 +155,7 @@ class NET_EXPORT_PRIVATE HttpStreamRequest {
         const HttpResponseInfo& response_info,
         const SSLConfig& used_ssl_config,
         const ProxyInfo& used_proxy_info,
-        HttpStream* stream) = 0;
+        std::unique_ptr<HttpStream> stream) = 0;
 
     // Called when finding all QUIC alternative services are marked broken for
     // the origin in this request which advertises supporting QUIC.
@@ -202,35 +203,41 @@ class NET_EXPORT HttpStreamFactory {
 
   // Request a stream.
   // Will call delegate->OnStreamReady on successful completion.
-  virtual HttpStreamRequest* RequestStream(
+  virtual std::unique_ptr<HttpStreamRequest> RequestStream(
       const HttpRequestInfo& info,
       RequestPriority priority,
       const SSLConfig& server_ssl_config,
       const SSLConfig& proxy_ssl_config,
       HttpStreamRequest::Delegate* delegate,
+      bool enable_ip_based_pooling,
+      bool enable_alternative_services,
       const NetLogWithSource& net_log) = 0;
 
   // Request a WebSocket handshake stream.
   // Will call delegate->OnWebSocketHandshakeStreamReady on successful
   // completion.
-  virtual HttpStreamRequest* RequestWebSocketHandshakeStream(
+  virtual std::unique_ptr<HttpStreamRequest> RequestWebSocketHandshakeStream(
       const HttpRequestInfo& info,
       RequestPriority priority,
       const SSLConfig& server_ssl_config,
       const SSLConfig& proxy_ssl_config,
       HttpStreamRequest::Delegate* delegate,
       WebSocketHandshakeStreamBase::CreateHelper* create_helper,
+      bool enable_ip_based_pooling,
+      bool enable_alternative_services,
       const NetLogWithSource& net_log) = 0;
 
   // Request a BidirectionalStreamImpl.
   // Will call delegate->OnBidirectionalStreamImplReady on successful
   // completion.
-  virtual HttpStreamRequest* RequestBidirectionalStreamImpl(
+  virtual std::unique_ptr<HttpStreamRequest> RequestBidirectionalStreamImpl(
       const HttpRequestInfo& info,
       RequestPriority priority,
       const SSLConfig& server_ssl_config,
       const SSLConfig& proxy_ssl_config,
       HttpStreamRequest::Delegate* delegate,
+      bool enable_ip_based_pooling,
+      bool enable_alternative_services,
       const NetLogWithSource& net_log) = 0;
 
   // Requests that enough connections for |num_streams| be opened.

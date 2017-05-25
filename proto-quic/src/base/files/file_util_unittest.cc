@@ -1744,7 +1744,7 @@ TEST_F(FileUtilTest, GetTempDirTest) {
 TEST_F(FileUtilTest, OpenFileNoInheritance) {
   FilePath file_path(temp_dir_.GetPath().Append(FPL("a_file")));
 
-  for (const char* mode : {"wb", "r,ccs=UNICODE"}) {
+  for (const char* mode : {"wb", "r,ccs=UTF-8"}) {
     SCOPED_TRACE(mode);
     ASSERT_NO_FATAL_FAILURE(CreateTextFile(file_path, L"Geepers"));
     FILE* file = OpenFile(file_path, mode);
@@ -2212,7 +2212,8 @@ TEST_F(FileUtilTest, TouchFile) {
 
   FilePath foobar(data_dir.Append(FILE_PATH_LITERAL("foobar.txt")));
   std::string data("hello");
-  ASSERT_TRUE(WriteFile(foobar, data.c_str(), data.length()));
+  ASSERT_EQ(static_cast<int>(data.length()),
+            WriteFile(foobar, data.c_str(), data.length()));
 
   Time access_time;
   // This timestamp is divisible by one day (in local timezone),
@@ -2247,12 +2248,36 @@ TEST_F(FileUtilTest, IsDirectoryEmpty) {
 
   FilePath foo(empty_dir.Append(FILE_PATH_LITERAL("foo.txt")));
   std::string bar("baz");
-  ASSERT_TRUE(WriteFile(foo, bar.c_str(), bar.length()));
+  ASSERT_EQ(static_cast<int>(bar.length()),
+            WriteFile(foo, bar.c_str(), bar.length()));
 
   EXPECT_FALSE(IsDirectoryEmpty(empty_dir));
 }
 
 #if defined(OS_POSIX)
+TEST_F(FileUtilTest, SetNonBlocking) {
+  const int kInvalidFd = 99999;
+  EXPECT_FALSE(SetNonBlocking(kInvalidFd));
+
+  base::FilePath path;
+  ASSERT_TRUE(PathService::Get(base::DIR_TEST_DATA, &path));
+  path = path.Append(FPL("file_util")).Append(FPL("original.txt"));
+  ScopedFD fd(open(path.value().c_str(), O_RDONLY));
+  ASSERT_GE(fd.get(), 0);
+  EXPECT_TRUE(SetNonBlocking(fd.get()));
+}
+
+TEST_F(FileUtilTest, SetCloseOnExec) {
+  const int kInvalidFd = 99999;
+  EXPECT_FALSE(SetCloseOnExec(kInvalidFd));
+
+  base::FilePath path;
+  ASSERT_TRUE(PathService::Get(base::DIR_TEST_DATA, &path));
+  path = path.Append(FPL("file_util")).Append(FPL("original.txt"));
+  ScopedFD fd(open(path.value().c_str(), O_RDONLY));
+  ASSERT_GE(fd.get(), 0);
+  EXPECT_TRUE(SetCloseOnExec(fd.get()));
+}
 
 // Testing VerifyPathControlledByAdmin() is hard, because there is no
 // way a test can make a file owned by root, or change file paths
