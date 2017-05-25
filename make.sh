@@ -8,6 +8,7 @@ install_path=$HOME/nginx
 openssl_path=./proto-quic/src/third_party/boringssl/src/
 boringssl_lib=${BASE_DIR}/proto-quic/lib/
 proto_quic_src=${BASE_DIR}/proto-quic/src/
+out_proto_quic_src=${BASE_DIR}/proto-quic/src/out/Default/gen/
 
 pcre_path=${BASE_DIR}/third-lib/pcre-8.40
 ngx_src=${BASE_DIR}/nginx-1.11.1
@@ -28,19 +29,19 @@ function syntax()
     exit 1;
 }
 
-#--with-ld-opt="-lrt -L${boringssl_lib} -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror --sysroot=./proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/ -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L." \
 cd $ngx_src
 
 [[ -f Makefile ]] && make clean
 openssl_opt="-fPIC "
 export CFLAGS="-g -O2"
+export LD_LIBRARY_PATH=${boringssl_lib}:$LD_LIBRARY_PATH  
 ./configure --prefix=$install_path \
 --sbin-path=$install_path/nginx \
 --conf-path=$install_path/nginx.conf \
 --pid-path=$install_path/nginx.pid \
 --with-cc="~/github/woqu/proto-quic/src/third_party/llvm-build/Release+Asserts/bin/clang" \
---with-cc-opt="-I ${protobuf_path} -I ${stgw_engine_proto_lib_path} -I ${proto_quic_src}" \
---with-ld-opt="-lrt -L${boringssl_lib} -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_globals -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L." \
+--with-cc-opt="-I ${protobuf_path} -I ${stgw_engine_proto_lib_path} -I ${proto_quic_src} -I ${out_proto_quic_src}" \
+--with-ld-opt="-lrt -L${boringssl_lib} -lcrcrypto -lboringssl -lbase_i18n -licui18n -licuuc -lnet -lurl -lprotobuf_lite -lbase -Wl,--fatal-warnings -fPIC -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -Wl,--no-as-needed -lpthread -Wl,--as-needed -fuse-ld=gold -B./proto-quic/src/third_party/binutils/Linux_x64/Release/bin -Wl,--threads -Wl,--thread-count=4 -Wl,--icf=all -m64 -pthread -Werror -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/x86_64-linux-gnu -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib/gcc/x86_64-linux-gnu/4.6 -L~/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=/home/luocn99/github/woqu/proto-quic/src/build/linux/debian_wheezy_amd64-sysroot/usr/lib -Wl,-rpath-link=. -Wl,--disable-new-dtags -Wl,-rpath-link=. -Wl,--export-dynamic -L." \
 --with-http_ssl_module \
 --with-http_realip_module \
 --with-http_addition_module \
@@ -52,8 +53,7 @@ export CFLAGS="-g -O2"
 --with-http_stub_status_module \
 --with-stream \
 --with-boringssl_so="YES" \
---with-debug
-#--add-module=${third_module_path}/ngx_http_quic_module/ \
+--with-debug 
 #--with-pcre=$pcre_path \
 
 if [ $? -ne 0 ]; then
