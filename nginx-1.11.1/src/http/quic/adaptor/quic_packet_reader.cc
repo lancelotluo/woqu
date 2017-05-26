@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "quic_packet_reader.h"
+#include "net/tools/quic/quic_packet_reader.h"
 
 #include <errno.h>
 #ifndef __APPLE__
@@ -16,8 +16,8 @@
 #include "net/quic/platform/api/quic_logging.h"
 #include "net/quic/platform/api/quic_socket_address.h"
 #include "net/tools/quic/platform/impl/quic_socket_utils.h"
-#include "ngx_quic_dispatcher.h"
-#include "ngx_quic_process_packet_interface.h"
+#include "net/tools/quic/quic_dispatcher.h"
+#include "net/tools/quic/quic_process_packet_interface.h"
 
 #ifndef SO_RXQ_OVFL
 #define SO_RXQ_OVFL 40

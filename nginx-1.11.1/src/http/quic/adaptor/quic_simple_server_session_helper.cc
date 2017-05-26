@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "quic_simple_server_session_helper.h"
+#include "net/tools/quic/quic_simple_server_session_helper.h"
 
 namespace net {
 
@@ -13,12 +13,7 @@ QuicSimpleServerSessionHelper::~QuicSimpleServerSessionHelper() {}
 
 QuicConnectionId QuicSimpleServerSessionHelper::GenerateConnectionIdForReject(
     QuicConnectionId /*connection_id*/) const {
-  //return random_->RandUint64(); lc debug
-	//random_;
-	uint64_t random = 
-	    (((uint64_t) rand() <<  0) & 0x00000000FFFFFFFFull) | 
-		  (((uint64_t) rand() << 32) & 0xFFFFFFFF00000000ull);
-	return random;
+  return random_->RandUint64();
 }
 
 bool QuicSimpleServerSessionHelper::CanAcceptClientHello(
@@ -26,9 +21,6 @@ bool QuicSimpleServerSessionHelper::CanAcceptClientHello(
     const QuicSocketAddress& self_address,
     std::string* error_details) const {
   return true;
-}
-void QuicSimpleServerSessionHelper::MockRandom(){
-	random_->RandUint64();
 }
 
 }  // namespace net
