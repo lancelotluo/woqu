@@ -82,6 +82,9 @@ void QuicSession::OnStreamFrame(const QuicStreamFrame& frame) {
     }
     return;
   }
+
+  //lance pass session_ngx_connection_ to QuicSimpleServerStream
+  stream->SetQuicStreamNgxConnection(session_ngx_connection_);
   stream->OnStreamFrame(frame);
 }
 
@@ -944,4 +947,7 @@ QuicStream* QuicSession::CreateAndActivateStream(QuicStreamId id) {
   return stream_ptr;
 }
 
+void QuicSession::SetQuicSessionNgxConnection(void *ngx_connection) {
+  session_ngx_connection_ = ngx_connection;
+}
 }  // namespace net

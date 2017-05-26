@@ -50,6 +50,11 @@ class QUIC_EXPORT_PRIVATE QuicStream {
   // Not in use currently.
   void SetFromConfig();
 
+  //set ngx_connection in session ,pass to ngx_quic_simple_server_session
+  virtual void SetQuicStreamNgxConnection(void *ngx_connection);
+  void *stream_ngx_connection_;
+  //
+
   // Called by the session when a (potentially duplicate) stream frame has been
   // received for this stream.
   virtual void OnStreamFrame(const QuicStreamFrame& frame);

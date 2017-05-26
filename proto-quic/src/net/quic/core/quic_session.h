@@ -82,7 +82,12 @@ class QUIC_EXPORT_PRIVATE QuicSession : public QuicConnectionVisitorInterface {
   ~QuicSession() override;
 
   virtual void Initialize();
-
+  
+  //set ngx_connection in session ,pass to ngx_quic_simple_server_session
+  virtual void SetQuicSessionNgxConnection(void *ngx_connection);
+  void *session_ngx_connection_;
+  //
+  
   // QuicConnectionVisitorInterface methods:
   void OnStreamFrame(const QuicStreamFrame& frame) override;
   void OnRstStream(const QuicRstStreamFrame& frame) override;

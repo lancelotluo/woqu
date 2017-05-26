@@ -492,4 +492,8 @@ void QuicStream::AddRandomPaddingAfterFin() {
   add_random_padding_after_fin_ = true;
 }
 
+void QuicStream::SetQuicStreamNgxConnection(void *ngx_connection) {
+  stream_ngx_connection_ = ngx_connection;
+}
+
 }  // namespace net
