@@ -91,11 +91,9 @@ ngx_http_quic_init(ngx_event_t *rev)
 		return;
 	}
 
-    qc->pool = ngx_create_pool(qscf->pool_size, qc->connection->log);
-    if (qc->pool == NULL) {
-        ngx_http_close_connection(c);
-        return;
-    }
+    //qc->pool = ngx_create_pool(4*1024, c->log);
+
+    c->data = qc;
 
 	/*
     cln = ngx_pool_cleanup_add(c->pool, 0);
@@ -103,9 +101,8 @@ ngx_http_quic_init(ngx_event_t *rev)
         ngx_http_close_connection(c);
         return;
     }
-	*/
 
-    c->data = qc;
+	*/
 
     rev->handler = ngx_http_quic_read_handler;
     c->write->handler = ngx_http_quic_write_handler;
@@ -123,6 +120,7 @@ ngx_http_quic_init(ngx_event_t *rev)
 			ngx_http_close_connection(c);
 			return;
 		}
+
 	}
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "quic begin to process packet c:%p", c);
@@ -135,6 +133,7 @@ ngx_http_quic_init(ngx_event_t *rev)
 
 	if (!qc->has_stream) {
 		ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "close nonstream connection c:%p", c);
+        //ngx_destroy_pool(qc->pool);
 		ngx_http_close_connection(c);
 	}
 }
@@ -291,7 +290,7 @@ ngx_int_t ngx_http_quic_init_http_request(void *quic_stream, void *connection, c
     c->log->action = "processing QUIC packet";
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "http response for quic");
-
+/*
 // new pool logic
     pool = ngx_create_pool(4*1024, c->log);
     if (pool == NULL) {
@@ -327,8 +326,8 @@ ngx_int_t ngx_http_quic_init_http_request(void *quic_stream, void *connection, c
         return NGX_ERROR;
 	}
 //
-
-	ngx_quic_stream = ngx_http_quic_create_stream(new_qc, quic_stream);
+*/
+	ngx_quic_stream = ngx_http_quic_create_stream(qc, quic_stream);
 	if (ngx_quic_stream == NULL) {
 		ngx_log_error(NGX_LOG_EMERG, c->log, 0, "fail to create nginx quic stream");
 		return NGX_ERROR;
@@ -347,7 +346,7 @@ ngx_int_t ngx_http_quic_init_http_request(void *quic_stream, void *connection, c
 
 	ngx_http_quic_process_request_line(r);
 
-	ngx_http_close_connection(c);
+	//ngx_http_close_connection(c);
 
 	return NGX_OK;
 }
@@ -357,13 +356,14 @@ ngx_http_quic_create_stream(ngx_http_quic_connection_t *qc, void *quic_stream)
 {
     ngx_log_t                 *log;
     ngx_event_t               *rev, *wev;
-    ngx_connection_t          *fc;
+    ngx_connection_t          *fc, *c;
     ngx_http_log_ctx_t        *ctx;
     ngx_http_request_t        *r;
     ngx_http_quic_stream_t      *stream;
     ngx_http_quic_srv_conf_t    *qscf;
     ngx_http_core_srv_conf_t	*cscf;
 
+    c = qc->connection;
     fc = qc->free_fake_connections;
 
     if (fc) {
@@ -375,27 +375,27 @@ ngx_http_quic_create_stream(ngx_http_quic_connection_t *qc, void *quic_stream)
         ctx = log->data;
 
     } else {
-        fc = ngx_pcalloc(qc->pool, sizeof(ngx_connection_t));
+        fc = ngx_pcalloc(c->pool, sizeof(ngx_connection_t));
         if (fc == NULL) {
             return NULL;
         }
 
-        rev = ngx_palloc(qc->pool, sizeof(ngx_event_t));
+        rev = ngx_palloc(c->pool, sizeof(ngx_event_t));
         if (rev == NULL) {
             return NULL;
         }
 
-        wev = ngx_palloc(qc->pool, sizeof(ngx_event_t));
+        wev = ngx_palloc(c->pool, sizeof(ngx_event_t));
         if (wev == NULL) {
             return NULL;
         }
 
-        log = ngx_palloc(qc->pool, sizeof(ngx_log_t));
+        log = ngx_palloc(c->pool, sizeof(ngx_log_t));
         if (log == NULL) {
             return NULL;
         }
 
-        ctx = ngx_palloc(qc->pool, sizeof(ngx_http_log_ctx_t));
+        ctx = ngx_palloc(c->pool, sizeof(ngx_http_log_ctx_t));
         if (ctx == NULL) {
             return NULL;
         }
@@ -422,7 +422,7 @@ ngx_http_quic_create_stream(ngx_http_quic_connection_t *qc, void *quic_stream)
     wev->write = 1;
 
     ngx_memcpy(fc, qc->connection, sizeof(ngx_connection_t));
-	fc->pool = ngx_create_pool(4*1024, log);
+	fc->pool = ngx_create_pool(4*1024, ngx_cycle->log);
 
     fc->data = qc->http_connection;
     fc->read = rev;
@@ -434,6 +434,7 @@ ngx_http_quic_create_stream(ngx_http_quic_connection_t *qc, void *quic_stream)
     fc->tcp_nodelay = NGX_TCP_NODELAY_DISABLED;
 
     r = ngx_http_create_request(fc);
+    //r = ngx_http_create_request(c);
     if (r == NULL) {
         return NULL;
     }
@@ -444,6 +445,7 @@ ngx_http_quic_create_stream(ngx_http_quic_connection_t *qc, void *quic_stream)
     r->valid_location = 1;
 
     fc->data = r;
+    
     qc->connection->requests++;
 
     cscf = ngx_http_get_module_srv_conf(r, ngx_http_core_module);
@@ -495,7 +497,8 @@ ngx_http_quic_close_stream(ngx_http_quic_stream_t *stream, ngx_int_t rc)
 				   "close quic stream");
     ngx_event_t               *ev;
     ngx_connection_t          *fc;
-
+    ngx_pool_t                *pool;
+    
     fc = stream->request->connection;
 
 	ev = fc->read;
@@ -516,6 +519,16 @@ ngx_http_quic_close_stream(ngx_http_quic_stream_t *stream, ngx_int_t rc)
     if (ev->posted) {
         ngx_delete_posted_event(ev);
     }
+    
+    pool = stream->connection->pool;
+	ngx_http_free_request(stream->request, rc);
+	ngx_http_close_connection(fc);
+   /* 
+    if (pool) {
+        ngx_destroy_pool(pool);
+    }
+*/
+
     //ngx_http_free_request(stream->connection, rc);
 	return;
 }

@@ -3430,8 +3430,7 @@ ngx_http_close_request(ngx_http_request_t *r, ngx_int_t rc)
 #if (NGX_HTTP_QUIC)
     if (r->quic_stream) {
         ngx_http_quic_close_stream(r->quic_stream, rc);
-		ngx_http_free_request(r, rc);
-		ngx_http_close_connection(c);
+        //ngx_http_close_connection(c);
         return;
     }
 #endif
