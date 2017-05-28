@@ -85,15 +85,33 @@ ngx_http_quic_init(ngx_event_t *rev)
     c->write->handler = ngx_http_quic_write_handler;
 
 	if (qscf->quic_dispatcher->proto_quic_dispatcher == NULL) {
-		ngx_http_quic_conf_t nqcf;
-		nqcf.certificate		= qscf->certificate.data;
-		nqcf.certificate_key	= qscf->certificate_key.data; 
+		// use ssl_certificate and ssl_certificate_key for quic
+		// so we need not to add new configure rules
+        ngx_http_ssl_srv_conf_t  *sscf;
+        sscf = ngx_http_get_module_srv_conf(hc->conf_ctx,
+                                                ngx_http_ssl_module);
+		
+		if (sscf->certificates->nelts > 1) {
+			ngx_log_error(NGX_LOG_ERR, c->log, 0, 
+						"more than 1 cert for quic, use the first as default");
+		}
 
-		ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "first to create dispatcher, only once");
+		ngx_str_t   *cert, *key;
+
+		cert = sscf->certificates->elts;
+		key = sscf->certificate_keys->elts;
+
+		ngx_http_quic_conf_t nqcf;
+		//nqcf.certificate		= qscf->certificate.data;
+		//nqcf.certificate_key	= qscf->certificate_key.data; 
+		nqcf.certificate		= cert[0].data;
+		nqcf.certificate_key	= key[0].data; 
+
+		ngx_log_debug2(NGX_LOG_DEBUG_HTTP, c->log, 0, "first to create dispatcher, only once, certificate:%s key:%s", nqcf.certificate, nqcf.certificate_key);
 		qscf->quic_dispatcher->proto_quic_dispatcher = ngx_http_quic_create_dispatcher(c->fd, &nqcf);
 		if (qscf->quic_dispatcher->proto_quic_dispatcher == NULL) {
 			ngx_log_error(NGX_LOG_EMERG, c->log, 0,
-                          "fail to create proto-quic dispatcher");
+                          "fail to create proto-quic dispatcher for new packet");
 			ngx_http_close_connection(c);
 			return;
 		}
