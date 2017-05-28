@@ -112,7 +112,6 @@ void QuicSimpleServerStream::OnDataAvailable() {
     return;
   }
 
-  //SendResponse();
   SendToNginx();
 }
 
@@ -122,6 +121,7 @@ void QuicSimpleServerStream::PushResponse(
     QUIC_BUG << "Client initiated stream shouldn't be used as promised stream.";
     return;
   }
+
   // Change the stream state to emulate a client request.
   request_headers_ = std::move(push_request_headers);
   content_length_ = 0;
@@ -292,9 +292,9 @@ void QuicSimpleServerStream::OnNginxDataAvailable() {
 void QuicSimpleServerStream::OnNginxHeaderAvailable(const std::string &header, bool fin)
 {
 	HeadersToRaw(const_cast<std::string *> (&header));
-	const HttpResponseHeaders request_headers_ = HttpResponseHeaders(header);	
+	scoped_refptr<HttpResponseHeaders> request_headers = new HttpResponseHeaders(header);	
 	SpdyHeaderBlock spdy_headers;
-	CreateSpdyHeadersFromHttpResponse(request_headers_, &spdy_headers);
+	CreateSpdyHeadersFromHttpResponse(*request_headers, &spdy_headers);
 	WriteHeaders(std::move(spdy_headers), fin, nullptr);
 	//SendHeadersAndBody(std::move(spdy_headers), kNotFoundResponseBody);
 }

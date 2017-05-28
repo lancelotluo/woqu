@@ -174,7 +174,6 @@ int ngx_http_quic_send_to_nginx(void *stream, const char *request, int request_l
 	}
 	QUIC_DVLOG(1) << "lance_debug quic request:" << request << " len: "<< request_len  << " ngx_connection:" << ngx_connection;
 
-	//return ngx_http_quic_init_http_request(stream, ngx_connection, ngx_addr_conf, request, request_len, body, body_len);
 	return ngx_http_quic_init_http_request(stream, ngx_connection, request, request_len, body, body_len);
 	//ngx_http_quic_init_http_request_test(stream, ngx_connection, request, request_len, body, body_len);
 	//quic_stream->OnNginxDataAvailable();
@@ -191,8 +190,6 @@ void ngx_http_quic_send_to_nginx_test(void *stream, const char *host, int64_t ho
 		return;
 	}
 
-	//ngx_http_quic_init_http_request(stream, ngx_connection, host, host_len, path, path_len, body, body_len);
-	//quic_stream->OnNginxDataAvailable();
 }
 void ngx_http_quic_send_to_nginx_test(void *stream)
 {

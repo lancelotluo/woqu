@@ -86,6 +86,7 @@ void QuicSimpleServerSession::OnStreamFrame(const QuicStreamFrame& frame) {
         ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET);
     return;
   }
+
   QuicSpdySession::OnStreamFrame(frame);
 }
 
