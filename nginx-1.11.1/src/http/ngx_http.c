@@ -59,8 +59,14 @@ static ngx_int_t ngx_http_init_listening(ngx_conf_t *cf,
     ngx_http_conf_port_t *port);
 static ngx_listening_t *ngx_http_add_listening(ngx_conf_t *cf,
     ngx_http_conf_addr_t *addr);
+#if (NGX_HTTP_QUIC)
+static ngx_int_t ngx_http_add_addrs(ngx_conf_t *cf, ngx_http_port_t *hport,
+    ngx_http_conf_addr_t *addr, ngx_int_t is_quic);
+#else
 static ngx_int_t ngx_http_add_addrs(ngx_conf_t *cf, ngx_http_port_t *hport,
     ngx_http_conf_addr_t *addr);
+#endif
+
 #if (NGX_HAVE_INET6)
 static ngx_int_t ngx_http_add_addrs6(ngx_conf_t *cf, ngx_http_port_t *hport,
     ngx_http_conf_addr_t *addr);
@@ -1712,9 +1718,15 @@ ngx_http_init_listening(ngx_conf_t *cf, ngx_http_conf_port_t *port)
             break;
 #endif
         default: /* AF_INET */
+            #if (NGX_HTTP_QUIC)
+            if (ngx_http_add_addrs(cf, hport, addr, 0) != NGX_OK) {
+                return NGX_ERROR;
+            }
+            #else
             if (ngx_http_add_addrs(cf, hport, addr) != NGX_OK) {
                 return NGX_ERROR;
             }
+            #endif
             break;
         }
 
@@ -1722,6 +1734,49 @@ ngx_http_init_listening(ngx_conf_t *cf, ngx_http_conf_port_t *port)
             return NGX_ERROR;
         }
 
+#if (NGX_HTTP_QUIC)
+// lance for simple quic lisenting
+// need to optimize
+
+        if (addr[i].opt.quic) {
+            ls = ngx_http_add_listening(cf, &addr[i]);
+            if (ls == NULL) {
+                return NGX_ERROR;
+            }
+
+		    ls->type = SOCK_DGRAM;
+
+            hport = ngx_pcalloc(cf->pool, sizeof(ngx_http_port_t));
+            if (hport == NULL) {
+                return NGX_ERROR;
+            }
+
+            ls->servers = hport;
+
+            hport->naddrs = i + 1;
+
+            switch (ls->sockaddr->sa_family) {
+
+    #if (NGX_HAVE_INET6)
+            case AF_INET6:
+                if (ngx_http_add_addrs6(cf, hport, addr) != NGX_OK) {
+                    return NGX_ERROR;
+                }
+                break;
+    #endif
+            default: /* AF_INET */
+                if (ngx_http_add_addrs(cf, hport, addr, 1) != NGX_OK) {
+                    return NGX_ERROR;
+                }
+                break;
+            }
+
+            if (ngx_clone_listening(cf, ls) != NGX_OK) {
+                return NGX_ERROR;
+            }
+        }
+// lance end
+#endif
         addr++;
         last--;
     }
@@ -1742,14 +1797,6 @@ ngx_http_add_listening(ngx_conf_t *cf, ngx_http_conf_addr_t *addr)
     if (ls == NULL) {
         return NULL;
     }
-
-#if NGX_HTTP_QUIC
-	ngx_log_error(NGX_LOG_EMERG, cf->log, 0,
-				  "lcdebug opt.port: opt.quic %ui", addr->opt.quic);
-	if (addr->opt.quic) {
-		ls->type = SOCK_DGRAM;
-	}
-#endif
 
     ls->addr_ntop = 1;
 
@@ -1817,9 +1864,15 @@ ngx_http_add_listening(ngx_conf_t *cf, ngx_http_conf_addr_t *addr)
 }
 
 
+#if (NGX_HTTP_QUIC)
+static ngx_int_t
+ngx_http_add_addrs(ngx_conf_t *cf, ngx_http_port_t *hport,
+    ngx_http_conf_addr_t *addr, ngx_int_t is_quic)
+#else
 static ngx_int_t
 ngx_http_add_addrs(ngx_conf_t *cf, ngx_http_port_t *hport,
     ngx_http_conf_addr_t *addr)
+#endif
 {
     ngx_uint_t                 i;
     ngx_http_in_addr_t        *addrs;
@@ -1846,7 +1899,9 @@ ngx_http_add_addrs(ngx_conf_t *cf, ngx_http_port_t *hport,
         addrs[i].conf.http2 = addr[i].opt.http2;
 #endif
 #if (NGX_HTTP_QUIC)
-        addrs[i].conf.quic = addr[i].opt.quic;
+        if (is_quic) {
+            addrs[i].conf.quic = addr[i].opt.quic;
+        }
 #endif
         addrs[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
 

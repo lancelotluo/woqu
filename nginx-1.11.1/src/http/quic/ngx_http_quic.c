@@ -105,9 +105,15 @@ ngx_http_quic_init(ngx_event_t *rev)
 		//nqcf.certificate		= qscf->certificate.data;
 		//nqcf.certificate_key	= qscf->certificate_key.data; 
 		nqcf.certificate		= cert[0].data;
-		nqcf.certificate_key	= key[0].data; 
 
-		ngx_log_debug2(NGX_LOG_DEBUG_HTTP, c->log, 0, "first to create dispatcher, only once, certificate:%s key:%s", nqcf.certificate, nqcf.certificate_key);
+        //tmp use
+        char tmp_key[64] = {0};
+        strcpy(tmp_key, key[0].data);
+        strcat(tmp_key, ".pkcs8");
+		//nqcf.certificate_key	= key[0].data; 
+		nqcf.certificate_key	= tmp_key; 
+
+		ngx_log_debug2(NGX_LOG_DEBUG_HTTP, c->log, 0, "first to create dispatcher, only once, certificate:%s key:%s", nqcf.certificate, tmp_key);
 		qscf->quic_dispatcher->proto_quic_dispatcher = ngx_http_quic_create_dispatcher(c->fd, &nqcf);
 		if (qscf->quic_dispatcher->proto_quic_dispatcher == NULL) {
 			ngx_log_error(NGX_LOG_EMERG, c->log, 0,
