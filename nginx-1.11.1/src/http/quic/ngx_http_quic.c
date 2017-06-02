@@ -291,12 +291,27 @@ ngx_int_t ngx_http_quic_init_http_request(void *quic_stream, void *connection, c
 	}
 
 	ngx_http_request_t *r = ngx_quic_stream->request;
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "http request from proto_quic:%s", request);
-
+    ngx_log_debug4(NGX_LOG_DEBUG_HTTP, c->log, 0, "http request from proto_quic:%s, request_len:%d body:%s body_len:%d", request, request_len, body, body_len);
+/*
 	r->header_in->start = (unsigned char*)request;
 	r->header_in->pos   = (unsigned char*)request;
 	r->header_in->last  = (unsigned char*)request + request_len;
 	r->header_in->end   = (unsigned char*)request + request_len;
+*/
+    r->header_in = ngx_create_temp_buf(r->pool, request_len + body_len);
+    if (r->header_in == NULL) {
+        ngx_log_error(NGX_LOG_EMERG, c->log, 0, "fail to alloc memory for quic heaer_in");
+        return NGX_ERROR;
+    }
+
+    ngx_memcpy(r->header_in->start, request, request_len);
+
+    if (body_len) {
+        ngx_memcpy(r->header_in->start + request_len, body, body_len);
+    }
+
+    r->header_in->last = r->header_in->last + request_len + body_len; 
+    r->header_in->end = r->header_in->last + request_len + body_len; 
 
 	ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0,
 			   "request header_in: %s", r->header_in->start);
