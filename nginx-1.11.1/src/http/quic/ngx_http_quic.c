@@ -12,9 +12,6 @@
 static void ngx_http_quic_read_handler(ngx_event_t *rev);
 static void ngx_http_quic_write_handler(ngx_event_t *wev);
 static void ngx_http_quic_handle_connection(ngx_http_quic_connection_t *qc);
-static void ngx_http_quic_run_request(ngx_http_request_t *r);
-static ngx_int_t
-ngx_http_quic_construct_host(ngx_http_request_t *r, const char *host, int64_t host_len);
 static ngx_int_t
 ngx_http_quic_parse_method(ngx_http_request_t *r, ngx_http_quic_header_t *header);
 
@@ -22,13 +19,7 @@ static ngx_http_quic_stream_t *ngx_http_quic_create_stream(
     ngx_http_quic_connection_t *qc, void *stream);
 static void ngx_http_quic_close_stream_handler(ngx_event_t *ev);
 
-static ngx_int_t
-ngx_http_quic_construct_request_line(ngx_http_request_t *r);
 static ngx_int_t ngx_http_quic_construct_cookie_header(ngx_http_request_t *r);
-static ngx_int_t
-ngx_http_quic_construct_header(ngx_http_request_t *r, ngx_http_quic_header_t *header);
-static ngx_int_t
-ngx_http_quic_parse_path(ngx_http_request_t *r, ngx_http_quic_header_t *header);
 
 static ngx_int_t
 ngx_http_quic_process_request_line(ngx_http_request_t *r);
@@ -204,66 +195,6 @@ ngx_http_quic_handle_connection(ngx_http_quic_connection_t *qc)
     }
 
     //ngx_add_timer(c->read, qscf->idle_timeout);
-}
-
-void
-ngx_http_quic_run_request(ngx_http_request_t *r)
-{
-    if (ngx_http_quic_construct_request_line(r) != NGX_OK) {
-        return;
-    }
-
-    if (ngx_http_quic_construct_cookie_header(r) != NGX_OK) {
-        return;
-    }
-
-    r->http_state = NGX_HTTP_PROCESS_REQUEST_STATE;
-
-    if (ngx_http_process_request_header(r) != NGX_OK) {
-        return;
-    }
-
-    ngx_http_process_request(r);
-}
-
-static ngx_int_t
-ngx_http_quic_construct_request_line(ngx_http_request_t *r)
-{
-    u_char  *p;
-
-    static const u_char ending[] = " HTTP/2.0";
-
-    if (r->method_name.len == 0
-        || r->unparsed_uri.len == 0)
-    {
-        ngx_http_finalize_request(r, NGX_HTTP_BAD_REQUEST);
-        return NGX_ERROR;
-    }
-
-    r->request_line.len = r->method_name.len + 1
-                          + r->unparsed_uri.len
-                          + sizeof(ending) - 1;
-
-    p = ngx_pnalloc(r->pool, r->request_line.len + 1);
-    if (p == NULL) {
-        ngx_http_quic_close_stream(r->quic_stream, NGX_HTTP_INTERNAL_SERVER_ERROR);
-        return NGX_ERROR;
-    }
-
-    r->request_line.data = p;
-
-    p = ngx_cpymem(p, r->method_name.data, r->method_name.len);
-
-    *p++ = ' ';
-
-    p = ngx_cpymem(p, r->unparsed_uri.data, r->unparsed_uri.len);
-
-    ngx_memcpy(p, ending, sizeof(ending));
-
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "http2 http request line: \"%V\"", &r->request_line);
-
-    return NGX_OK;
 }
 
 
@@ -593,90 +524,6 @@ ngx_http_quic_construct_cookie_header(ngx_http_request_t *r)
 }
 
 static ngx_int_t
-ngx_http_quic_construct_host(ngx_http_request_t *r, const char *quic_host, int64_t host_len)
-{
-    ngx_table_elt_t            *h;
-    ngx_http_header_t          *hh;
-    ngx_http_core_main_conf_t  *cmcf;
-
-    static ngx_str_t host = ngx_string("host");
-
-    h = ngx_list_push(&r->headers_in.headers);
-    if (h == NULL) {
-        return NGX_ERROR;
-    }
-
-    h->hash = ngx_hash_key(host.data, host.len);
-
-    h->key.len = host.len;
-    h->key.data = host.data;
-
-    h->value.len = host_len;
-    h->value.data = (unsigned char *)quic_host;
-
-    h->lowcase_key = host.data;
-
-    cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
-
-    hh = ngx_hash_find(&cmcf->headers_in_hash, h->hash,
-                       h->lowcase_key, h->key.len);
-
-    if (hh == NULL) {
-        return NGX_ERROR;
-    }
-
-    if (hh->handler(r, h, hh->offset) != NGX_OK) {
-        /*
-         * request has been finalized already
-         * in ngx_http_process_host()
-         */
-        return NGX_ABORT;
-    }
-
-    return NGX_OK;
-}
-
-static ngx_int_t
-ngx_http_quic_parse_path(ngx_http_request_t *r, ngx_http_quic_header_t *header)
-{
-    if (r->unparsed_uri.len) {
-        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                      "client sent duplicate :path header");
-
-        return NGX_DECLINED;
-    }
-
-    if (header->value.len == 0) {
-        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                      "client sent empty :path header");
-
-        return NGX_DECLINED;
-    }
-
-    r->uri_start = header->value.data;
-    r->uri_end = header->value.data + header->value.len;
-
-    if (ngx_http_parse_uri(r) != NGX_OK) {
-        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                      "client sent invalid :path header: \"%V\"",
-                      &header->value);
-
-        return NGX_DECLINED;
-    }
-
-    if (ngx_http_process_request_uri(r) != NGX_OK) {
-        /*
-         * request has been finalized already
-         * in ngx_http_process_request_uri()
-         */
-        return NGX_ABORT;
-    }
-
-    return NGX_OK;
-}
-
-
-static ngx_int_t
 ngx_http_quic_parse_method(ngx_http_request_t *r, ngx_http_quic_header_t *header)
 {
     size_t         k, len;
@@ -766,30 +613,6 @@ ngx_http_quic_parse_method(ngx_http_request_t *r, ngx_http_quic_header_t *header
         p++;
 
     } while (--len);
-
-    return NGX_OK;
-}
-
-
-static ngx_int_t
-ngx_http_quic_parse_scheme(ngx_http_request_t *r, ngx_http_quic_header_t *header)
-{
-    if (r->schema_start) {
-        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                      "client sent duplicate :schema header");
-
-        return NGX_DECLINED;
-    }
-
-    if (header->value.len == 0) {
-        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                      "client sent empty :schema header");
-
-        return NGX_DECLINED;
-    }
-
-    r->schema_start = header->value.data;
-    r->schema_end = header->value.data + header->value.len;
 
     return NGX_OK;
 }

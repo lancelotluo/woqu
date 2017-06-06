@@ -86,32 +86,6 @@ ngx_http_quic_headers_filter(ngx_http_request_t *r)
 	}
 
     return ngx_http_next_header_filter(r);
-
-    if (!r->quic_stream) {
-        return ngx_http_next_header_filter(r);
-    }
-
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "quic header filter");
-
-    if (r->header_sent) {
-        return NGX_OK;
-    }
-
-    r->header_sent = 1;
-
-    if (r != r->main) {
-        return NGX_OK;
-    }
-
-    if (r->method == NGX_HTTP_HEAD) {
-        r->header_only = 1;
-    }
-
-
-    fc = r->connection;
-
-    return ngx_http_quic_filter_send(fc, r->quic_stream);
 }
 
 static ngx_inline ngx_int_t
@@ -153,7 +127,18 @@ ngx_http_quic_header_filter(ngx_http_request_t *r, ngx_chain_t *in)
 {
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "begin to ngx_http_quic_response_header_available");
-	ngx_http_quic_response_header_available(r->quic_stream->quic_stream, in->buf->start, in->buf->last - in->buf->start, in->buf->last_buf);
+
+    //if (r->quic_stream->skip_data && r->discard_body) {
+    if (r->quic_stream->skip_data) {
+        in->buf->last_buf = 1;
+    }
+
+    ngx_int_t sent = in->buf->last - in->buf->start;
+
+	ngx_http_quic_response_header_available(r->quic_stream->quic_stream, in->buf->start, sent, in->buf->last_buf);
+
+    ngx_chain_update_sent(in, sent);
+
 	return NGX_OK;
 }
 
@@ -184,8 +169,8 @@ ngx_http_quic_send_chain(ngx_connection_t *fc, ngx_chain_t *in, off_t limit)
 		} 
 	
 		buf_len = ngx_buf_size(out->buf);
-		ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "ngx_http_quic_response_body_available, last:%d", last);
+		ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "ngx_http_quic_response_body_available, buf_len:%d last:%d", buf_len, last);
 
 		if (buf_len) {
 			ngx_http_quic_response_body_available(r->quic_stream->quic_stream, out->buf->pos, buf_len, last);
@@ -194,7 +179,6 @@ ngx_http_quic_send_chain(ngx_connection_t *fc, ngx_chain_t *in, off_t limit)
 
 		out = out->next;
 	}
-
 	
     return in;
 }

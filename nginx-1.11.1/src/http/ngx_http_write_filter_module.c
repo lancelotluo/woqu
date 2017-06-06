@@ -308,12 +308,6 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
         return NGX_AGAIN;
     }
 
-	//lance debug
-	//if (r->quic_stream) {
-//		return NGX_OK;
-//	}
-	//
-
     c->buffered &= ~NGX_HTTP_WRITE_BUFFERED;
 
     if ((c->buffered & NGX_LOWLEVEL_BUFFERED) && r->postponed == NULL) {

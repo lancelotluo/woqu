@@ -524,6 +524,11 @@ ngx_http_discard_request_body(ngx_http_request_t *r)
         return NGX_OK;
     }
 #endif
+#if (NGX_HTTP_QUIC) 
+    if (r->quic_stream) {
+        r->quic_stream->skip_data = 1;
+    }
+#endif
 
     if (ngx_http_test_expect(r) != NGX_OK) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;

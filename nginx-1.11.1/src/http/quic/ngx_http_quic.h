@@ -83,9 +83,6 @@ struct ngx_http_quic_connection_s {
 
 void ngx_http_quic_init(ngx_event_t *rev);
 
-//static void
-//ngx_http_quic_run_request(ngx_http_request_t *r);
-
 void
 ngx_http_quic_switch_in_nginx(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
 
