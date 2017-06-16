@@ -163,8 +163,8 @@ ngx_http_quic_send_chain(ngx_connection_t *fc, ngx_chain_t *in, off_t limit)
 
 	while (out) {
 		last = 0;
-		if (out->buf->last_buf) {
-		//if (out->buf->last_buf || (out->buf->flush && !out->next)) {
+		//if (out->buf->last_buf) {
+		if (out->buf->last_buf || (out->buf->flush && !out->next)) {
 			last = 1;
 		} 
 	
@@ -180,7 +180,7 @@ ngx_http_quic_send_chain(ngx_connection_t *fc, ngx_chain_t *in, off_t limit)
 		out = out->next;
 	}
 	
-    return in;
+    return out;
 }
 
 static ngx_int_t

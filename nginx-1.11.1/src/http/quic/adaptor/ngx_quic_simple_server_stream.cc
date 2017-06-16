@@ -23,12 +23,22 @@
 #include "net/tools/quic/quic_http_response_cache.h"
 
 namespace net {
-const char* const QuicSimpleServerStream::kErrorResponseBody = "bad";
+const char* const kForbiddenHttpHeaderFields[] = {
+    ":authority",
+    ":method",
+    ":path",
+    ":scheme",
+    ":version",
+    "method",
+    "scheme",
+    "version",
+};
+
+const char* const QuicSimpleServerStream::kErrorResponseBody = "<h1> bad</h1>";
 const char* const QuicSimpleServerStream::kNotFoundResponseBody = "lance found";
 
 static bool ConvertSpdyHeaderToHttpRequest(const SpdyHeaderBlock& spdy_headers,
                                     HttpRequestHeaders* request_headers);
-static void HeadersToRaw(std::string* headers);
 static void AddSpdyHeader(const std::string& name,
                    const std::string& value,
                    SpdyHeaderBlock* headers);
@@ -291,17 +301,19 @@ void QuicSimpleServerStream::OnNginxDataAvailable() {
 
 void QuicSimpleServerStream::OnNginxHeaderAvailable(const std::string &header, bool fin)
 {
-	HeadersToRaw(const_cast<std::string *> (&header));
+    //SendErrorResponse();
+	//HeadersToRaw(const_cast<std::string *> (&header));
 	scoped_refptr<HttpResponseHeaders> request_headers = new HttpResponseHeaders(header);	
 	SpdyHeaderBlock spdy_headers;
 	CreateSpdyHeadersFromHttpResponse(*request_headers, &spdy_headers);
 	WriteHeaders(std::move(spdy_headers), fin, nullptr);
-	//SendHeadersAndBody(std::move(spdy_headers), kNotFoundResponseBody);
 }
 
 void QuicSimpleServerStream::OnNginxBodyAvailable(const std::string &body, bool fin)
 {
-	HeadersToRaw(const_cast<std::string *> (&body));
+    
+	QUIC_DLOG(INFO) << "quic body available:" << body << "size:" << body.size() << "fin:" << fin;
+	//HeadersToRaw(const_cast<std::string *> (&body));
 	WriteOrBufferData(body, fin, nullptr);
 }
 
@@ -362,6 +374,8 @@ void* QuicSimpleServerStream::GetQuicNgxAddrConf() {
 void CreateSpdyHeadersFromHttpResponse(
     const HttpResponseHeaders& response_headers,
     SpdyHeaderBlock* headers) {
+// debug
+//  return;
   const std::string status_line = response_headers.GetStatusLine();
   std::string::const_iterator after_version =
       std::find(status_line.begin(), status_line.end(), ' ');
@@ -404,12 +418,6 @@ void AddSpdyHeader(const std::string& name,
   }
 }
 
-void HeadersToRaw(std::string* headers) {
-  std::replace(headers->begin(), headers->end(), '\n', '\0');
-  if (!headers->empty()) {
-    *headers += '\0';
-  }
-}
 
 bool ConvertSpdyHeaderToHttpRequest(const SpdyHeaderBlock& spdy_headers,
                                     HttpRequestHeaders* request_headers) {
@@ -418,15 +426,13 @@ bool ConvertSpdyHeaderToHttpRequest(const SpdyHeaderBlock& spdy_headers,
 
   SpdyHeaderBlock::const_iterator it = spdy_headers.begin();
   while (it != spdy_headers.end()) {
-    bool valid_header = true;
-    /*
-	 * for (size_t i = 0; i < arraysize(kForbiddenHttpHeaderFields); ++i) {
+  bool valid_header = true;
+	for (size_t i = 0; i < arraysize(kForbiddenHttpHeaderFields); ++i) {
       if (it->first == kForbiddenHttpHeaderFields[i]) {
         valid_header = false;
         break;
       }   
     }   
-	*/
     if (!valid_header) {
       ++it;
       continue;
@@ -438,6 +444,8 @@ bool ConvertSpdyHeaderToHttpRequest(const SpdyHeaderBlock& spdy_headers,
     if (key.size() && key[0] == ':') {
       key = key.substr(1);
     }   
+
+    QUIC_DVLOG(1) << "ConvertSpdyHeaderToHttpRequest key:" << key << "value:" << value;
 
     request_headers->SetHeader(key, value);
     ++it;

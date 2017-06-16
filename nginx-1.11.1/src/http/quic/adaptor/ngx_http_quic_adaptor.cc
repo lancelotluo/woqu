@@ -200,7 +200,7 @@ void ngx_http_quic_send_to_nginx_test(void *stream)
 
 int ngx_http_quic_response_body_available(void *stream, unsigned char *buf, const int buf_len, int last_buf)
 {
-	QUIC_DVLOG(1) << "lance_debug begin to OnNginxHeaderAvailable";	
+	QUIC_DVLOG(1) << "lance_debug begin to OnNginxBodyAvailable";	
 	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
 	string ngx_body = string(reinterpret_cast<char*>(buf), buf_len);
 	bool fin = last_buf ? true : false;
