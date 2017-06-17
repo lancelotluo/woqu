@@ -46,6 +46,8 @@ static void CreateSpdyHeadersFromHttpResponse(
     const HttpResponseHeaders& response_headers,
     SpdyHeaderBlock* headers);
 
+static void HeadersToRaw(std::string* headers);
+
 QuicSimpleServerStream::QuicSimpleServerStream(
     QuicStreamId id,
     QuicSpdySession* session,
@@ -302,10 +304,26 @@ void QuicSimpleServerStream::OnNginxDataAvailable() {
 void QuicSimpleServerStream::OnNginxHeaderAvailable(const std::string &header, bool fin)
 {
     //SendErrorResponse();
-	//HeadersToRaw(const_cast<std::string *> (&header));
+	HeadersToRaw(const_cast<std::string *> (&header));
+	QUIC_DLOG(INFO) << "quic header available:" << header << " size:" << header.size() << " fin:" << fin;
 	scoped_refptr<HttpResponseHeaders> request_headers = new HttpResponseHeaders(header);	
 	SpdyHeaderBlock spdy_headers;
 	CreateSpdyHeadersFromHttpResponse(*request_headers, &spdy_headers);
+  //lance debug
+  //
+  /*
+    spdy_headers.erase("connection");
+    spdy_headers.erase("accept-ranges");
+    spdy_headers.erase("content-length");
+    spdy_headers.erase("alt-svc");
+    spdy_headers.erase("etag");
+    spdy_headers.erase("last-modified");
+    spdy_headers.erase("server");
+*/
+   // spdy_headers.erase("date");
+    spdy_headers.erase("content-type");
+    spdy_headers.erase("stgw");
+
 	WriteHeaders(std::move(spdy_headers), fin, nullptr);
 }
 
@@ -313,7 +331,6 @@ void QuicSimpleServerStream::OnNginxBodyAvailable(const std::string &body, bool 
 {
     
 	QUIC_DLOG(INFO) << "quic body available:" << body << "size:" << body.size() << "fin:" << fin;
-	//HeadersToRaw(const_cast<std::string *> (&body));
 	WriteOrBufferData(body, fin, nullptr);
 }
 
@@ -426,13 +443,14 @@ bool ConvertSpdyHeaderToHttpRequest(const SpdyHeaderBlock& spdy_headers,
 
   SpdyHeaderBlock::const_iterator it = spdy_headers.begin();
   while (it != spdy_headers.end()) {
-  bool valid_header = true;
-	for (size_t i = 0; i < arraysize(kForbiddenHttpHeaderFields); ++i) {
+    bool valid_header = true;
+    for (size_t i = 0; i < arraysize(kForbiddenHttpHeaderFields); ++i) {
       if (it->first == kForbiddenHttpHeaderFields[i]) {
         valid_header = false;
         break;
       }   
     }   
+
     if (!valid_header) {
       ++it;
       continue;
@@ -440,18 +458,38 @@ bool ConvertSpdyHeaderToHttpRequest(const SpdyHeaderBlock& spdy_headers,
 
     base::StringPiece key(it->first);
     base::StringPiece value(it->second);
-
+   /* 
+    value.erase(std::remove(value.begin(), value.end(), '\r'), value.end());
+    value.erase(std::remove(value.begin(), value.end(), '\n'), value.end());
+    value.erase(std::remove(value.begin(), value.end(), '\0'), value.end());
+*/
     if (key.size() && key[0] == ':') {
       key = key.substr(1);
     }   
 
-    QUIC_DVLOG(1) << "ConvertSpdyHeaderToHttpRequest key:" << key << "value:" << value;
+    QUIC_DVLOG(1) << "ConvertSpdyHeaderToHttpRequest key:" << key << " value:" << value;
+    
+    for (char c : value) {
+        if (c == '\0')
+            QUIC_DVLOG(1) << "ConvertSpdyHeaderToHttpRequest 0 value:" << value << " includes '\0'";
+        if (c == '\r')
+            QUIC_DVLOG(1) << "ConvertSpdyHeaderToHttpRequest r value:" << value << " includes '\r'";
+        if (c == '\n')
+            QUIC_DVLOG(1) << "ConvertSpdyHeaderToHttpRequest n value:" << value << " includes '\n'";
+    }
 
     request_headers->SetHeader(key, value);
     ++it;
   }
 
   return true;
+}
+
+void HeadersToRaw(std::string* headers) {
+  std::replace(headers->begin(), headers->end(), '\n', '\0');
+  if (!headers->empty()) {
+    *headers += '\0';
+  }
 }
 
 
