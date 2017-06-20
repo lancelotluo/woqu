@@ -508,6 +508,9 @@ void QuicDispatcher::OnConnectionClosed(QuicConnectionId connection_id,
     return;
   }
 
+  QUIC_DLOG(INFO)
+      << "Closing connection:" << connection_id;
+
   QUIC_DLOG_IF(INFO, error != QUIC_NO_ERROR)
       << "Closing connection (" << connection_id
       << ") due to error: " << QuicErrorCodeToString(error)

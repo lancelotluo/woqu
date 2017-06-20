@@ -198,7 +198,7 @@ ngx_http_quic_handle_connection(ngx_http_quic_connection_t *qc)
 }
 
 
-ngx_int_t ngx_http_quic_init_http_request(void *quic_stream, void *connection, const char *request, int request_len, const char *body, int body_len)
+ngx_int_t ngx_http_quic_init_http_request(void *quic_stream, void *connection, const char *request, int request_len, const char *body, int body_len, ngx_quic_stream_info_t *nq_info)
 {
     ngx_connection_t          *c;
     ngx_http_quic_stream_t    *ngx_quic_stream;

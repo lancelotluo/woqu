@@ -463,21 +463,15 @@ bool ConvertSpdyHeaderToHttpRequest(const SpdyHeaderBlock& spdy_headers,
     value.erase(std::remove(value.begin(), value.end(), '\n'), value.end());
     value.erase(std::remove(value.begin(), value.end(), '\0'), value.end());
 */
+    QuicTextUtils::RemoveLeadingAndTrailingWhitespace(&value);
+    QuicTextUtils::RemoveLeadingAndTrailingWhitespace(&key);
+
     if (key.size() && key[0] == ':') {
       key = key.substr(1);
     }   
 
     QUIC_DVLOG(1) << "ConvertSpdyHeaderToHttpRequest key:" << key << " value:" << value;
     
-    for (char c : value) {
-        if (c == '\0')
-            QUIC_DVLOG(1) << "ConvertSpdyHeaderToHttpRequest 0 value:" << value << " includes '\0'";
-        if (c == '\r')
-            QUIC_DVLOG(1) << "ConvertSpdyHeaderToHttpRequest r value:" << value << " includes '\r'";
-        if (c == '\n')
-            QUIC_DVLOG(1) << "ConvertSpdyHeaderToHttpRequest n value:" << value << " includes '\n'";
-    }
-
     request_headers->SetHeader(key, value);
     ++it;
   }

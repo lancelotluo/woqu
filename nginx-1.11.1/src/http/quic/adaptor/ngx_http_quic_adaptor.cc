@@ -24,6 +24,7 @@ extern "C" {
 using namespace net;
 // The port the quic server will listen on.
 static base::AtExitManager* exit_manager;
+//g_disable_managers = true;	
 
 std::unique_ptr<net::ProofSource> CreateProofSource(
     const base::FilePath& cert_path,
@@ -46,8 +47,7 @@ QuicSimpleDispatcher* ngx_http_quic_create_dispatcher(int fd, ngx_http_quic_conf
 	base::CommandLine::Init(fake_argc, fake_argv);
 	ngx_http_quic_set_log_level(-1);
 	exit_manager = new base::AtExitManager;
-
-	QuicConfig* config = new QuicConfig();
+    QuicConfig* config = new QuicConfig();
 
 	QuicChromiumClock* clock = new QuicChromiumClock();  // Deleted by scoped ptr of    QuicConnectionHelper
 	QuicRandom* random_generator = QuicRandom::GetInstance();
@@ -172,12 +172,21 @@ int ngx_http_quic_send_to_nginx(void *stream, const char *request, int request_l
 		QUIC_DVLOG(1) << "lance_debug ngx_connection is nullptr";	
 		return -1;
 	}
-	QUIC_DVLOG(1) << "lance_debug quic request:" << request << " len: "<< request_len  << " ngx_connection:" << ngx_connection;
 
-	return ngx_http_quic_init_http_request(stream, ngx_connection, request, request_len, body, body_len);
+	QUIC_DVLOG(1) << "lance_debug quic request:" << request << " len: "<< request_len  << " ngx_connection:" << ngx_connection << "quic_version:" << quic_stream->version() << "quic_connection_id:" << "quic_stream_id:" << quic_stream->id();
+
+    string full_version = "q0"+ std::to_string(quic_stream->version()); 
+    string sid = std::to_string(quic_stream->id());
+
+    ngx_quic_stream_info_t nq_info;
+    memcpy(&nq_info.quic_version, full_version.c_str(), 4);
+    memcpy(&nq_info.stream_id, sid.c_str(), 32);
+
+	return ngx_http_quic_init_http_request(stream, ngx_connection, request, request_len, body, body_len, &nq_info);
 	//ngx_http_quic_init_http_request_test(stream, ngx_connection, request, request_len, body, body_len);
 	//quic_stream->OnNginxDataAvailable();
 }
+
 void ngx_http_quic_send_to_nginx_test(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len)
 {
 	QUIC_DVLOG(1) << "lance_debug quic host:" << host << " len: "<< host_len << " quic path:" << path << " path_len: " << path_len;	
@@ -191,6 +200,7 @@ void ngx_http_quic_send_to_nginx_test(void *stream, const char *host, int64_t ho
 	}
 
 }
+
 void ngx_http_quic_send_to_nginx_test(void *stream)
 {
 	QUIC_DVLOG(1) << "lance_debug quic_send_to_nginx_test";	

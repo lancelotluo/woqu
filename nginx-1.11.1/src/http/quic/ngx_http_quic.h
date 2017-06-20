@@ -19,6 +19,13 @@ typedef struct ngx_http_quic_header_s	ngx_http_quic_header_t;
 typedef u_char *(*ngx_http_quic_handler_pt) (ngx_http_quic_connection_t *qc,
     u_char *pos, u_char *end);
 
+typedef struct ngx_quic_stream_info_s ngx_quic_stream_info_t;
+
+struct ngx_quic_stream_info_s {
+    u_char quic_version[4];    
+    u_char stream_id[64];
+};
+
 struct ngx_http_quic_header_s {
 	ngx_str_t name;
 	ngx_str_t value;
@@ -36,6 +43,9 @@ struct ngx_http_quic_stream_s {
      */
     ssize_t                          send_window;
     size_t                           recv_window;
+    ngx_str_t                        quic_version;
+    int32_t                          stream_id;
+    int64_t                          connection_id; 
 
     ngx_buf_t                       *preread;
 
@@ -86,7 +96,7 @@ void ngx_http_quic_init(ngx_event_t *rev);
 void
 ngx_http_quic_switch_in_nginx(void *stream, const char *host, int64_t host_len, const char *path, int64_t path_len, const char *body, int64_t body_len);
 
-ngx_int_t ngx_http_quic_init_http_request(void *quic_stream, void *connection, const char *request, int request_len, const char *body, int body_len);
+ngx_int_t ngx_http_quic_init_http_request(void *quic_stream, void *connection, const char *request, int request_len, const char *body, int body_len, ngx_quic_stream_info_t *nq_info);
 
 ngx_int_t
 ngx_http_quic_header_filter(ngx_http_request_t *r, ngx_chain_t *in);

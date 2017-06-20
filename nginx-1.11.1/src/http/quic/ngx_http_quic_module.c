@@ -10,6 +10,9 @@
 #include <ngx_http.h>
 #include <ngx_http_quic_module.h>
 
+static ngx_int_t ngx_http_quic_add_variables(ngx_conf_t *cf);
+static ngx_int_t ngx_http_quic_variable(ngx_http_request_t *r,
+    ngx_http_variable_value_t *v, uintptr_t data);
 static ngx_int_t ngx_http_quic_proto_init(ngx_cycle_t *cycle);
 
 static void *ngx_http_quic_create_main_conf(ngx_conf_t *cf);
@@ -122,7 +125,7 @@ static ngx_command_t  ngx_http_quic_commands[] = {
 
 
 static ngx_http_module_t  ngx_http_quic_module_ctx = {
-    NULL,						             /* preconfiguration */
+    ngx_http_quic_add_variables,						             /* preconfiguration */
     NULL,                                    /* postconfiguration */
 
     ngx_http_quic_create_main_conf,          /* create main configuration */
@@ -149,11 +152,6 @@ ngx_module_t  ngx_http_quic_module = {
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
     NGX_MODULE_V1_PADDING
-};
-
-
-static ngx_http_variable_t  ngx_http_quic_vars[] = {
-    { ngx_null_string, NULL, NULL, 0, 0, 0 }
 };
 
 
@@ -330,6 +328,65 @@ ngx_http_quic_preread_size(ngx_conf_t *cf, void *post, void *data)
     }
 
     return NGX_CONF_OK;
+}
+
+static ngx_int_t
+ngx_http_quic_variable(ngx_http_request_t *r,
+    ngx_http_variable_value_t *v, uintptr_t data)
+{
+
+    if (r->quic_stream) {
+#if (NGX_HTTP_SSL)
+
+        if (r->connection->ssl) {
+            v->len = sizeof("h2") - 1;
+            v->valid = 1;
+            v->no_cacheable = 0;
+            v->not_found = 0;
+            v->data = (u_char *) "h2";
+
+            return NGX_OK;
+        }
+
+#endif
+        v->len = sizeof("h2c") - 1;
+        v->valid = 1;
+        v->no_cacheable = 0;
+        v->not_found = 0;
+        v->data = (u_char *) "h2c";
+
+        return NGX_OK;
+    }
+
+    *v = ngx_http_variable_null_value;
+
+    return NGX_OK;
+}
+
+static ngx_http_variable_t  ngx_http_quic_vars[] = {
+
+    { ngx_string("quic"), NULL,
+      ngx_http_quic_variable, 0, 0, 0 },
+
+    { ngx_null_string, NULL, NULL, 0, 0, 0 }
+};
+
+static ngx_int_t
+ngx_http_quic_add_variables(ngx_conf_t *cf)
+{
+    ngx_http_variable_t  *var, *v;
+
+    for (v = ngx_http_quic_vars; v->name.len; v++) {
+        var = ngx_http_add_variable(cf, &v->name, v->flags);
+        if (var == NULL) {
+            return NGX_ERROR;
+        }
+
+        var->get_handler = v->get_handler;
+        var->data = v->data;
+    }
+
+    return NGX_OK;
 }
 
 static char *
