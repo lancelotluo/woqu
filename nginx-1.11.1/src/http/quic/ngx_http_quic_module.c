@@ -57,6 +57,13 @@ static ngx_command_t  ngx_http_quic_commands[] = {
       offsetof(ngx_http_quic_srv_conf_t, pool_size),
       &ngx_http_quic_pool_size_post },
 
+    { ngx_string("quic_log_level"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_num_slot,
+      NGX_HTTP_SRV_CONF_OFFSET,
+      offsetof(ngx_http_quic_srv_conf_t, quic_log_level),
+      NULL },
+
     { ngx_string("quic_max_concurrent_streams"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_num_slot,
@@ -194,17 +201,14 @@ ngx_http_quic_create_srv_conf(ngx_conf_t *cf)
         return NULL;
     }
 
-    hqscf->pool_size = NGX_CONF_UNSET_SIZE;
-
     hqscf->concurrent_streams = NGX_CONF_UNSET_UINT;
-
-    hqscf->max_field_size = NGX_CONF_UNSET_SIZE;
-    hqscf->max_header_size = NGX_CONF_UNSET_SIZE;
-
-    hqscf->preread_size = NGX_CONF_UNSET_SIZE;
-
-    hqscf->recv_timeout = NGX_CONF_UNSET_MSEC;
-    hqscf->idle_timeout = NGX_CONF_UNSET_MSEC;
+    hqscf->pool_size        = NGX_CONF_UNSET_SIZE;
+    hqscf->max_field_size   = NGX_CONF_UNSET_SIZE;
+    hqscf->max_header_size  = NGX_CONF_UNSET_SIZE;
+    hqscf->preread_size     = NGX_CONF_UNSET_SIZE;
+    hqscf->recv_timeout     = NGX_CONF_UNSET_MSEC;
+    hqscf->idle_timeout     = NGX_CONF_UNSET_MSEC;
+    hqscf->quic_log_level   = NGX_CONF_UNSET;
 
 	hqscf->quic_dispatcher = ngx_pcalloc(cf->pool, sizeof(ngx_http_quic_dispatcher_t));
 	if (hqscf->quic_dispatcher == NULL) {
@@ -228,8 +232,12 @@ ngx_http_quic_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_uint_value(conf->concurrent_streams,
                               prev->concurrent_streams, 128);
 
+    ngx_conf_merge_value(conf->quic_log_level,
+                              prev->quic_log_level, 2);//LogSeverity LOG_ERROR = 2;
+
     ngx_conf_merge_size_value(conf->max_field_size, prev->max_field_size,
                               4096);
+
     ngx_conf_merge_size_value(conf->max_header_size, prev->max_header_size,
                               16384);
 

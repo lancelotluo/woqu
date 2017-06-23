@@ -2753,6 +2753,18 @@ ngx_http_test_reading(ngx_http_request_t *r)
     }
 
 #endif
+#if (NGX_HTTP_QUIC)
+
+    if (r->quic_stream) {
+        if (c->error) {
+            err = 0;
+            goto closed;
+        }
+
+        return;
+    }
+
+#endif
 
 #if (NGX_HAVE_KQUEUE)
 

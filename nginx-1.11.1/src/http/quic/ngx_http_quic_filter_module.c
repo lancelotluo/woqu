@@ -153,35 +153,56 @@ ngx_http_quic_send_chain(ngx_connection_t *fc, ngx_chain_t *in, off_t limit)
     ngx_http_quic_stream_t      *stream;
     ngx_http_quic_loc_conf_t    *qlcf;
     ngx_http_quic_connection_t  *qcc;
+    ngx_http_upstream_t         *u;
+    ngx_connection_t            *upstream;
 
-    r = fc->data;
-    stream = r->quic_stream;
+    r           = fc->data;
+    stream      = r->quic_stream;
+    u           = r->upstream;
+    upstream    = u->peer.connection; 
 
 	ngx_log_debug0(NGX_LOG_DEBUG_HTTP, fc->log, 0,
 				"quic send chain");
 	out = in;	
-
-	while (out) {
+    //lance cebug
+    //fc->buffered |= NGX_HTTP_V2_BUFFERED;
+	while (in) {
 		last = 0;
-		//if (out->buf->last_buf) {
-		//if (out->buf->last_buf || (out->buf->flush && !out->next)) {
-		if (r->upstream->length <= 0) {
+
+        if (u->length == 0 
+                    || (upstream->read->eof && u->length == -1)) {
 			last = 1;
 		} 
-	
-		buf_len = ngx_buf_size(out->buf);
-		ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "ngx_http_quic_response_body_available, buf_len:%d last:%d", buf_len, last);
+//lance debug
+        if (stream->send_times == 8) {
+            last = 1;
+        }
+        
+        if (last) {
+	        ngx_log_debug3(NGX_LOG_DEBUG_HTTP, fc->log, 0,
+				"quic stream set last, chunked:%d content-length:%d last_buf:%d", r->chunked, u->length, upstream->read->eof);
+	    }
+
+		buf_len = ngx_buf_size(in->buf);
 
 		if (buf_len) {
-			ngx_http_quic_response_body_available(r->quic_stream->quic_stream, out->buf->pos, buf_len, last);
+            stream->send_times++;
+            stream->send_bytes += buf_len;
+			ngx_http_quic_response_body_available(r->quic_stream->quic_stream, in->buf->pos, buf_len, last);
 			in = ngx_chain_update_sent(in, buf_len);
 		}
+        
+        r->connection->sent += buf_len;
 
-		out = out->next;
+		ngx_log_debug4(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "ngx_http_quic_response_body_available, buf_len:%d last:%d send_times:%d send_bytes:%d", buf_len, last, stream->send_times, stream->send_bytes);
+        if (in) {
+            in = in->next;
+        }
 	}
 	
-    return out;
+    //return out;
+    return in;
 }
 
 static ngx_int_t

@@ -30,6 +30,7 @@ typedef void QuicSimpleDispatcher;
 struct ngx_http_quic_conf_s {
 	unsigned char *certificate;
 	unsigned char *certificate_key;
+    int            quic_log_level;
 };
 
 typedef struct ngx_http_quic_conf_s ngx_http_quic_conf_t;

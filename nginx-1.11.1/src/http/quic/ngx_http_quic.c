@@ -103,6 +103,7 @@ ngx_http_quic_init(ngx_event_t *rev)
         strcat(tmp_key, ".pkcs8");
 		//nqcf.certificate_key	= key[0].data; 
 		nqcf.certificate_key	= tmp_key; 
+		nqcf.quic_log_level	    = qscf->quic_log_level; 
 
 		ngx_log_debug2(NGX_LOG_DEBUG_HTTP, c->log, 0, "first to create dispatcher, only once, certificate:%s key:%s", nqcf.certificate, tmp_key);
 		qscf->quic_dispatcher->proto_quic_dispatcher = ngx_http_quic_create_dispatcher(c->fd, &nqcf);
@@ -340,7 +341,7 @@ ngx_http_quic_create_stream(ngx_http_quic_connection_t *qc, void *quic_stream)
         return NULL;
     }
 
-    ngx_str_set(&r->http_protocol, "HTTP/2.0");
+    ngx_str_set(&r->http_protocol, "QUIC");
 
     r->http_version = NGX_HTTP_VERSION_20;
     r->valid_location = 1;

@@ -46,6 +46,8 @@ struct ngx_http_quic_stream_s {
     ngx_str_t                        quic_version;
     int32_t                          stream_id;
     int64_t                          connection_id; 
+    int64_t                          send_times; 
+    int64_t                          send_bytes; 
 
     ngx_buf_t                       *preread;
 

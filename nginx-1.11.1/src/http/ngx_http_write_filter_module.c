@@ -185,6 +185,8 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
      */
 
     if (!last && !flush && in && size < (off_t) clcf->postpone_output) {
+        ngx_log_debug3(NGX_LOG_DEBUG_HTTP, c->log, 0,
+                      "lance_debug last:%d flush:%d in:%p", last, flush, in);
         return NGX_OK;
     }
 
@@ -206,6 +208,8 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
             r->out = NULL;
             c->buffered &= ~NGX_HTTP_WRITE_BUFFERED;
+            ngx_log_debug3(NGX_LOG_DEBUG_HTTP, c->log, 0,
+                      "lance_debug buffer last:%d flush:%d in:%p", last, flush, in);
 
             return NGX_OK;
         }

@@ -45,8 +45,10 @@ QuicSimpleDispatcher* ngx_http_quic_create_dispatcher(int fd, ngx_http_quic_conf
 	char **fake_argv = new char *[fake_argc]{ arg0 , arg1 } ;
 
 	base::CommandLine::Init(fake_argc, fake_argv);
+	//ngx_http_quic_set_log_level(conf->quic_log_level);
 	ngx_http_quic_set_log_level(-1);
 	exit_manager = new base::AtExitManager;
+    //exit_manager->DisableAllAtExitManagers();
     QuicConfig* config = new QuicConfig();
 
 	QuicChromiumClock* clock = new QuicChromiumClock();  // Deleted by scoped ptr of    QuicConnectionHelper

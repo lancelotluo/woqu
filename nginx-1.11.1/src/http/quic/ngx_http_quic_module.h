@@ -35,6 +35,7 @@ typedef struct {
     size_t                          preread_size;
     ngx_msec_t                      recv_timeout;
     ngx_msec_t                      idle_timeout;
+    ngx_int_t                       quic_log_level;
     ngx_str_t						certificate;
     ngx_str_t						certificate_key;
 	ngx_http_quic_dispatcher_t     *quic_dispatcher;
@@ -43,6 +44,7 @@ typedef struct {
 
 typedef struct {
     size_t                          chunk_size;
+    ngx_int_t                       quic_log_level;
 } ngx_http_quic_loc_conf_t;
 
 

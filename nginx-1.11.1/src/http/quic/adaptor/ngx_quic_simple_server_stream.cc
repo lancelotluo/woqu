@@ -305,7 +305,7 @@ void QuicSimpleServerStream::OnNginxHeaderAvailable(const std::string &header, b
 {
     //SendErrorResponse();
 	HeadersToRaw(const_cast<std::string *> (&header));
-	QUIC_DLOG(INFO) << "quic header available:" << header << " size:" << header.size() << " fin:" << fin;
+	QUIC_DLOG(INFO) << "quic header available, id:" << id() << " header: " << header << " size:" << header.size() << " fin:" << fin;
 	scoped_refptr<HttpResponseHeaders> request_headers = new HttpResponseHeaders(header);	
 	SpdyHeaderBlock spdy_headers;
 	CreateSpdyHeadersFromHttpResponse(*request_headers, &spdy_headers);
@@ -321,8 +321,9 @@ void QuicSimpleServerStream::OnNginxHeaderAvailable(const std::string &header, b
     spdy_headers.erase("server");
 */
    // spdy_headers.erase("date");
-    spdy_headers.erase("content-type");
-    spdy_headers.erase("stgw");
+    //spdy_headers.erase("content-type");
+    spdy_headers.erase("transfer-encoding");
+    spdy_headers.erase("connection");
 
 	WriteHeaders(std::move(spdy_headers), fin, nullptr);
 }
@@ -330,7 +331,7 @@ void QuicSimpleServerStream::OnNginxHeaderAvailable(const std::string &header, b
 void QuicSimpleServerStream::OnNginxBodyAvailable(const std::string &body, bool fin)
 {
     
-	QUIC_DLOG(INFO) << "quic body available:" << body << "size:" << body.size() << "fin:" << fin;
+	QUIC_DLOG(INFO) << "quic body available, id:" << id() << " size:" << body.size() << " fin:" << fin << " body:" << body;
 	WriteOrBufferData(body, fin, nullptr);
 }
 
@@ -481,6 +482,7 @@ bool ConvertSpdyHeaderToHttpRequest(const SpdyHeaderBlock& spdy_headers,
 
 void HeadersToRaw(std::string* headers) {
   std::replace(headers->begin(), headers->end(), '\n', '\0');
+  std::replace(headers->begin(), headers->end(), '\r', '\0');
   if (!headers->empty()) {
     *headers += '\0';
   }

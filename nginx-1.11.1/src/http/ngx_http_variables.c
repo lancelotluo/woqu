@@ -1376,7 +1376,7 @@ ngx_http_variable_scheme(ngx_http_request_t *r,
 {
 #if (NGX_HTTP_SSL)
 
-    if (r->connection->ssl) {
+    if (r->connection->ssl || r->quic_stream) {
         v->len = sizeof("https") - 1;
         v->valid = 1;
         v->no_cacheable = 0;
