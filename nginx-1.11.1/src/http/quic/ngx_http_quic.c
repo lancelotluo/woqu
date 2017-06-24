@@ -421,7 +421,9 @@ ngx_http_quic_close_stream(ngx_http_quic_stream_t *stream, ngx_int_t rc)
     if (ev->posted) {
         ngx_delete_posted_event(ev);
     }
-    
+
+	ngx_http_quic_close_write_side(stream->quic_stream);    
+
     pool = stream->connection->pool;
 	ngx_http_free_request(stream->request, rc);
 	ngx_http_close_connection(fc);

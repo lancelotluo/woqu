@@ -164,6 +164,12 @@ int ngx_http_quic_dispatcher_process_packet(void *ngx_connection, QuicSimpleDisp
 	return dispatcher->ProcessPacket(server_address, client_address, packet);
 }
 
+void ngx_http_quic_close_write_side(void *stream)
+{
+	QuicSimpleServerStream *quic_stream = reinterpret_cast< QuicSimpleServerStream * >(stream);
+	quic_stream->CloseWriteSide();
+}
+
 int ngx_http_quic_send_to_nginx(void *stream, const char *request, int request_len, const char *body, int body_len)
 {
 
